@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Playfair+Display:ital,wght@1,400;1,600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg:           #FAFAF8;
+    --bg-surface:   #FFFFFF;
+    --bg-subtle:    #F3F3F0;
+    --bg-muted:     #EAEAE6;
+    --border:       #E2E2DC;
+    --border-muted: #ECECEA;
+
+    --text-primary:   #0D0D0D;
+    --text-secondary: #4A4A4A;
+    --text-muted:     #8A8A8A;
+    --text-faint:     #AEAEAE;
+
+    --accent:       #E8A020;
+    --accent-hover: #CF8F18;
+    --accent-light: #FDF3E0;
+    --breaking:     #C0392B;
+    --breaking-bg:  #FDF0EE;
+    --forest:       #2D6A4F;
+  }
+
+  .dark {
+    --bg:           #0D1117;
+    --bg-surface:   #161B22;
+    --bg-subtle:    #1C2330;
+    --bg-muted:     #21262D;
+    --border:       #2A3340;
+    --border-muted: #21262D;
+
+    --text-primary:   #E6EDF3;
+    --text-secondary: #8B949E;
+    --text-muted:     #5A6370;
+    --text-faint:     #3D444D;
+
+    --accent:       #F0A830;
+    --accent-hover: #E8A020;
+    --accent-light: #2A1F0A;
+    --breaking:     #E05A4E;
+    --breaking-bg:  #2A1210;
+    --forest:       #3D9970;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-size: 16px;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar       { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+}
+
+@layer components {
+
+  /* ── Category label ───────────────────────────── */
+  .cat-label {
+    @apply inline-block text-[10px] font-bold
+           tracking-[0.18em] uppercase;
+  }
+
+  /* ── Section heading label ────────────────────── */
+  .section-label {
+    @apply text-[10px] font-bold tracking-[0.22em]
+           uppercase;
+    color: var(--accent);
+  }
+
+  /* ── Breaking strip ───────────────────────────── */
+  .breaking-strip {
+    @apply inline-flex items-center gap-1.5
+           text-[10px] font-black tracking-[0.18em]
+           uppercase px-2 py-0.5 rounded-sm;
+    background: var(--breaking);
+    color: #fff;
+  }
+
+  /* ── Standard card ────────────────────────────── */
+  .news-card {
+    @apply rounded-lg overflow-hidden
+           transition-all duration-200
+           hover:shadow-md cursor-pointer;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-muted);
+  }
+
+  .news-card:hover {
+    border-color: var(--border);
+    transform: translateY(-2px);
+  }
+
+  /* ── Divider ──────────────────────────────────── */
+  .divider {
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Skeleton ─────────────────────────────────── */
+  .skeleton {
+    @apply animate-pulse rounded;
+    background: var(--bg-muted);
+  }
+
+  /* ── Accent underline on hover ────────────────── */
+  .headline-link {
+    @apply transition-colors duration-150;
+    color: var(--text-primary);
+  }
+
+  .headline-link:hover {
+    color: var(--accent);
+  }
+
+  /* ── Accent button ────────────────────────────── */
+  .btn-accent {
+    @apply inline-flex items-center justify-center
+           px-5 py-2.5 text-sm font-semibold
+           rounded-lg transition-all duration-200
+           active:scale-95;
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-accent:hover {
+    background: var(--accent-hover);
+  }
+
+  /* ── Ghost button ─────────────────────────────── */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center
+           px-4 py-2 text-sm font-semibold
+           rounded-lg transition-all duration-200;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    background: transparent;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── Page container ───────────────────────────── */
+  .page-container {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6;
+  }
+}
