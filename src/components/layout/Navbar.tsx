@@ -2,36 +2,31 @@ import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   Sun, Moon, Menu, X,
-  Home, TrendingUp, Bookmark, BarChart2,
-  ChevronRight, ChevronDown, User, Settings,
+  Home, TrendingUp, Bookmark, BarChart2, Settings,
   Search, LogIn, UserPlus,
 } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 import { getCategories } from '../../api/categories'
-import { getArticles } from '../../api/articles'
-import type { Category, Article } from '../../types'
-import { SEED_CATEGORIES, SEED_ARTICLES } from '../../lib/seed'
-import { timeAgo } from '../../lib/utils'
+import type { Category } from '../../types'
+import { SEED_CATEGORIES } from '../../lib/seed'
 
 const BOTTOM_NAV = [
-  { to: '/',                 icon: Home,       label: 'Home'    },
-  { to: '/category/markets', icon: BarChart2,  label: 'Markets' },
+  { to: '/',                 icon: Home,       label: 'Home'     },
+  { to: '/category/markets', icon: BarChart2,  label: 'Markets'  },
   { to: '/search',           icon: Search,     label: 'Search',  center: true },
   { to: '/trending',         icon: TrendingUp, label: 'Trending' },
-  { to: '/saved',            icon: Bookmark,   label: 'Saved'   },
+  { to: '/saved',            icon: Bookmark,   label: 'Saved'    },
 ]
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme()
   const location               = useLocation()
 
-  const [categories,   setCategories]   = useState<Category[]>([])
-  const [menuArticles, setMenuArticles] = useState<Record<string, Article[]>>({})
-  const [expanded,     setExpanded]     = useState<string | null>(null)
-  const [scrolled,     setScrolled]     = useState(false)
-  const [menuOpen,     setMenuOpen]     = useState(false)
-  const [searchOpen,   setSearchOpen]   = useState(false)
-  const [query,        setQuery]        = useState('')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [scrolled,   setScrolled]   = useState(false)
+  const [menuOpen,   setMenuOpen]   = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [query,      setQuery]      = useState('')
 
   const isLoggedIn = false
   const user       = { name: 'Bhawesh', avatar: null as string | null }
@@ -39,7 +34,7 @@ export default function Navbar() {
   useEffect(() => {
     getCategories()
       .then(res => {
-        if (res.data?.length > 0) setCategories(res.data)
+        if (res.data && res.data.length > 0) setCategories(res.data)
         else setCategories(SEED_CATEGORIES)
       })
       .catch(() => setCategories(SEED_CATEGORIES))
@@ -59,26 +54,7 @@ export default function Navbar() {
   useEffect(() => {
     setMenuOpen(false)
     setSearchOpen(false)
-    setExpanded(null)
   }, [location.pathname])
-
-  const handleExpand = async (slug: string) => {
-    if (expanded === slug) { setExpanded(null); return }
-    setExpanded(slug)
-    if (menuArticles[slug]) return
-    try {
-      const res = await getArticles({ category: slug, limit: 3 })
-      const articles = res.data?.length > 0
-        ? res.data
-        : SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3)
-      setMenuArticles(prev => ({ ...prev, [slug]: articles }))
-    } catch {
-      setMenuArticles(prev => ({
-        ...prev,
-        [slug]: SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3),
-      }))
-    }
-  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -139,7 +115,7 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* Desktop actions */}
+            {/* ── Desktop actions ───────────────── */}
             <div className="hidden md:flex items-center gap-2">
               <form onSubmit={handleSearch}>
                 <div
@@ -178,7 +154,7 @@ export default function Navbar() {
               <button
                 onClick={toggleTheme}
                 className="w-9 h-9 rounded-lg flex items-center justify-center
-                           transition-all duration-200 hover:border-[var(--accent)]"
+                           transition-all duration-200"
                 style={{
                   background: 'var(--bg-subtle)',
                   border:     '1px solid var(--border)',
@@ -197,7 +173,7 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Mobile actions — Theme + Hamburger only */}
+            {/* ── Mobile actions ────────────────── */}
             <div className="flex md:hidden items-center gap-1.5">
               <button
                 onClick={toggleTheme}
@@ -229,7 +205,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Desktop category nav */}
+          {/* ── Desktop category nav ──────────────────── */}
           <nav
             className="hidden md:flex items-center overflow-x-auto scrollbar-none"
             style={{ borderTop: '1px solid var(--border)' }}
@@ -286,10 +262,50 @@ export default function Navbar() {
             </Link>
           </nav>
         </div>
+
+        {/* ── Mobile category strip — below navbar ──── */}
+        <div
+          className="md:hidden overflow-x-auto scrollbar-none"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <div className="flex items-center px-4 gap-1 py-0">
+            <Link
+              to="/"
+              className="flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
+                         tracking-widest uppercase transition-all duration-150
+                         whitespace-nowrap"
+              style={{
+                color:        isActive('/') ? 'var(--accent)' : 'var(--text-secondary)',
+                borderBottom: isActive('/')
+                  ? '2px solid var(--accent)' : '2px solid transparent',
+              }}
+            >
+              Home
+            </Link>
+
+            {categories.map(cat => (
+              <Link
+                key={cat.id}
+                to={`/category/${cat.slug}`}
+                className="flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
+                           tracking-widest uppercase transition-all duration-150
+                           whitespace-nowrap"
+                style={{
+                  color:        isActive(`/category/${cat.slug}`)
+                    ? cat.color : 'var(--text-secondary)',
+                  borderBottom: isActive(`/category/${cat.slug}`)
+                    ? `2px solid ${cat.color}` : '2px solid transparent',
+                }}
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        </div>
       </header>
 
       {/* ══════════════════════════════════════════
-          MOBILE FULL-SCREEN MENU
+          MOBILE FULL-SCREEN MENU — simplified
       ══════════════════════════════════════════ */}
       {menuOpen && (
         <div
@@ -323,313 +339,143 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Auth block — always at top */}
-          <div
-            className="flex-shrink-0 px-4 py-4"
-            style={{ borderBottom: '2px solid var(--border)' }}
-          >
-            {isLoggedIn ? (
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-11 h-11 rounded-full flex items-center
-                             justify-center flex-shrink-0 text-lg font-bold"
-                  style={{
-                    background: 'var(--accent-light)',
-                    color:      'var(--accent)',
-                  }}
-                >
-                  {user.avatar
-                    ? <img
-                        src={user.avatar}
-                        className="w-full h-full rounded-full object-cover"
-                        alt=""
-                      />
-                    : user.name.charAt(0).toUpperCase()
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="text-sm font-bold truncate"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {user.name}
-                  </p>
-                  <Link
-                    to="/account"
-                    className="text-xs font-semibold"
-                    style={{ color: 'var(--accent)' }}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    View profile →
-                  </Link>
-                </div>
-                <Link
-                  to="/settings"
-                  onClick={() => setMenuOpen(false)}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg"
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    color:      'var(--text-secondary)',
-                  }}
-                >
-                  <Settings size={16} />
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                <p
-                  className="text-xs font-semibold"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Sign in to save articles, get personalised news and more.
-                </p>
-                <div className="flex gap-2.5 pt-1">
-                  <Link
-                    to="/login"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex-1 flex items-center justify-center gap-2
-                               py-2.5 rounded-xl text-sm font-bold btn-accent"
-                  >
-                    <LogIn size={15} />
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex-1 flex items-center justify-center gap-2
-                               py-2.5 rounded-xl text-sm font-bold btn-ghost"
-                  >
-                    <UserPlus size={15} />
-                    Register
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Scrollable nav */}
-          <div className="flex-1 overflow-y-auto overscroll-contain">
-
-            <div className="px-4 pt-4 pb-2">
-              <span
-                className="text-[10px] font-black tracking-[0.22em] uppercase"
-                style={{ color: 'var(--text-faint)' }}
-              >
-                Sections
-              </span>
-            </div>
-
-            {/* Home */}
-            <Link
-              to="/"
-              className="flex items-center justify-between px-4 py-3.5
-                         transition-colors hover:bg-[var(--bg-subtle)] group"
-              style={{ borderBottom: '1px solid var(--border-muted)' }}
-            >
-              <span
-                className="font-display text-2xl font-bold tracking-tight
-                           uppercase group-hover:text-[var(--accent)]
-                           transition-colors"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                Home
-              </span>
-              <ChevronRight size={15} style={{ color: 'var(--text-faint)' }} />
-            </Link>
-
-            {/* Category accordion */}
-            {categories.map((cat, i) => (
-              <div
-                key={cat.id}
-                style={{
-                  borderBottom: i < categories.length - 1
-                    ? '1px solid var(--border-muted)' : 'none',
-                }}
-              >
-                <button
-                  onClick={() => handleExpand(cat.slug)}
-                  className="w-full flex items-center justify-between px-4
-                             py-3.5 text-left transition-colors
-                             hover:bg-[var(--bg-subtle)]"
-                  aria-expanded={expanded === cat.slug}
-                >
-                  <span
-                    className="font-display text-2xl font-bold tracking-tight
-                               uppercase transition-colors"
-                    style={{
-                      color: expanded === cat.slug
-                        ? cat.color : 'var(--text-primary)',
-                    }}
-                  >
-                    {cat.name}
-                  </span>
-                  <ChevronDown
-                    size={16}
-                    className="flex-shrink-0 transition-transform duration-200"
-                    style={{
-                      color:     'var(--text-faint)',
-                      transform: expanded === cat.slug
-                        ? 'rotate(180deg)' : 'rotate(0deg)',
-                    }}
-                  />
-                </button>
-
-                {expanded === cat.slug && (
+          {/* Auth block */}
+          <div className="flex-1 flex flex-col justify-between px-4 py-6">
+            <div>
+              {isLoggedIn ? (
+                /* Logged in */
+                <div className="flex items-center gap-3 mb-6">
                   <div
-                    className="px-4 pb-3 animate-fade-in"
-                    style={{ background: 'var(--bg-subtle)' }}
+                    className="w-12 h-12 rounded-full flex items-center
+                               justify-center text-lg font-bold flex-shrink-0"
+                    style={{
+                      background: 'var(--accent-light)',
+                      color:      'var(--accent)',
+                    }}
                   >
-                    {/* Skeleton */}
-                    {!menuArticles[cat.slug] && (
-                      <div className="space-y-3 pt-3">
-                        {[1, 2, 3].map(n => (
-                          <div key={n} className="flex gap-3 items-start">
-                            <div className="skeleton w-14 h-14 rounded-md flex-shrink-0" />
-                            <div className="flex-1 space-y-2 pt-1">
-                              <div className="skeleton h-3 w-full rounded" />
-                              <div className="skeleton h-3 w-3/4 rounded" />
-                              <div className="skeleton h-2.5 w-1/3 rounded" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Empty */}
-                    {menuArticles[cat.slug]?.length === 0 && (
-                      <p
-                        className="text-sm py-4 text-center"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
-                        No articles yet.
-                      </p>
-                    )}
-
-                    {/* Articles */}
-                    {menuArticles[cat.slug]?.map((article, idx) => (
-                      <Link
-                        key={article.id}
-                        to={`/article/${article.slug}`}
-                        className="flex gap-3 py-3 group"
-                        style={{
-                          borderBottom: idx < menuArticles[cat.slug].length - 1
-                            ? '1px solid var(--border-muted)' : 'none',
-                        }}
-                      >
-                        {article.cover_image && (
-                          <img
-                            src={article.cover_image}
-                            alt=""
-                            className="w-14 h-14 object-cover rounded-md flex-shrink-0"
-                            loading="lazy"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0 pt-0.5">
-                          <p
-                            className="text-sm font-semibold leading-snug
-                                       line-clamp-2 transition-colors
-                                       group-hover:text-[var(--accent)]"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
-                            {article.title}
-                          </p>
-                          <p
-                            className="text-xs mt-1.5"
-                            style={{ color: 'var(--text-muted)' }}
-                          >
-                            {timeAgo(article.published_at)}
-                            {article.reading_time && (
-                              <span className="ml-2">
-                                · {article.reading_time} min read
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-
-                    {menuArticles[cat.slug] && (
-                      <Link
-                        to={`/category/${cat.slug}`}
-                        className="inline-flex items-center gap-1 mt-3
-                                   text-xs font-bold tracking-wide uppercase
-                                   hover:opacity-75 transition-opacity"
-                        style={{ color: cat.color }}
-                      >
-                        See all {cat.name}
-                        <ChevronRight size={11} />
-                      </Link>
-                    )}
+                    {user.avatar
+                      ? <img
+                          src={user.avatar}
+                          className="w-full h-full rounded-full object-cover"
+                          alt=""
+                        />
+                      : user.name.charAt(0).toUpperCase()
+                    }
                   </div>
-                )}
-              </div>
-            ))}
-
-            {/* All News */}
-            <Link
-              to="/articles"
-              className="flex items-center justify-between px-4 py-3.5
-                         transition-colors hover:bg-[var(--bg-subtle)] group"
-              style={{ borderTop: '2px solid var(--border)' }}
-            >
-              <span
-                className="font-display text-2xl font-bold tracking-tight uppercase"
-                style={{ color: 'var(--accent)' }}
-              >
-                All News
-              </span>
-              <ChevronRight size={15} style={{ color: 'var(--accent)' }} />
-            </Link>
-
-            {/* Account links — logged in only */}
-            {isLoggedIn && (
-              <div
-                className="px-4 py-4 space-y-1"
-                style={{ borderTop: '2px solid var(--border)' }}
-              >
-                <p
-                  className="text-[10px] font-black tracking-[0.22em] uppercase mb-3"
-                  style={{ color: 'var(--text-faint)' }}
-                >
-                  Account
-                </p>
-                {[
-                  { to: '/account',  icon: User,     label: 'My Profile'     },
-                  { to: '/saved',    icon: Bookmark, label: 'Saved Articles' },
-                  { to: '/settings', icon: Settings, label: 'Settings'       },
-                ].map(({ to, icon: Icon, label }) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 py-2.5 px-3 rounded-xl
-                               transition-all hover:bg-[var(--bg-subtle)] group"
-                  >
-                    <Icon size={16} style={{ color: 'var(--text-secondary)' }} />
-                    <span
-                      className="text-sm font-semibold transition-colors
-                                 group-hover:text-[var(--accent)]"
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="text-base font-bold truncate"
                       style={{ color: 'var(--text-primary)' }}
                     >
-                      {label}
-                    </span>
-                    <ChevronRight
-                      size={13}
-                      className="ml-auto"
-                      style={{ color: 'var(--text-faint)' }}
-                    />
+                      {user.name}
+                    </p>
+                    <Link
+                      to="/account"
+                      className="text-xs font-semibold"
+                      style={{ color: 'var(--accent)' }}
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      View profile →
+                    </Link>
+                  </div>
+                  <Link
+                    to="/settings"
+                    onClick={() => setMenuOpen(false)}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg"
+                    style={{
+                      background: 'var(--bg-subtle)',
+                      border:     '1px solid var(--border)',
+                      color:      'var(--text-secondary)',
+                    }}
+                  >
+                    <Settings size={16} />
                   </Link>
-                ))}
+                </div>
+              ) : (
+                /* Logged out */
+                <div className="space-y-3 mb-6">
+                  <p
+                    className="text-sm"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Sign in to save articles and get personalised news.
+                  </p>
+                  <div className="flex gap-2.5">
+                    <Link
+                      to="/login"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex-1 flex items-center justify-center gap-2
+                                 py-3 rounded-xl text-sm font-bold btn-accent"
+                    >
+                      <LogIn size={15} />
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex-1 flex items-center justify-center gap-2
+                                 py-3 rounded-xl text-sm font-bold btn-ghost"
+                    >
+                      <UserPlus size={15} />
+                      Register
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {/* Divider */}
+              <div
+                className="mb-6"
+                style={{ borderTop: '1px solid var(--border)' }}
+              />
+
+              {/* Newsletter subscribe */}
+              <div
+                className="rounded-2xl p-4 space-y-3"
+                style={{
+                  background: 'var(--accent-light)',
+                  border:     '1px solid var(--border)',
+                }}
+              >
+                <div>
+                  <p
+                    className="font-display text-lg font-bold tracking-tight uppercase"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    Stay Informed
+                  </p>
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    Get top Indian business & market news in your inbox daily.
+                  </p>
+                </div>
+                <Link
+                  to="/newsletter"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center justify-center gap-2
+                             w-full py-2.5 rounded-xl text-sm font-bold
+                             btn-accent"
+                >
+                  Subscribe to Newsletter
+                </Link>
               </div>
-            )}
+            </div>
+
+            {/* App version at bottom */}
+            <p
+              className="text-center text-[10px] mt-6"
+              style={{ color: 'var(--text-faint)' }}
+            >
+              Mango People News · News for Every Indian
+            </p>
           </div>
         </div>
       )}
 
       {/* ══════════════════════════════════════════
           BOTTOM FLOATING NAV
-          Hides when menu is open so it doesn't
-          overlap the last categories
       ══════════════════════════════════════════ */}
       <nav
         className={`
@@ -663,8 +509,8 @@ export default function Navbar() {
               <Link
                 key={to}
                 to={to}
-                className="flex items-center justify-center mx-1.5 rounded-xl
-                           transition-all duration-200 active:scale-90"
+                className="flex items-center justify-center mx-1.5
+                           rounded-xl transition-all duration-200 active:scale-90"
                 style={{
                   width:      '48px',
                   height:     '44px',
@@ -705,7 +551,7 @@ export default function Navbar() {
         })}
       </nav>
 
-      {/* Spacer — only when bottom nav is visible */}
+      {/* Spacer */}
       {!menuOpen && (
         <div className="md:hidden h-24" aria-hidden="true" />
       )}
