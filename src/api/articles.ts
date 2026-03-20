@@ -37,3 +37,10 @@ export const getHomeFeed = async (): Promise<PaginatedResponse<Article>> => {
   })
   return data
 }
+
+export const getTrending = async (limit = 6, days = 7) => {
+  const { data } = await client.get('/articles/trending', {
+    params: { limit, days }
+  })
+  return data
+}
