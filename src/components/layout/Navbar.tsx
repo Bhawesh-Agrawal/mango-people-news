@@ -27,6 +27,8 @@ export default function Navbar() {
   const [menuOpen,   setMenuOpen]   = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query,      setQuery]      = useState('')
+  const [navVisible,    setNavVisible]    = useState(true)
+  const [lastScrollY,   setLastScrollY]   = useState(0)
 
   const isLoggedIn = false
   const user       = { name: 'Bhawesh', avatar: null as string | null }
@@ -41,10 +43,24 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 10)
+    const fn = () => {
+      const current = window.scrollY
+
+      // Sticky header shadow
+      setScrolled(current > 10)
+
+      // Hide bottom nav on scroll down, show on scroll up
+      // Only trigger after scrolling 60px to avoid jitter
+      if (current > lastScrollY && current > 60) {
+        setNavVisible(false)
+      } else {
+        setNavVisible(true)
+      }
+      setLastScrollY(current)
+    }
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
-  }, [])
+  }, [lastScrollY])
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
@@ -481,8 +497,8 @@ export default function Navbar() {
         className={`
           md:hidden fixed bottom-4 left-1/2 -translate-x-1/2
           z-50 flex items-center rounded-2xl px-1.5 py-1.5
-          transition-all duration-200
-          ${menuOpen
+          transition-all duration-300
+          ${menuOpen || !navVisible
             ? 'opacity-0 pointer-events-none translate-y-4'
             : 'opacity-100 pointer-events-auto translate-y-0'
           }

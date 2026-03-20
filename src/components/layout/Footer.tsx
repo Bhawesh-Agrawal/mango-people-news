@@ -89,37 +89,37 @@ export default function Footer() {
             ) : (
               <form
                 onSubmit={handleSubscribe}
-                className="flex gap-2 max-w-md mx-auto"
-              >
+                className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto w-full px-4 sm:px-0"
+                >
                 <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="Your email address"
-                  required
-                  className="flex-1 px-4 h-11 rounded-xl text-sm outline-none
-                             transition-all duration-200"
-                  style={{
-                    background:  'var(--bg)',
-                    border:      '1px solid var(--border)',
-                    color:       'var(--text-primary)',
-                  }}
-                  onFocus={e => {
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="Your email address"
+                    required
+                    className="w-full px-4 h-11 rounded-xl text-sm outline-none
+                            transition-all duration-200"
+                    style={{
+                    background: 'var(--bg)',
+                    border:     '1px solid var(--border)',
+                    color:      'var(--text-primary)',
+                    }}
+                    onFocus={e => {
                     e.currentTarget.style.borderColor = 'var(--accent)'
-                  }}
-                  onBlur={e => {
+                    }}
+                    onBlur={e => {
                     e.currentTarget.style.borderColor = 'var(--border)'
-                  }}
+                    }}
                 />
                 <button
-                  type="submit"
-                  disabled={status === 'loading'}
-                  className="btn-accent h-11 px-5 text-sm flex-shrink-0
-                             disabled:opacity-60"
+                    type="submit"
+                    disabled={status === 'loading'}
+                    className="btn-accent w-full sm:w-auto h-11 px-6 text-sm
+                            flex-shrink-0 disabled:opacity-60"
                 >
-                  {status === 'loading' ? 'Joining…' : 'Subscribe'}
+                    {status === 'loading' ? 'Joining…' : 'Subscribe'}
                 </button>
-              </form>
+                </form>
             )}
 
             {status === 'error' && (
