@@ -309,7 +309,7 @@ export default function Navbar() {
       ══════════════════════════════════════════ */}
       {menuOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 flex flex-col animate-fade-in"
+          className="md:hidden fixed inset-0 z-50 flex flex-col animate-fade-in"
           style={{ background: 'var(--bg-surface)' }}
           role="dialog"
           aria-modal="true"
@@ -553,7 +553,7 @@ export default function Navbar() {
 
       {/* Spacer */}
       {!menuOpen && (
-        <div className="md:hidden h-24" aria-hidden="true" />
+        <div className="md:hidden h-6" aria-hidden="true" />
       )}
     </>
   )

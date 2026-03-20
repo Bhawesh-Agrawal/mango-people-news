@@ -30,3 +30,10 @@ export const getBreaking = async (): Promise<PaginatedResponse<Article>> => {
   })
   return data
 }
+
+export const getHomeFeed = async (): Promise<PaginatedResponse<Article>> => {
+  const { data } = await client.get('/articles', {
+    params: { limit: 10, page: 1 }
+  })
+  return data
+}
