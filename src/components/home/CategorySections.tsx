@@ -10,6 +10,7 @@ import type { Article, Category } from '../../types'
 // MARKET TICKER
 // ══════════════════════════════════════════════════════════════════
 interface MarketItem { symbol: string; value: string; pct: string; up: boolean }
+
 const INDIA: MarketItem[] = [
   { symbol: 'SENSEX',     value: '82,450',  pct: '+0.94%', up: true  },
   { symbol: 'NIFTY 50',   value: '24,820',  pct: '+0.87%', up: true  },
@@ -39,7 +40,9 @@ function MarketTicker() {
         style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-black tracking-[0.2em] uppercase"
-            style={{ color: 'var(--text-primary)' }}>Market Pulse</span>
+            style={{ color: 'var(--text-primary)' }}>
+            Market Pulse
+          </span>
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot"
               style={{ background: '#22c55e' }} />
@@ -47,7 +50,8 @@ function MarketTicker() {
               style={{ color: '#22c55e' }}>Live</span>
           </span>
         </div>
-        <div className="flex text-[10px] font-bold tracking-wide uppercase overflow-hidden rounded-md"
+        <div className="flex text-[10px] font-bold tracking-wide uppercase
+                        overflow-hidden rounded-md"
           style={{ border: '1px solid var(--border)' }}>
           {(['india', 'global'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
@@ -66,14 +70,21 @@ function MarketTicker() {
         <div className="flex gap-2 min-w-max">
           {data.map(item => (
             <div key={item.symbol} className="flex-shrink-0 px-3 py-2 rounded-md"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-muted)', minWidth: '100px' }}>
+              style={{
+                background: 'var(--bg-surface)',
+                border:     '1px solid var(--border-muted)',
+                minWidth:   '100px',
+              }}>
               <div className="text-[9px] font-black tracking-widest uppercase"
                 style={{ color: 'var(--text-muted)' }}>{item.symbol}</div>
               <div className="text-sm font-bold font-display mt-0.5"
                 style={{ color: 'var(--text-primary)' }}>{item.value}</div>
               <div className="flex items-center gap-0.5 mt-0.5"
                 style={{ color: item.up ? '#16a34a' : '#dc2626' }}>
-                {item.up ? <TrendingUp size={9} strokeWidth={2.5} /> : <TrendingDown size={9} strokeWidth={2.5} />}
+                {item.up
+                  ? <TrendingUp size={9} strokeWidth={2.5} />
+                  : <TrendingDown size={9} strokeWidth={2.5} />
+                }
                 <span className="text-[10px] font-bold">{item.pct}</span>
               </div>
             </div>
@@ -89,6 +100,31 @@ function MarketTicker() {
     </div>
   )
 }
+
+// ══════════════════════════════════════════════════════════════════
+// DIVIDERS
+// ══════════════════════════════════════════════════════════════════
+const ColDivider = () => (
+  <>
+    {/* Vertical line — desktop only */}
+    <div
+      className="hidden md:block w-px self-stretch flex-shrink-0"
+      style={{ background: 'var(--border-muted)' }}
+    />
+    {/* Horizontal line — mobile only, between stacked articles */}
+    <div
+      className="block md:hidden w-full h-px my-6"
+      style={{ background: 'var(--border-muted)' }}
+    />
+  </>
+)
+
+const RowDivider = () => (
+  <div
+    className="w-full h-px my-6 md:my-8"
+    style={{ background: 'var(--border-muted)' }}
+  />
+)
 
 // ══════════════════════════════════════════════════════════════════
 // META ROW
@@ -107,33 +143,34 @@ function Meta({ article }: { article: Article }) {
       <span>·</span>
       <span>{article.reading_time} min</span>
       {article.view_count > 500 && (
-        <><span>·</span>
-        <span className="flex items-center gap-1">
-          <Eye size={10} />{formatCount(article.view_count)}
-        </span></>
+        <>
+          <span>·</span>
+          <span className="flex items-center gap-1">
+            <Eye size={10} />{formatCount(article.view_count)}
+          </span>
+        </>
       )}
     </div>
   )
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ARTICLE CONTENT BLOCK
-// Handles both image and no-image cases cleanly
-// No special backgrounds — just text like a newspaper column
+// ARTICLE CELL
+// reserveBadge — reserves space even if not breaking
+// so headlines align in multi-col rows
 // ══════════════════════════════════════════════════════════════════
-
-// Full article cell — heading + desc + image (or content)
-// size controls how much vertical space it takes
 function ArticleCell({
   article,
-  size = 'md',
+  size         = 'md',
+  reserveBadge = false,
 }: {
-  article: Article
-  size?:   'lg' | 'md' | 'sm'
+  article:       Article
+  size?:         'lg' | 'md' | 'sm'
+  reserveBadge?: boolean
 }) {
   const headingSize =
-    size === 'lg' ? 'clamp(22px, 3vw, 30px)' :
-    size === 'md' ? 'clamp(17px, 2.2vw, 22px)' :
+    size === 'lg' ? 'clamp(22px, 3vw, 30px)'    :
+    size === 'md' ? 'clamp(17px, 2.2vw, 22px)'  :
                    'clamp(14px, 1.8vw, 17px)'
 
   const excerptLines = size === 'lg' ? 4 : size === 'md' ? 3 : 2
@@ -144,12 +181,17 @@ function ArticleCell({
       to={`/article/${article.slug}`}
       className="group flex flex-col h-full"
     >
-      {/* Breaking */}
-      {article.is_breaking && (
-        <span className="breaking-strip mb-2.5 self-start">● Breaking</span>
+      {/* Badge row — always reserves height in multi-col layouts
+          so headlines start at the same level across columns     */}
+      {(article.is_breaking || reserveBadge) && (
+        <div className="mb-2.5" style={{ minHeight: '22px' }}>
+          {article.is_breaking && (
+            <span className="breaking-strip">● Breaking</span>
+          )}
+        </div>
       )}
 
-      {/* Headline — always first */}
+      {/* Headline */}
       <h3
         className="font-display font-bold leading-tight tracking-tight
                    transition-colors duration-150
@@ -186,7 +228,7 @@ function ArticleCell({
       {/* Meta */}
       <Meta article={article} />
 
-      {/* Image OR more content — no special background */}
+      {/* Image OR newspaper-style content — no special background */}
       <div className="mt-4 flex-1">
         {article.cover_image ? (
           <div className="w-full rounded-lg overflow-hidden"
@@ -200,21 +242,22 @@ function ArticleCell({
             />
           </div>
         ) : (
-          // No image — extend the body content naturally
-          // like a newspaper column, no box, no background
+          // No image — extend content naturally, no box, no bg
           <div>
             {article.body && (
               <p
                 className="text-sm leading-relaxed"
                 style={{
-                  color:           'var(--text-secondary)',
-                  display:         '-webkit-box',
-                  WebkitLineClamp: size === 'lg' ? 8 : 5,
-                  WebkitBoxOrient: 'vertical',
-                  overflow:        'hidden',
+                  color:              'var(--text-secondary)',
+                  display:            '-webkit-box',
+                  WebkitLineClamp:    size === 'lg' ? 8 : 5,
+                  WebkitBoxOrient:    'vertical',
+                  overflow:           'hidden',
                 }}
                 dangerouslySetInnerHTML={{
-                  __html: article.body.replace(/<[^>]*>/g, ' ').slice(0, 600)
+                  __html: article.body
+                    .replace(/<[^>]*>/g, ' ')
+                    .slice(0, 600),
                 }}
               />
             )}
@@ -222,21 +265,20 @@ function ArticleCell({
               <p
                 className="text-sm leading-relaxed"
                 style={{
-                  color:           'var(--text-secondary)',
-                  display:         '-webkit-box',
-                  WebkitLineClamp: size === 'lg' ? 6 : 4,
-                  WebkitBoxOrient: 'vertical',
-                  overflow:        'hidden',
+                  color:              'var(--text-secondary)',
+                  display:            '-webkit-box',
+                  WebkitLineClamp:    size === 'lg' ? 6 : 4,
+                  WebkitBoxOrient:    'vertical',
+                  overflow:           'hidden',
                 }}
               >
                 {article.excerpt}
               </p>
             )}
-            {/* Read more — inline, no button, newspaper style */}
             <span
               className="inline-block mt-3 text-xs font-bold
-                         tracking-widest uppercase transition-colors
-                         group-hover:opacity-70"
+                         tracking-widest uppercase
+                         group-hover:opacity-70 transition-opacity"
               style={{ color: 'var(--accent)' }}
             >
               Read more →
@@ -248,7 +290,7 @@ function ArticleCell({
   )
 }
 
-// Small stacked card — for the bottom-right slot in 4+ layout
+// Small stacked card — for 4+ layout right column
 function SmallStackCard({ article }: { article: Article }) {
   return (
     <Link
@@ -272,85 +314,81 @@ function SmallStackCard({ article }: { article: Article }) {
       )}
       <div className="flex items-center gap-1.5 text-[11px] mt-1.5"
         style={{ color: 'var(--text-muted)' }}>
-        <Clock size={10} />{timeAgo(article.published_at)}
-        <span>·</span>{article.reading_time} min
+        <Clock size={10} />
+        {timeAgo(article.published_at)}
+        <span>·</span>
+        {article.reading_time} min
       </div>
     </Link>
   )
 }
 
 // ══════════════════════════════════════════════════════════════════
-// VERTICAL DIVIDER — the line between left and right columns
+// LAYOUTS
 // ══════════════════════════════════════════════════════════════════
-const ColDivider = () => (
-  <div
-    className="hidden md:block w-px self-stretch flex-shrink-0"
-    style={{ background: 'var(--border-muted)' }}
-  />
-)
 
-// ══════════════════════════════════════════════════════════════════
-// HORIZONTAL DIVIDER
-// ══════════════════════════════════════════════════════════════════
-const RowDivider = () => (
-  <div
-    className="w-full h-px my-8"
-    style={{ background: 'var(--border-muted)' }}
-  />
-)
-
-// ══════════════════════════════════════════════════════════════════
-// NEWSPAPER GRID LAYOUTS
-// ══════════════════════════════════════════════════════════════════
+// 1 article — 100% full width
 function Layout1({ articles }: { articles: Article[] }) {
-  // 1 article — 100% full width
-  return (
-    <div className="w-full">
-      <ArticleCell article={articles[0]} size="lg" />
-    </div>
-  )
+  return <ArticleCell article={articles[0]} size="lg" />
 }
 
+// 2 articles — 50% | 50%
 function Layout2({ articles }: { articles: Article[] }) {
-  // 2 articles — 50% | 50%, images at same level
+  const anyBreaking = articles.slice(0, 2).some(a => a.is_breaking)
   return (
     <div className="flex flex-col md:flex-row gap-0 md:gap-8 items-stretch">
       <div className="flex-1">
-        <ArticleCell article={articles[0]} size="md" />
+        <ArticleCell
+          article={articles[0]}
+          size="md"
+          reserveBadge={anyBreaking}
+        />
       </div>
       <ColDivider />
       <div className="flex-1">
-        <ArticleCell article={articles[1]} size="md" />
+        <ArticleCell
+          article={articles[1]}
+          size="md"
+          reserveBadge={anyBreaking}
+        />
       </div>
     </div>
   )
 }
 
+// 3 articles — full width top + two halves bottom
 function Layout3({ articles }: { articles: Article[] }) {
-  // 3 articles:
-  // Top 50% → article 1 full width
-  // Bottom 50% → article 2 left | article 3 right
+  const anyBreakingBottom = [articles[1], articles[2]].some(a => a.is_breaking)
   return (
     <div>
-      {/* Top row — full width */}
+      {/* Top — full width */}
       <ArticleCell article={articles[0]} size="lg" />
 
       <RowDivider />
 
-      {/* Bottom row — two halves */}
+      {/* Bottom — two halves */}
       <div className="flex flex-col md:flex-row gap-0 md:gap-8 items-stretch">
         <div className="flex-1">
-          <ArticleCell article={articles[1]} size="md" />
+          <ArticleCell
+            article={articles[1]}
+            size="md"
+            reserveBadge={anyBreakingBottom}
+          />
         </div>
         <ColDivider />
         <div className="flex-1">
-          <ArticleCell article={articles[2]} size="md" />
+          <ArticleCell
+            article={articles[2]}
+            size="md"
+            reserveBadge={anyBreakingBottom}
+          />
         </div>
       </div>
     </div>
   )
 }
 
+// 4+ articles — full width top + left article | right article + stacked smalls
 function Layout4Plus({
   articles,
   flip,
@@ -358,14 +396,10 @@ function Layout4Plus({
   articles: Article[]
   flip:     boolean
 }) {
-  // 4+ articles:
-  // Top 50% → article 1 full width
-  // Bottom left 50% → article 2
-  // Bottom right 50% → article 3 + stacked small cards for rest
-  // flip alternates which side is the single article
-  const bottomLeft  = flip ? articles[2] : articles[1]
-  const bottomRight = flip ? articles[1] : articles[2]
-  const stacked     = articles.slice(3)
+  const bottomLeft      = flip ? articles[2] : articles[1]
+  const bottomRight     = flip ? articles[1] : articles[2]
+  const stacked         = articles.slice(3)
+  const anyBreakingBot  = [bottomLeft, bottomRight].some(a => a.is_breaking)
 
   return (
     <div>
@@ -379,15 +413,22 @@ function Layout4Plus({
 
         {/* Left half */}
         <div className="flex-1">
-          <ArticleCell article={bottomLeft} size="md" />
+          <ArticleCell
+            article={bottomLeft}
+            size="md"
+            reserveBadge={anyBreakingBot}
+          />
         </div>
 
         <ColDivider />
 
         {/* Right half — article + stacked smalls */}
         <div className="flex-1 flex flex-col">
-          <ArticleCell article={bottomRight} size="md" />
-
+          <ArticleCell
+            article={bottomRight}
+            size="md"
+            reserveBadge={anyBreakingBot}
+          />
           {stacked.length > 0 && (
             <div
               className="mt-5 pt-5"
@@ -442,6 +483,7 @@ function CategoryBlock({
   const { articles, loading } = useArticles({
     category: category.slug,
     limit:    6,
+    stagger: index, // Stagger API calls to prevent overload on load
   })
 
   const flip      = index % 2 !== 0
@@ -502,7 +544,7 @@ function CategoryBlock({
       {/* Markets: ticker first */}
       {isMarkets && <MarketTicker />}
 
-      {/* Layout based on article count */}
+      {/* Layout by article count */}
       {count === 1 && <Layout1 articles={articles} />}
       {count === 2 && <Layout2 articles={articles} />}
       {count === 3 && <Layout3 articles={articles} />}

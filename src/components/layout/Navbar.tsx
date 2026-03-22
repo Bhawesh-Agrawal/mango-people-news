@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   Sun, Moon, Menu, X,
-  Home, TrendingUp, Bookmark, BarChart2, Settings,
+  Home, TrendingUp, Bookmark, BarChart2,
+  ChevronRight, ChevronDown, Settings,
   Search, LogIn, UserPlus,
 } from 'lucide-react'
-import { useTheme } from '../../context/ThemeContext'
+import { useTheme }  from '../../context/ThemeContext'
+import { useAuth }   from '../../context/AuthContext'
 import { getCategories } from '../../api/categories'
-import type { Category } from '../../types'
-import { SEED_CATEGORIES } from '../../lib/seed'
+import { getArticles }   from '../../api/articles'
+import type { Category, Article, User } from '../../types'
+import { SEED_CATEGORIES, SEED_ARTICLES } from '../../lib/seed'
+import { timeAgo } from '../../lib/utils'
 
+// ── Bottom nav items ──────────────────────────────────────────────
 const BOTTOM_NAV = [
   { to: '/',                 icon: Home,       label: 'Home'     },
   { to: '/category/markets', icon: BarChart2,  label: 'Markets'  },
@@ -18,64 +23,220 @@ const BOTTOM_NAV = [
   { to: '/saved',            icon: Bookmark,   label: 'Saved'    },
 ]
 
+// ── Desktop user dropdown ─────────────────────────────────────────
+function DesktopUserMenu({ user }: { user: User }) {
+  const { logout } = useAuth()
+  const navigate   = useNavigate()
+  const [open, setOpen] = useState(false)
+
+  const handleLogout = async () => {
+    await logout()
+    setOpen(false)
+    navigate('/')
+  }
+
+  useEffect(() => {
+    if (!open) return
+    const handler = () => setOpen(false)
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [open])
+
+  return (
+    <div className="relative" onClick={e => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 h-9 px-3 rounded-lg
+                   transition-all duration-200"
+        style={{
+          background: 'var(--bg-subtle)',
+          border:     '1px solid var(--border)',
+          color:      'var(--text-primary)',
+        }}
+      >
+        {/* Avatar */}
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center
+                     text-xs font-bold flex-shrink-0 overflow-hidden"
+          style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+        >
+          {user.avatar_url
+            ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+            : user.full_name.charAt(0).toUpperCase()
+          }
+        </div>
+        <span className="text-sm font-semibold max-w-[100px] truncate">
+          {user.full_name.split(' ')[0]}
+        </span>
+        <svg
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          className={`flex-shrink-0 transition-transform duration-200
+                      ${open ? 'rotate-180' : ''}`}
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <path d="M2 4l4 4 4-4" stroke="currentColor"
+            strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div
+          className="absolute right-0 top-full mt-2 w-48 rounded-xl
+                     overflow-hidden z-50"
+          style={{
+            background: 'var(--bg-surface)',
+            border:     '1px solid var(--border)',
+            boxShadow:  '0 8px 24px rgba(0,0,0,0.12)',
+          }}
+        >
+          {/* User info */}
+          <div
+            className="px-4 py-3"
+            style={{ borderBottom: '1px solid var(--border)' }}
+          >
+            <p className="text-sm font-bold truncate"
+              style={{ color: 'var(--text-primary)' }}>
+              {user.full_name}
+            </p>
+            <p className="text-xs truncate mt-0.5"
+              style={{ color: 'var(--text-muted)' }}>
+              {user.email}
+            </p>
+          </div>
+
+          {/* Links */}
+          {[
+            { to: '/account', label: 'My Account'    },
+            { to: '/saved',   label: 'Saved Articles' },
+          ].map(item => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={() => setOpen(false)}
+              className="flex items-center px-4 py-2.5 text-sm
+                         transition-colors duration-150
+                         hover:bg-[var(--bg-subtle)]"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              {item.label}
+            </Link>
+          ))}
+
+          {/* Admin — editor+ only */}
+          {(user.role === 'editor' || user.role === 'super_admin') && (
+            <Link
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className="flex items-center px-4 py-2.5 text-sm
+                         transition-colors duration-150
+                         hover:bg-[var(--bg-subtle)]"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Admin Dashboard
+            </Link>
+          )}
+
+          {/* Logout */}
+          <div style={{ borderTop: '1px solid var(--border)' }}>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center px-4 py-2.5 text-sm
+                         transition-colors duration-150
+                         hover:bg-[var(--bg-subtle)]"
+              style={{ color: 'var(--breaking)' }}
+            >
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Main Navbar ───────────────────────────────────────────────────
 export default function Navbar() {
-  const { theme, toggleTheme } = useTheme()
-  const location               = useLocation()
+  const { theme, toggleTheme }  = useTheme()
+  const { user, isLoggedIn, logout } = useAuth()
+  const location                = useLocation()
+  const navigate                = useNavigate()
 
-  const [categories, setCategories] = useState<Category[]>([])
-  const [scrolled,   setScrolled]   = useState(false)
-  const [menuOpen,   setMenuOpen]   = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [query,      setQuery]      = useState('')
-  const [navVisible,    setNavVisible]    = useState(true)
-  const [lastScrollY,   setLastScrollY]   = useState(0)
+  const [categories,   setCategories]   = useState<Category[]>([])
+  const [menuArticles, setMenuArticles] = useState<Record<string, Article[]>>({})
+  const [expanded,     setExpanded]     = useState<string | null>(null)
+  const [scrolled,     setScrolled]     = useState(false)
+  const [menuOpen,     setMenuOpen]     = useState(false)
+  const [searchOpen,   setSearchOpen]   = useState(false)
+  const [navVisible,   setNavVisible]   = useState(true)
+  const [lastScrollY,  setLastScrollY]  = useState(0)
+  const [query,        setQuery]        = useState('')
 
-  const isLoggedIn = false
-  const user       = { name: 'Bhawesh', avatar: null as string | null }
-
+  // ── Fetch categories ──────────────────────────────────────────
   useEffect(() => {
     getCategories()
       .then(res => {
-        if (res.data && res.data.length > 0) setCategories(res.data)
+        if (res.data?.length > 0) setCategories(res.data)
         else setCategories(SEED_CATEGORIES)
       })
       .catch(() => setCategories(SEED_CATEGORIES))
   }, [])
 
+  // ── Scroll detection ──────────────────────────────────────────
   useEffect(() => {
     const fn = () => {
       const current = window.scrollY
-
-      // Sticky header shadow
       setScrolled(current > 10)
-
-      // Hide bottom nav on scroll down, show on scroll up
-      // Only trigger after scrolling 60px to avoid jitter
-      if (current > lastScrollY && current > 60) {
-        setNavVisible(false)
-      } else {
-        setNavVisible(true)
-      }
+      if (current > lastScrollY && current > 60) setNavVisible(false)
+      else setNavVisible(true)
       setLastScrollY(current)
     }
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
   }, [lastScrollY])
 
+  // ── Body scroll lock ──────────────────────────────────────────
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
+  // ── Close on route change ─────────────────────────────────────
   useEffect(() => {
     setMenuOpen(false)
     setSearchOpen(false)
+    setExpanded(null)
   }, [location.pathname])
+
+  // ── Lazy load articles per category ──────────────────────────
+  const handleExpand = async (slug: string) => {
+    if (expanded === slug) { setExpanded(null); return }
+    setExpanded(slug)
+    if (menuArticles[slug]) return
+    try {
+      const res = await getArticles({ category: slug, limit: 3 })
+      const articles = res.data?.length > 0
+        ? res.data
+        : SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3)
+      setMenuArticles(prev => ({ ...prev, [slug]: articles }))
+    } catch {
+      setMenuArticles(prev => ({
+        ...prev,
+        [slug]: SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3),
+      }))
+    }
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (query.trim())
       window.location.href = `/search?q=${encodeURIComponent(query.trim())}`
+  }
+
+  const handleMobileLogout = async () => {
+    await logout()
+    setMenuOpen(false)
+    navigate('/')
   }
 
   const isActive = (path: string) =>
@@ -133,6 +294,7 @@ export default function Navbar() {
 
             {/* ── Desktop actions ───────────────── */}
             <div className="hidden md:flex items-center gap-2">
+              {/* Search */}
               <form onSubmit={handleSearch}>
                 <div
                   className={`flex items-center gap-2 rounded-lg h-9
@@ -167,6 +329,7 @@ export default function Navbar() {
                 </div>
               </form>
 
+              {/* Theme toggle */}
               <button
                 onClick={toggleTheme}
                 className="w-9 h-9 rounded-lg flex items-center justify-center
@@ -181,15 +344,22 @@ export default function Navbar() {
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
               </button>
 
-              <Link to="/newsletter" className="btn-accent text-sm h-9 px-4">
-                Subscribe
-              </Link>
-              <Link to="/login" className="btn-ghost text-sm h-9">
-                Login
-              </Link>
+              {/* Auth — logged in or out */}
+              {isLoggedIn && user ? (
+                <DesktopUserMenu user={user} />
+              ) : (
+                <>
+                  <Link to="/newsletter" className="btn-accent text-sm h-9 px-4">
+                    Subscribe
+                  </Link>
+                  <Link to="/login" className="btn-ghost text-sm h-9 px-4">
+                    Login
+                  </Link>
+                </>
+              )}
             </div>
 
-            {/* ── Mobile actions ────────────────── */}
+            {/* ── Mobile actions ── Theme + Hamburger only ── */}
             <div className="flex md:hidden items-center gap-1.5">
               <button
                 onClick={toggleTheme}
@@ -221,7 +391,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* ── Desktop category nav ──────────────────── */}
+          {/* Desktop category nav */}
           <nav
             className="hidden md:flex items-center overflow-x-auto scrollbar-none"
             style={{ borderTop: '1px solid var(--border)' }}
@@ -232,8 +402,7 @@ export default function Navbar() {
                          tracking-widest uppercase transition-all duration-150"
               style={{
                 color:        isActive('/') ? 'var(--accent)' : 'var(--text-secondary)',
-                borderBottom: isActive('/')
-                  ? '2px solid var(--accent)' : '2px solid transparent',
+                borderBottom: isActive('/') ? '2px solid var(--accent)' : '2px solid transparent',
               }}
             >
               Home
@@ -246,8 +415,7 @@ export default function Navbar() {
                 className="flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
                            tracking-widest uppercase transition-all duration-150"
                 style={{
-                  color:        isActive(`/category/${cat.slug}`)
-                    ? cat.color : 'var(--text-secondary)',
+                  color:        isActive(`/category/${cat.slug}`) ? cat.color : 'var(--text-secondary)',
                   borderBottom: isActive(`/category/${cat.slug}`)
                     ? `2px solid ${cat.color}` : '2px solid transparent',
                 }}
@@ -279,7 +447,7 @@ export default function Navbar() {
           </nav>
         </div>
 
-        {/* ── Mobile category strip — below navbar ──── */}
+        {/* Mobile category strip */}
         <div
           className="md:hidden overflow-x-auto scrollbar-none"
           style={{ borderTop: '1px solid var(--border)' }}
@@ -292,13 +460,11 @@ export default function Navbar() {
                          whitespace-nowrap"
               style={{
                 color:        isActive('/') ? 'var(--accent)' : 'var(--text-secondary)',
-                borderBottom: isActive('/')
-                  ? '2px solid var(--accent)' : '2px solid transparent',
+                borderBottom: isActive('/') ? '2px solid var(--accent)' : '2px solid transparent',
               }}
             >
               Home
             </Link>
-
             {categories.map(cat => (
               <Link
                 key={cat.id}
@@ -307,8 +473,7 @@ export default function Navbar() {
                            tracking-widest uppercase transition-all duration-150
                            whitespace-nowrap"
                 style={{
-                  color:        isActive(`/category/${cat.slug}`)
-                    ? cat.color : 'var(--text-secondary)',
+                  color:        isActive(`/category/${cat.slug}`) ? cat.color : 'var(--text-secondary)',
                   borderBottom: isActive(`/category/${cat.slug}`)
                     ? `2px solid ${cat.color}` : '2px solid transparent',
                 }}
@@ -321,7 +486,7 @@ export default function Navbar() {
       </header>
 
       {/* ══════════════════════════════════════════
-          MOBILE FULL-SCREEN MENU — simplified
+          MOBILE FULL-SCREEN MENU
       ══════════════════════════════════════════ */}
       {menuOpen && (
         <div
@@ -355,137 +520,261 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Auth block */}
-          <div className="flex-1 flex flex-col justify-between px-4 py-6">
-            <div>
-              {isLoggedIn ? (
-                /* Logged in */
-                <div className="flex items-center gap-3 mb-6">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center
-                               justify-center text-lg font-bold flex-shrink-0"
-                    style={{
-                      background: 'var(--accent-light)',
-                      color:      'var(--accent)',
-                    }}
-                  >
-                    {user.avatar
-                      ? <img
-                          src={user.avatar}
-                          className="w-full h-full rounded-full object-cover"
-                          alt=""
-                        />
-                      : user.name.charAt(0).toUpperCase()
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-base font-bold truncate"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      {user.name}
-                    </p>
-                    <Link
-                      to="/account"
-                      className="text-xs font-semibold"
-                      style={{ color: 'var(--accent)' }}
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      View profile →
-                    </Link>
-                  </div>
+          {/* Auth block — top, always visible */}
+          <div
+            className="flex-shrink-0 px-4 py-4"
+            style={{ borderBottom: '2px solid var(--border)' }}
+          >
+            {isLoggedIn && user ? (
+              /* Logged in */
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-11 h-11 rounded-full flex items-center
+                             justify-center flex-shrink-0 text-lg font-bold
+                             overflow-hidden"
+                  style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+                >
+                  {user.avatar_url
+                    ? <img src={user.avatar_url} className="w-full h-full object-cover" alt="" />
+                    : user.full_name.charAt(0).toUpperCase()
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate"
+                    style={{ color: 'var(--text-primary)' }}>
+                    {user.full_name}
+                  </p>
                   <Link
-                    to="/settings"
+                    to="/account"
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--accent)' }}
                     onClick={() => setMenuOpen(false)}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg"
-                    style={{
-                      background: 'var(--bg-subtle)',
-                      border:     '1px solid var(--border)',
-                      color:      'var(--text-secondary)',
-                    }}
                   >
-                    <Settings size={16} />
+                    View profile →
                   </Link>
                 </div>
-              ) : (
-                /* Logged out */
-                <div className="space-y-3 mb-6">
-                  <p
-                    className="text-sm"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Sign in to save articles and get personalised news.
-                  </p>
-                  <div className="flex gap-2.5">
-                    <Link
-                      to="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex-1 flex items-center justify-center gap-2
-                                 py-3 rounded-xl text-sm font-bold btn-accent"
-                    >
-                      <LogIn size={15} />
-                      Login
-                    </Link>
-                    <Link
-                      to="/register"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex-1 flex items-center justify-center gap-2
-                                 py-3 rounded-xl text-sm font-bold btn-ghost"
-                    >
-                      <UserPlus size={15} />
-                      Register
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {/* Divider */}
-              <div
-                className="mb-6"
-                style={{ borderTop: '1px solid var(--border)' }}
-              />
-
-              {/* Newsletter subscribe */}
-              <div
-                className="rounded-2xl p-4 space-y-3"
-                style={{
-                  background: 'var(--accent-light)',
-                  border:     '1px solid var(--border)',
-                }}
-              >
-                <div>
-                  <p
-                    className="font-display text-lg font-bold tracking-tight uppercase"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    Stay Informed
-                  </p>
-                  <p
-                    className="text-xs mt-0.5"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    Get top Indian business & market news in your inbox daily.
-                  </p>
-                </div>
                 <Link
-                  to="/newsletter"
+                  to="/settings"
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center justify-center gap-2
-                             w-full py-2.5 rounded-xl text-sm font-bold
-                             btn-accent"
+                  className="w-9 h-9 flex items-center justify-center rounded-lg"
+                  style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
                 >
-                  Subscribe to Newsletter
+                  <Settings size={16} />
                 </Link>
               </div>
+            ) : (
+              /* Logged out */
+              <div className="space-y-2.5">
+                <p className="text-xs font-semibold"
+                  style={{ color: 'var(--text-muted)' }}>
+                  Sign in to save articles, get personalised news and more.
+                </p>
+                <div className="flex gap-2.5 pt-1">
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-2
+                               py-2.5 rounded-xl text-sm font-bold btn-accent"
+                  >
+                    <LogIn size={15} /> Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-2
+                               py-2.5 rounded-xl text-sm font-bold btn-ghost"
+                  >
+                    <UserPlus size={15} /> Register
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Scrollable nav */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+
+            <div className="px-4 pt-4 pb-2">
+              <span
+                className="text-[10px] font-black tracking-[0.22em] uppercase"
+                style={{ color: 'var(--text-faint)' }}
+              >
+                Sections
+              </span>
             </div>
 
-            {/* App version at bottom */}
-            <p
-              className="text-center text-[10px] mt-6"
-              style={{ color: 'var(--text-faint)' }}
+            {/* Home */}
+            <Link
+              to="/"
+              className="flex items-center justify-between px-4 py-3.5
+                         transition-colors hover:bg-[var(--bg-subtle)] group"
+              style={{ borderBottom: '1px solid var(--border-muted)' }}
             >
-              Mango People News · News for Every Indian
-            </p>
+              <span
+                className="font-display text-2xl font-bold tracking-tight
+                           uppercase group-hover:text-[var(--accent)]
+                           transition-colors"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                Home
+              </span>
+              <ChevronRight size={15} style={{ color: 'var(--text-faint)' }} />
+            </Link>
+
+            {/* Category accordion */}
+            {categories.map((cat, i) => (
+              <div
+                key={cat.id}
+                style={{
+                  borderBottom: i < categories.length - 1
+                    ? '1px solid var(--border-muted)' : 'none',
+                }}
+              >
+                <button
+                  onClick={() => handleExpand(cat.slug)}
+                  className="w-full flex items-center justify-between px-4
+                             py-3.5 text-left transition-colors
+                             hover:bg-[var(--bg-subtle)]"
+                  aria-expanded={expanded === cat.slug}
+                >
+                  <span
+                    className="font-display text-2xl font-bold tracking-tight
+                               uppercase transition-colors"
+                    style={{ color: expanded === cat.slug ? cat.color : 'var(--text-primary)' }}
+                  >
+                    {cat.name}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className="flex-shrink-0 transition-transform duration-200"
+                    style={{
+                      color:     'var(--text-faint)',
+                      transform: expanded === cat.slug ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                  />
+                </button>
+
+                {expanded === cat.slug && (
+                  <div
+                    className="px-4 pb-3 animate-fade-in"
+                    style={{ background: 'var(--bg-subtle)' }}
+                  >
+                    {/* Skeleton */}
+                    {!menuArticles[cat.slug] && (
+                      <div className="space-y-3 pt-3">
+                        {[1, 2, 3].map(n => (
+                          <div key={n} className="flex gap-3 items-start">
+                            <div className="skeleton w-14 h-14 rounded-md flex-shrink-0" />
+                            <div className="flex-1 space-y-2 pt-1">
+                              <div className="skeleton h-3 w-full rounded" />
+                              <div className="skeleton h-3 w-3/4 rounded" />
+                              <div className="skeleton h-2.5 w-1/3 rounded" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Empty */}
+                    {menuArticles[cat.slug]?.length === 0 && (
+                      <p className="text-sm py-4 text-center"
+                        style={{ color: 'var(--text-muted)' }}>
+                        No articles yet.
+                      </p>
+                    )}
+
+                    {/* Articles */}
+                    {menuArticles[cat.slug]?.map((article, idx) => (
+                      <Link
+                        key={article.id}
+                        to={`/article/${article.slug}`}
+                        className="flex gap-3 py-3 group"
+                        style={{
+                          borderBottom: idx < menuArticles[cat.slug].length - 1
+                            ? '1px solid var(--border-muted)' : 'none',
+                        }}
+                      >
+                        {article.cover_image && (
+                          <img
+                            src={article.cover_image}
+                            alt=""
+                            className="w-14 h-14 object-cover rounded-md flex-shrink-0"
+                            loading="lazy"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <p
+                            className="text-sm font-semibold leading-snug
+                                       line-clamp-2 transition-colors
+                                       group-hover:text-[var(--accent)]"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {article.title}
+                          </p>
+                          <p className="text-xs mt-1.5"
+                            style={{ color: 'var(--text-muted)' }}>
+                            {timeAgo(article.published_at)}
+                            {article.reading_time && (
+                              <span className="ml-2">· {article.reading_time} min read</span>
+                            )}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+
+                    {menuArticles[cat.slug] && (
+                      <Link
+                        to={`/category/${cat.slug}`}
+                        className="inline-flex items-center gap-1 mt-3
+                                   text-xs font-bold tracking-wide uppercase
+                                   hover:opacity-75 transition-opacity"
+                        style={{ color: cat.color }}
+                      >
+                        See all {cat.name}
+                        <ChevronRight size={11} />
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* All News */}
+            <Link
+              to="/articles"
+              className="flex items-center justify-between px-4 py-3.5
+                         transition-colors hover:bg-[var(--bg-subtle)] group"
+              style={{ borderTop: '2px solid var(--border)' }}
+            >
+              <span
+                className="font-display text-2xl font-bold tracking-tight uppercase"
+                style={{ color: 'var(--accent)' }}
+              >
+                All News
+              </span>
+              <ChevronRight size={15} style={{ color: 'var(--accent)' }} />
+            </Link>
+
+            {/* Sign out — logged in only */}
+            {isLoggedIn && (
+              <div
+                className="px-4 py-4"
+                style={{ borderTop: '2px solid var(--border)' }}
+              >
+                <button
+                  onClick={handleMobileLogout}
+                  className="w-full py-3 rounded-xl text-sm font-bold
+                             transition-colors hover:opacity-80"
+                  style={{
+                    background: 'var(--bg-subtle)',
+                    color:      'var(--breaking)',
+                    border:     '1px solid var(--border)',
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -567,9 +856,8 @@ export default function Navbar() {
         })}
       </nav>
 
-      {/* Spacer */}
       {!menuOpen && (
-        <div className="md:hidden h-6" aria-hidden="true" />
+        <div className="md:hidden h-0" aria-hidden="true" />
       )}
     </>
   )

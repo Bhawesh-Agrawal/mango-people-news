@@ -3,13 +3,14 @@ import type { Article, PaginatedResponse } from '../types'
 import { getArticles } from '../api/articles'
 import { SEED_ARTICLES } from '../lib/seed'
 
-interface UseArticlesOptions {
+export interface ArticleParams {
   page?:     number
   limit?:    number
   category?: string
   search?:   string
   featured?: boolean
   enabled?:  boolean
+  stagger?:  number
 }
 
 interface UseArticlesReturn {
@@ -20,7 +21,7 @@ interface UseArticlesReturn {
   refetch:    () => void
 }
 
-export const useArticles = (options: UseArticlesOptions = {}): UseArticlesReturn => {
+export const useArticles = (options: ArticleParams = {}): UseArticlesReturn => {
   const {
     page     = 1,
     limit    = 10,
@@ -28,6 +29,7 @@ export const useArticles = (options: UseArticlesOptions = {}): UseArticlesReturn
     search,
     featured,
     enabled  = true,
+    stagger  = 0,
   } = options
 
   const [articles,   setArticles]   = useState<Article[]>([])
@@ -45,36 +47,48 @@ export const useArticles = (options: UseArticlesOptions = {}): UseArticlesReturn
     setLoading(true)
     setError(null)
 
-    getArticles({ page, limit, category, search, featured })
-      .then(res => {
-        if (cancelled) return
-        if (res.data && res.data.length > 0) {
-          setArticles(res.data)
-          setPagination(res.pagination)
-        } else {
-          // API returned empty — use seed filtered by category
+    // Stagger to prevent hammering the API simultaneously
+    const delay = stagger * 150
+
+    const timer = setTimeout(() => {
+      getArticles({ page, limit, category, search, featured })
+        .then(res => {
+          if (cancelled) return
+          if (res.data && res.data.length > 0) {
+            setArticles(res.data)
+            setPagination(res.pagination)
+          } else {
+            const seed = category
+              ? SEED_ARTICLES.filter(a =>
+                  a.category_slug === category ||
+                  a.category_name?.toLowerCase() === category
+                )
+              : SEED_ARTICLES
+            setArticles(seed.slice(0, limit))
+            setPagination(null)
+          }
+        })
+        .catch(() => {
+          if (cancelled) return
           const seed = category
-            ? SEED_ARTICLES.filter(a => a.category_slug === category)
+            ? SEED_ARTICLES.filter(a =>
+                a.category_slug === category ||
+                a.category_name?.toLowerCase() === category
+              )
             : SEED_ARTICLES
           setArticles(seed.slice(0, limit))
-          setPagination(null)
-        }
-      })
-      .catch(() => {
-        if (cancelled) return
-        // API failed — use seed
-        const seed = category
-          ? SEED_ARTICLES.filter(a => a.category_slug === category)
-          : SEED_ARTICLES
-        setArticles(seed.slice(0, limit))
-        setError(null) // silent fallback, no error shown to user
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+          setError(null)
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    }, delay)
 
-    return () => { cancelled = true }
-  }, [page, limit, category, search, featured, enabled, tick])
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [page, limit, category, search, featured, enabled, tick, stagger])
 
   return { articles, loading, error, pagination, refetch }
 }

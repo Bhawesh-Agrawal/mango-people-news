@@ -61,3 +61,13 @@ export interface User {
   avatar_url?: string
   status:     string
 }
+
+export interface ArticleParams {
+  page?:     number
+  limit?:    number
+  category?: string
+  featured?: boolean
+  breaking?: boolean
+  search?:   string
+  stagger?:  number   // ← add this
+}
