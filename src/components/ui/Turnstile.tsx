@@ -12,10 +12,10 @@ declare global {
 }
 
 interface TurnstileProps {
-  onVerify:  (token: string) => void
-  onError?:  () => void
-  onExpire?: () => void
-  theme?:    'light' | 'dark' | 'auto'
+  onVerify:   (token: string) => void
+  onError?:   () => void
+  onExpire?:  () => void
+  theme?:     'light' | 'dark' | 'auto'
   className?: string
 }
 
@@ -26,7 +26,7 @@ let tsLoading = false
 const tsCallbacks: (() => void)[] = []
 
 function loadTurnstile(cb: () => void) {
-  if (tsLoaded) { cb(); return }
+  if (tsLoaded)  { cb(); return }
   tsCallbacks.push(cb)
   if (tsLoading) return
   tsLoading = true
@@ -37,10 +37,10 @@ function loadTurnstile(cb: () => void) {
     tsCallbacks.length = 0
   }
 
-  const script    = document.createElement('script')
-  script.src      = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
-  script.async    = true
-  script.defer    = true
+  const script  = document.createElement('script')
+  script.src    = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad'
+  script.async  = true
+  script.defer  = true
   document.head.appendChild(script)
 }
 
@@ -56,27 +56,28 @@ export default function Turnstile({
   const uid          = useId()
 
   useEffect(() => {
-    // No site key — silent bypass (dev mode or not configured)
     if (!SITE_KEY || SITE_KEY === 'your_turnstile_site_key') return
 
-    loadTurnstile(() => {
+    const renderWidget = () => {
       if (!window.turnstile || !containerRef.current) return
       if (widgetId.current) return // already rendered
 
       widgetId.current = window.turnstile.render(containerRef.current, {
-        sitekey:           SITE_KEY,
+        sitekey:            SITE_KEY,
         theme,
-        callback:          (token: string) => onVerify(token),
-        'error-callback':  () => onError?.(),
+        size:               'flexible',   // ← key fix: flexible fills container width
+        callback:           (token: string) => onVerify(token),
+        'error-callback':   () => onError?.(),
         'expired-callback': () => {
           onExpire?.()
-          // Auto-reset so user doesn't have to reload
           if (widgetId.current && window.turnstile) {
             window.turnstile.reset(widgetId.current)
           }
         },
       })
-    })
+    }
+
+    loadTurnstile(renderWidget)
 
     return () => {
       if (widgetId.current && window.turnstile) {
@@ -86,7 +87,6 @@ export default function Turnstile({
     }
   }, [])
 
-  // No site key = no widget rendered
   if (!SITE_KEY || SITE_KEY === 'your_turnstile_site_key') return null
 
   return (
@@ -94,6 +94,9 @@ export default function Turnstile({
       ref={containerRef}
       id={uid}
       className={className}
+      // Explicit min-height prevents layout collapse on mobile
+      // before the iframe loads
+      style={{ minHeight: '65px', width: '100%' }}
     />
   )
 }

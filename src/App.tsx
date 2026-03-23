@@ -9,6 +9,7 @@ import LoginPage     from './pages/LoginPage'
 import RegisterPage  from './pages/RegisterPage'
 
 import VerifyEmailPage from './pages/VerifyEmailPage'
+import MagicVerifyPage from './pages/MagicVerifyPage'
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
               </h1>
             </div>} />
             <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/auth/magic" element={<MagicVerifyPage />} />
           </Routes>
         </main>
         <Footer />
