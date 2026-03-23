@@ -1,4 +1,4 @@
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import ProtectedRoute from './components/ui/ProtectedRoutes'
@@ -7,6 +7,8 @@ import ProtectedRoute from './components/ui/ProtectedRoutes'
 import HomePage      from './pages/HomePage'
 import LoginPage     from './pages/LoginPage'
 import RegisterPage  from './pages/RegisterPage'
+
+import VerifyEmailPage from './pages/VerifyEmailPage'
 
 function App() {
   return (
@@ -43,6 +45,7 @@ function App() {
                 404 — Page Not Found
               </h1>
             </div>} />
+            <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
           </Routes>
         </main>
         <Footer />

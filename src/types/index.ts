@@ -60,6 +60,7 @@ export interface User {
   role:       'reader' | 'author' | 'editor' | 'super_admin'
   avatar_url?: string
   status:     string
+  email_verified?: boolean
 }
 
 export interface ArticleParams {

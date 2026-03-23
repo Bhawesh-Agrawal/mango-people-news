@@ -7,26 +7,34 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import type { User } from '../types'
-import { getMe, login, register, logout } from '../api/auth'
-import type {
-    LoginPayload,
-    RegisterPayload,
+import {
+  login    as apiLogin,
+  register as apiRegister,
+  logout   as apiLogout,
+  getMe,
+  googleLogin  as apiGoogleLogin,
 } from '../api/auth'
+import type { LoginPayload, RegisterPayload } from '../api/auth'
 
-interface AuthState {
-  user:        User | null
-  loading:     boolean
-  isLoggedIn:  boolean
-  isEditor:    boolean
-  isAuthor:    boolean
-  isSuperAdmin:boolean
+// ── Types ─────────────────────────────────────────────────────
+interface RegisterResult {
+  needsVerification: boolean
+  email:             string
 }
 
-interface AuthContextType extends AuthState {
-  login:     (payload: LoginPayload)    => Promise<void>
-  register:  (payload: RegisterPayload) => Promise<void>
-  logout:    () => Promise<void>
-  refresh:   () => Promise<void>
+interface AuthContextType {
+  user:          User | null
+  loading:       boolean
+  isLoggedIn:    boolean
+  isEditor:      boolean
+  isAuthor:      boolean
+  isSuperAdmin:  boolean
+  emailVerified: boolean
+  login:         (payload: LoginPayload)    => Promise<void>
+  register:      (payload: RegisterPayload) => Promise<RegisterResult>
+  googleLogin:   (idToken: string)          => Promise<void>
+  logout:        ()                         => Promise<void>
+  refresh:       ()                         => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,35 +44,35 @@ const AuthContext = createContext<AuthContextType>({
   isEditor:      false,
   isAuthor:      false,
   isSuperAdmin:  false,
+  emailVerified: false,
   login:         async () => {},
-  register:      async () => {},
+  register:      async () => ({ needsVerification: true, email: '' }),
+  googleLogin:   async () => {},
   logout:        async () => {},
   refresh:       async () => {},
 })
 
+// ── Provider ──────────────────────────────────────────────────
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user,    setUser]    = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // ── Derived role flags ──────────────────────────────────────
   const isLoggedIn   = !!user
-  const isEditor     = user?.role === 'editor'   || user?.role === 'super_admin'
-  const isAuthor     = user?.role === 'author'   || isEditor
+  const isEditor     = user?.role === 'editor'      || user?.role === 'super_admin'
+  const isAuthor     = user?.role === 'author'      || isEditor
   const isSuperAdmin = user?.role === 'super_admin'
+  const emailVerified = user?.email_verified ?? false
 
-  // ── On mount — check if user is already logged in ───────────
+  // ── Restore session on mount ────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem('mpn_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
+    if (!token) { setLoading(false); return }
+
     getMe()
       .then(res => {
         if (res.data) setUser(res.data)
       })
       .catch(() => {
-        // Token invalid or expired — clear it
         localStorage.removeItem('mpn_token')
       })
       .finally(() => setLoading(false))
@@ -72,38 +80,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // ── Login ───────────────────────────────────────────────────
   const handleLogin = useCallback(async (payload: LoginPayload) => {
-    const res = await login(payload)
+    const res = await apiLogin(payload)
     if (res.data?.accessToken) {
       localStorage.setItem('mpn_token', res.data.accessToken)
     }
-    if (res.data?.user) {
-      setUser(res.data.user)
-    }
+    if (res.data?.user) setUser(res.data.user)
   }, [])
 
-  // ── Register ────────────────────────────────────────────────
-  const handleRegister = useCallback(async (payload: RegisterPayload) => {
-    await register(payload)
-    // After register — auto login
-    await handleLogin({
-      email:    payload.email,
-      password: payload.password,
-    })
-  }, [handleLogin])
+  // ── Register — returns needsVerification so page can show the right state
+  const handleRegister = useCallback(async (payload: RegisterPayload): Promise<RegisterResult> => {
+    await apiRegister(payload)
+    // Backend sets status = 'pending_verification'
+    // No auto-login — user must verify email first
+    return { needsVerification: true, email: payload.email }
+  }, [])
+
+  // ── Google login — auto-verified, log straight in ───────────
+  const handleGoogleLogin = useCallback(async (idToken: string) => {
+    const res = await apiGoogleLogin(idToken)
+    if (res.data?.accessToken) {
+      localStorage.setItem('mpn_token', res.data.accessToken)
+    }
+    if (res.data?.user) setUser(res.data.user)
+  }, [])
 
   // ── Logout ──────────────────────────────────────────────────
   const handleLogout = useCallback(async () => {
-    try {
-      await logout()
-    } catch {
-      // Even if API fails, clear local state
-    } finally {
+    try { await apiLogout() } catch {}
+    finally {
       localStorage.removeItem('mpn_token')
       setUser(null)
     }
   }, [])
 
-  // ── Refresh user data ───────────────────────────────────────
+  // ── Refresh user data (call after email verify) ─────────────
   const handleRefresh = useCallback(async () => {
     try {
       const res = await getMe()
@@ -122,10 +132,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isEditor,
       isAuthor,
       isSuperAdmin,
-      login:    handleLogin,
-      register: handleRegister,
-      logout:   handleLogout,
-      refresh:  handleRefresh,
+      emailVerified,
+      login:       handleLogin,
+      register:    handleRegister,
+      googleLogin: handleGoogleLogin,
+      logout:      handleLogout,
+      refresh:     handleRefresh,
     }}>
       {children}
     </AuthContext.Provider>
