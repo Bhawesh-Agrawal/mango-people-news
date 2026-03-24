@@ -84,8 +84,9 @@ export default function RegisterPage() {
   const [showPass,    setShowPass]    = useState(false)
   const [submitting,  setSubmitting]  = useState(false)
   const [error,       setError]       = useState('')
-  const [tsToken,     setTsToken]     = useState('')
+  //const [tsToken,     setTsToken]     = useState('')
   const [googleError, setGoogleError] = useState('')
+  const tsTokenRef = useRef('')
 
   const googleRef = useRef<HTMLDivElement>(null!)
 
@@ -121,15 +122,22 @@ export default function RegisterPage() {
     const pwError = validatePassword()
     if (pwError) { setError(pwError); return }
 
+    // Check Turnstile token from ref — always current value
+    const turnstileToken = tsTokenRef.current
+    if (!turnstileToken && import.meta.env.VITE_TURNSTILE_SITE_KEY) {
+      setError('Please complete the security check before submitting.')
+      return
+    }
+
     setSubmitting(true)
     try {
-      const result = await register({
+      await register({
         email,
         password,
         full_name: fullName,
-        'cf-turnstile-response': tsToken || undefined,
+        'cf-turnstile-response': turnstileToken || undefined,
       })
-      setRegEmail(result.email)
+      setRegEmail(email)
       setDone(true)
     } catch (err: any) {
       const msg =
@@ -137,6 +145,8 @@ export default function RegisterPage() {
         err?.response?.data?.errors?.[0]?.message ||
         'Registration failed. Please try again.'
       setError(msg)
+      // Reset Turnstile so user can try again
+      tsTokenRef.current = ''
     } finally {
       setSubmitting(false)
     }
@@ -398,9 +408,9 @@ export default function RegisterPage() {
 
                 {/* Turnstile */}
                 <Turnstile
-                  onVerify={token => setTsToken(token)}
-                  onError={() => setTsToken('')}
-                  onExpire={() => setTsToken('')}
+                  onVerify={token => { tsTokenRef.current = token }}
+                  onError={() => { tsTokenRef.current = '' }}
+                  onExpire={() => { tsTokenRef.current = '' }}
                   theme="auto"
                 />
 

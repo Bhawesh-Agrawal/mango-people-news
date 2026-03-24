@@ -36,8 +36,10 @@ export default function LoginPage() {
   const [showPass,     setShowPass]     = useState(false)
   const [submitting,   setSubmitting]   = useState(false)
   const [error,        setError]        = useState('')
-  const [tsToken,      setTsToken]      = useState('')
+  //const [tsToken,      setTsToken]      = useState('')
   const [googleError,  setGoogleError]  = useState('')
+
+  const tsTokenRef = useRef('')
 
   const googleRef = useRef<HTMLDivElement>(null!)
 
@@ -71,15 +73,20 @@ export default function LoginPage() {
       await login({
         email,
         password,
-        'cf-turnstile-response': tsToken || undefined,
+        'cf-turnstile-response': tsTokenRef.current || undefined,
       })
       navigate(from, { replace: true })
     } catch (err: any) {
       const msg: string = err?.response?.data?.message ?? ''
-      if (msg.toLowerCase().includes('verify') || err?.response?.status === 403) {
-        setError('Please verify your email before signing in. Check your inbox for the verification link.')
+      if (err?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+        setError('Please verify your email before signing in. Check your inbox.')
+      } else if (err?.response?.status === 403) {
+        setError('Please verify your email before signing in. Check your inbox.')
       } else if (err?.response?.status === 429) {
-        setError('Too many attempts. Please wait a few minutes before trying again.')
+        setError('Too many attempts. Please wait a few minutes.')
+      } else if (msg.toLowerCase().includes('security')) {
+        setError('Security check failed. Please refresh and try again.')
+        tsTokenRef.current = ''
       } else {
         setError('Incorrect email or password.')
       }
@@ -87,7 +94,6 @@ export default function LoginPage() {
       setSubmitting(false)
     }
   }
-
   // ── Magic link ─────────────────────────────────────────────
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -362,9 +368,9 @@ export default function LoginPage() {
 
                     {/* Cloudflare Turnstile */}
                     <Turnstile
-                      onVerify={token => setTsToken(token)}
-                      onError={() => setTsToken('')}
-                      onExpire={() => setTsToken('')}
+                      onVerify={token => { tsTokenRef.current = token }}
+                      onError={() => { tsTokenRef.current = '' }}
+                      onExpire={() => { tsTokenRef.current = '' }}
                       theme="auto"
                     />
 
