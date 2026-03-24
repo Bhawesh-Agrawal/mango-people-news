@@ -57,7 +57,7 @@ export default function MarketWidget() {
                 }}
               />
               <span
-                className="text-[9px] font-bold tracking-widest uppercase"
+                className="text-[9px] font-bold tracking-wide uppercase"
                 style={{ color: '#22c55e' }}
               >
                 Live
@@ -131,7 +131,7 @@ export default function MarketWidget() {
               >
                 {/* Symbol */}
                 <div
-                  className="text-[9px] font-black tracking-widest uppercase mb-1"
+                  className="text-[9px] font-semibold tracking-wide uppercase mb-1"
                   style={{ color: 'var(--text-muted)' }}
                 >
                   {item.symbol}

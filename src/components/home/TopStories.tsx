@@ -126,7 +126,7 @@ function TrendingItem({ article, rank }: {
       style={{ borderBottom: '1px solid var(--border-muted)' }}
     >
       <span
-        className="font-display text-3xl font-black leading-none
+        className="font-display text-3xl font-bold leading-none
                    flex-shrink-0 w-7 pt-0.5 select-none"
         style={{ color: rank <= 3 ? 'var(--accent)' : 'var(--border)' }}
       >

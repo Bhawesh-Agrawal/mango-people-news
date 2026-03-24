@@ -206,7 +206,7 @@ export default function CategoryTabs() {
         style={{ borderBottom: '2px solid var(--border)' }}
       >
         <span
-          className="font-display font-black tracking-tight uppercase"
+          className="font-display font-bold tracking-tight uppercase"
           style={{
             fontSize: 'clamp(28px, 5vw, 42px)',
             color:    'var(--text-primary)',
@@ -216,7 +216,7 @@ export default function CategoryTabs() {
         </span>
         <Link
           to="/articles"
-          className="text-xs font-bold tracking-widest uppercase
+          className="text-xs font-bold tracking-wide uppercase
                      hover:opacity-70 transition-opacity hidden sm:block"
           style={{ color: 'var(--accent)' }}
         >

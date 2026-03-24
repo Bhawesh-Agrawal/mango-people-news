@@ -237,7 +237,7 @@ export default function Hero() {
                        pointer-events-none overflow-hidden"
           >
             <span
-              className="font-display font-black uppercase
+              className="font-display font-bold uppercase
                          select-none whitespace-nowrap"
               style={{
                 fontSize:      '100px',
@@ -414,7 +414,7 @@ export default function Hero() {
                            pointer-events-none overflow-hidden"
               >
                 <span
-                  className="font-display font-black uppercase
+                  className="font-display font-bold uppercase
                              select-none whitespace-nowrap"
                   style={{
                     fontSize:      'clamp(80px, 12vw, 140px)',

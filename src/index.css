@@ -1,203 +1,349 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Playfair+Display:ital,wght@1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================================
+   DESIGN TOKENS
+   Single source of truth for every colour, space and radius.
+   Light mode is default. .dark class flips all tokens.
+================================================================ */
+
 @layer base {
   :root {
-    --bg:           #FAFAF8;
-    --bg-surface:   #FFFFFF;
-    --bg-subtle:    #F3F3F0;
-    --bg-muted:     #EAEAE6;
-    --border:       #E2E2DC;
-    --border-muted: #ECECEA;
+    /* ── Surfaces ── */
+    --bg:             #F7F6F2;   /* warm off-white — not clinical pure white */
+    --bg-surface:     #FFFFFF;
+    --bg-subtle:      #F0EFE9;
+    --bg-muted:       #E8E7E0;
 
-    --text-primary:   #0D0D0D;
-    --text-secondary: #4A4A4A;
-    --text-muted:     #8A8A8A;
-    --text-faint:     #AEAEAE;
+    /* ── Borders ── */
+    --border:         #DDD9D0;
+    --border-muted:   #E8E7E0;
 
-    --accent:       #E8A020;
-    --accent-hover: #CF8F18;
-    --accent-light: #FDF3E0;
-    --breaking:     #C0392B;
-    --breaking-bg:  #FDF0EE;
-    --forest:       #2D6A4F;
+    /* ── Text ── */
+    --text-primary:   #141210;   /* warm near-black */
+    --text-secondary: #4A4540;
+    --text-muted:     #8C8680;
+    --text-faint:     #B8B2AC;
+
+    /* ── Accent — amber, used sparingly ── */
+    --accent:         #C8820A;   /* darker, more refined than the old orange-y amber */
+    --accent-hover:   #A86D08;
+    --accent-light:   #FDF3DC;
+    --accent-text:    #7A4E05;   /* for text on light bg that needs amber */
+
+    /* ── Semantic ── */
+    --breaking:       #B91C1C;
+    --breaking-bg:    #FEF2F2;
+    --positive:       #15803D;
+    --positive-bg:    #F0FDF4;
   }
 
   .dark {
-    --bg:           #0D1117;
-    --bg-surface:   #161B22;
-    --bg-subtle:    #1C2330;
-    --bg-muted:     #21262D;
-    --border:       #2A3340;
-    --border-muted: #21262D;
+    --bg:             #0F1117;
+    --bg-surface:     #161B24;
+    --bg-subtle:      #1C2230;
+    --bg-muted:       #222A38;
 
-    --text-primary:   #E6EDF3;
-    --text-secondary: #8B949E;
-    --text-muted:     #5A6370;
-    --text-faint:     #3D444D;
+    --border:         #2A3344;
+    --border-muted:   #222A38;
 
-    --accent:       #F0A830;
-    --accent-hover: #E8A020;
-    --accent-light: #2A1F0A;
-    --breaking:     #E05A4E;
-    --breaking-bg:  #2A1210;
-    --forest:       #3D9970;
+    --text-primary:   #E8E4DC;
+    --text-secondary: #9E9890;
+    --text-muted:     #62594E;
+    --text-faint:     #3D3730;
+
+    --accent:         #E8A020;
+    --accent-hover:   #F0AB28;
+    --accent-light:   #241A06;
+    --accent-text:    #E8A020;
+
+    --breaking:       #EF4444;
+    --breaking-bg:    #200E0E;
+    --positive:       #22C55E;
+    --positive-bg:    #0A200F;
   }
 
+  /* ── Reset ── */
   *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
   }
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
 
   html {
     scroll-behavior: smooth;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing:  antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 16px;
+    /* Prevent flash when switching theme */
+    color-scheme: light dark;
   }
 
   body {
     background-color: var(--bg);
-    color: var(--text-primary);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    color:            var(--text-primary);
+    font-family:      'DM Sans', sans-serif;
+    font-size:        15px;
+    line-height:      1.6;
+    min-height:       100vh;
+    transition:       background-color 0.2s ease, color 0.2s ease;
   }
 
+  /* ── Text selection ── */
   ::selection {
     background-color: var(--accent);
-    color: #fff;
+    color:            #fff;
   }
 
-  ::-webkit-scrollbar       { width: 5px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar       { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background:    var(--border);
+    border-radius: 2px;
+  }
   ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
+  /* ── Links ── */
   a {
-    color: inherit;
+    color:           inherit;
     text-decoration: none;
   }
 
+  /* ── Images ── */
   img {
-    display: block;
+    display:   block;
     max-width: 100%;
+  }
+
+  /* ── Headings — no bold by default, controlled explicitly ── */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight:  600;
+    line-height:  1.25;
+    color:        var(--text-primary);
   }
 }
 
-@keyframes fadeUp {
-  from {
-    opacity:   0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity:   1;
-    transform: translateY(0);
-  }
-}
+/* ================================================================
+   COMPONENT CLASSES
+   Reusable primitives. Keep these minimal and purposeful.
+================================================================ */
 
 @layer components {
 
-  /* ── Category label ───────────────────────────── */
+  /* ── Layout container ──────────────────────────────────────── */
+  .page-container {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6;
+  }
+
+  /* ── Typography: Display headlines ─────────────────────────── */
+  /* Barlow Condensed ONLY for these — not for UI chrome        */
+  .headline-xl {
+    font-family:    'Barlow Condensed', sans-serif;
+    font-weight:    700;
+    line-height:    1.05;
+    letter-spacing: -0.01em;
+    color:          var(--text-primary);
+  }
+
+  .headline-lg {
+    font-family:    'Barlow Condensed', sans-serif;
+    font-weight:    700;
+    line-height:    1.1;
+    letter-spacing: -0.005em;
+    color:          var(--text-primary);
+  }
+
+  /* ── Typography: Serif accent ──────────────────────────────── */
+  /* Lora for subtitles, pull quotes, article decks             */
+  .serif-text {
+    font-family: 'Lora', serif;
+    font-weight: 400;
+    font-style:  italic;
+    line-height: 1.5;
+    color:       var(--text-secondary);
+  }
+
+  /* ── Article body text ─────────────────────────────────────── */
+  .article-body {
+    font-family: 'DM Sans', sans-serif;
+    font-size:   17px;
+    line-height: 1.75;
+    color:       var(--text-secondary);
+  }
+
+  .article-body p + p {
+    margin-top: 1.25em;
+  }
+
+  /* ── Category label ────────────────────────────────────────── */
+  /* Small, understated — not screaming                         */
   .cat-label {
-    @apply inline-block text-[10px] font-bold
-           tracking-[0.18em] uppercase;
+    font-family:    'DM Sans', sans-serif;
+    font-size:      11px;
+    font-weight:    600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display:        inline-block;
   }
 
-  /* ── Section heading label ────────────────────── */
+  /* ── Section label ─────────────────────────────────────────── */
+  /* Used above section titles — e.g. "Markets", "Top Stories"  */
   .section-label {
-    @apply text-[10px] font-bold tracking-[0.22em]
-           uppercase;
-    color: var(--accent);
+    font-family:    'DM Sans', sans-serif;
+    font-size:      11px;
+    font-weight:    600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color:          var(--accent-text);
   }
 
-  /* ── Breaking strip ───────────────────────────── */
+  /* ── Breaking badge ────────────────────────────────────────── */
   .breaking-strip {
-    @apply inline-flex items-center gap-1.5
-           text-[10px] font-black tracking-[0.18em]
-           uppercase px-2 py-0.5 rounded-sm;
-    background: var(--breaking);
-    color: #fff;
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm;
+    font-family:    'DM Sans', sans-serif;
+    font-size:      10px;
+    font-weight:    700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background:     var(--breaking);
+    color:          #fff;
   }
 
-  /* ── Standard card ────────────────────────────── */
-  .news-card {
-    @apply rounded-lg overflow-hidden
-           transition-all duration-200
-           hover:shadow-md cursor-pointer;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-muted);
-  }
-
-  .news-card:hover {
-    border-color: var(--border);
-    transform: translateY(-2px);
-  }
-
-  /* ── Divider ──────────────────────────────────── */
-  .divider {
-    border-top: 1px solid var(--border);
-  }
-
-  /* ── Skeleton ─────────────────────────────────── */
-  .skeleton {
-    @apply animate-pulse rounded;
-    background: var(--bg-muted);
-  }
-
-  /* ── Accent underline on hover ────────────────── */
-  .headline-link {
-    @apply transition-colors duration-150;
-    color: var(--text-primary);
-  }
-
-  .headline-link:hover {
-    color: var(--accent);
-  }
-
-  /* ── Accent button ────────────────────────────── */
+  /* ── Buttons ───────────────────────────────────────────────── */
   .btn-accent {
     @apply inline-flex items-center justify-center
-           px-5 py-2.5 text-sm font-semibold
-           rounded-lg transition-all duration-200
-           active:scale-95;
-    background: var(--accent);
-    color: #fff;
+           px-5 py-2.5 rounded-lg
+           transition-all duration-150 active:scale-95;
+    font-family:  'DM Sans', sans-serif;
+    font-size:    14px;
+    font-weight:  600;
+    background:   var(--accent);
+    color:        #fff;
+    border:       none;
+    cursor:       pointer;
   }
 
   .btn-accent:hover {
     background: var(--accent-hover);
   }
 
-  /* ── Ghost button ─────────────────────────────── */
   .btn-ghost {
     @apply inline-flex items-center justify-center
-           px-4 py-2 text-sm font-semibold
-           rounded-lg transition-all duration-200;
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    background: transparent;
+           px-4 py-2 rounded-lg
+           transition-all duration-150;
+    font-family:  'DM Sans', sans-serif;
+    font-size:    14px;
+    font-weight:  500;
+    background:   transparent;
+    color:        var(--text-secondary);
+    border:       1px solid var(--border);
+    cursor:       pointer;
   }
 
   .btn-ghost:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--text-muted);
+    color:        var(--text-primary);
   }
 
-  /* ── Page container ───────────────────────────── */
-  .page-container {
-    @apply w-full max-w-7xl mx-auto px-4 sm:px-6;
+  /* ── Card ──────────────────────────────────────────────────── */
+  .news-card {
+    background:    var(--bg-surface);
+    border:        1px solid var(--border-muted);
+    border-radius: 8px;
+    overflow:      hidden;
+    transition:    border-color 0.15s ease, box-shadow 0.15s ease;
+    cursor:        pointer;
   }
+
+  .news-card:hover {
+    border-color: var(--border);
+    box-shadow:   0 2px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  /* ── Divider ───────────────────────────────────────────────── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Skeleton loader ───────────────────────────────────────── */
+  .skeleton {
+    border-radius: 4px;
+    background:    var(--bg-muted);
+    animation:     skeleton-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* ── Meta text ─────────────────────────────────────────────── */
+  /* Reading time, author, date — consistent small text         */
+  .meta-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size:   12px;
+    font-weight: 400;
+    color:       var(--text-muted);
+    display:     inline-flex;
+    align-items: center;
+    gap:         4px;
+  }
+
+  /* ── Horizontal rule with label ────────────────────────────── */
+  /* Used between sections                                      */
+  .section-rule {
+    border:        none;
+    border-top:    2px solid var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  /* ── Image hover zoom wrapper ──────────────────────────────── */
+  .img-zoom {
+    overflow: hidden;
+  }
+
+  .img-zoom img {
+    transition: transform 0.4s ease;
+  }
+
+  .img-zoom:hover img {
+    transform: scale(1.03);
+  }
+
+  /* ── Focus ring for accessibility ──────────────────────────── */
+  .focus-ring:focus-visible {
+    outline:        2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius:  4px;
+  }
+}
+
+/* ================================================================
+   ANIMATIONS
+================================================================ */
+
+@layer utilities {
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1;   }
+    50%       { opacity: 0.5; }
+  }
+
+  @keyframes tickerScroll {
+    from { transform: translateX(0);     }
+    to   { transform: translateX(-50%);  }
+  }
+
+  .animate-fade-up   { animation: fadeUp  0.4s ease forwards; }
+  .animate-fade-in   { animation: fadeIn  0.3s ease forwards; }
+  .animate-ticker    { animation: tickerScroll 40s linear infinite; }
 }

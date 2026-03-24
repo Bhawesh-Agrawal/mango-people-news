@@ -176,7 +176,7 @@ export default function RegisterPage() {
       <Link
         to="/"
         className="relative mb-6 flex items-center gap-2 text-xs font-bold
-                   tracking-widest uppercase transition-opacity hover:opacity-60"
+                   tracking-wide uppercase transition-opacity hover:opacity-60"
         style={{ color: 'var(--text-muted)' }}
       >
         ← Back to Mango People News
@@ -205,13 +205,13 @@ export default function RegisterPage() {
             </div>
             <div className="leading-none">
               <div
-                className="font-display text-base font-black tracking-tight"
+                className="font-display text-base font-bold tracking-tight"
                 style={{ color: 'var(--text-primary)' }}
               >
                 MANGO PEOPLE
               </div>
               <div
-                className="text-[8px] font-bold tracking-[0.18em] uppercase mt-0.5"
+                className="text-[8px] font-bold tracking-[0.06em] uppercase mt-0.5"
                 style={{ color: 'var(--accent)' }}
               >
                 News for Every Indian
@@ -232,7 +232,7 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <h2
-                  className="font-display font-black text-xl uppercase tracking-tight"
+                  className="font-display font-bold text-xl uppercase tracking-tight"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   Verify your email
@@ -273,7 +273,7 @@ export default function RegisterPage() {
               <Link
                 to="/login"
                 className="inline-flex items-center gap-1.5 text-xs font-bold
-                           tracking-widest uppercase transition-opacity hover:opacity-60"
+                           tracking-wide uppercase transition-opacity hover:opacity-60"
                 style={{ color: 'var(--accent)' }}
               >
                 Go to Sign In <ArrowRight size={12} />
@@ -285,7 +285,7 @@ export default function RegisterPage() {
               {/* Heading */}
               <div>
                 <h1
-                  className="font-display font-black text-2xl uppercase tracking-tight"
+                  className="font-display font-bold text-2xl uppercase tracking-tight"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   Create account

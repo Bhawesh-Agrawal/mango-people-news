@@ -276,7 +276,7 @@ export default function Navbar() {
               </div>
               <div className="leading-none select-none">
                 <div
-                  className="font-display text-xl font-black
+                  className="font-display text-xl font-bold
                              tracking-tight leading-none"
                   style={{ color: 'var(--text-primary)' }}
                 >
@@ -398,8 +398,8 @@ export default function Navbar() {
           >
             <Link
               to="/"
-              className="flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
-                         tracking-widest uppercase transition-all duration-150"
+              className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
+                         tracking-wide transition-all duration-150"
               style={{
                 color:        isActive('/') ? 'var(--accent)' : 'var(--text-secondary)',
                 borderBottom: isActive('/') ? '2px solid var(--accent)' : '2px solid transparent',
@@ -412,8 +412,8 @@ export default function Navbar() {
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className="flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
-                           tracking-widest uppercase transition-all duration-150"
+                className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
+                         tracking-wide transition-all duration-150"
                 style={{
                   color:        isActive(`/category/${cat.slug}`) ? cat.color : 'var(--text-secondary)',
                   borderBottom: isActive(`/category/${cat.slug}`)
@@ -438,7 +438,7 @@ export default function Navbar() {
             <Link
               to="/articles"
               className="ml-auto flex-shrink-0 px-3 py-2.5 text-[11px]
-                         font-bold tracking-widest uppercase
+                         font-bold tracking-wide uppercase
                          hover:opacity-75 transition-opacity"
               style={{ color: 'var(--accent)' }}
             >
@@ -455,8 +455,8 @@ export default function Navbar() {
           <div className="flex items-center px-4 gap-1 py-0">
             <Link
               to="/"
-              className="flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
-                         tracking-widest uppercase transition-all duration-150
+              className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
+                         tracking-wide transition-all duration-150
                          whitespace-nowrap"
               style={{
                 color:        isActive('/') ? 'var(--accent)' : 'var(--text-secondary)',
@@ -469,8 +469,8 @@ export default function Navbar() {
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className="flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
-                           tracking-widest uppercase transition-all duration-150
+                className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
+                         tracking-wide transition-all duration-150
                            whitespace-nowrap"
                 style={{
                   color:        isActive(`/category/${cat.slug}`) ? cat.color : 'var(--text-secondary)',
@@ -501,7 +501,7 @@ export default function Navbar() {
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <span
-              className="text-xs font-black tracking-[0.22em] uppercase"
+              className="text-xs font-bold tracking-[0.08em] uppercase"
               style={{ color: 'var(--text-muted)' }}
             >
               Menu
@@ -596,7 +596,7 @@ export default function Navbar() {
 
             <div className="px-4 pt-4 pb-2">
               <span
-                className="text-[10px] font-black tracking-[0.22em] uppercase"
+                className="text-[10px] font-bold tracking-[0.08em] uppercase"
                 style={{ color: 'var(--text-faint)' }}
               >
                 Sections

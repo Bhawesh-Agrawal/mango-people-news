@@ -87,7 +87,7 @@ export default function BreakingBar() {
             >
               <Zap size={8} fill="#000" color="#000" />
               <span
-                className="text-[9px] font-black tracking-wider uppercase"
+                className="text-[9px] font-semibold tracking-wider uppercase"
                 style={{ color: '#000' }}
               >
                 {labelText}
@@ -107,7 +107,7 @@ export default function BreakingBar() {
           {/* Row 2: category + dots + counter */}
           <div className="flex items-center justify-between pb-2">
             <span
-              className="text-[9px] font-bold tracking-widest uppercase"
+              className="text-[9px] font-bold tracking-wide uppercase"
               style={{ color: active.category_color }}
             >
               {active.category_name}
@@ -166,7 +166,7 @@ export default function BreakingBar() {
           >
             <Zap size={10} fill="#000" color="#000" />
             <span
-              className="text-[10px] font-black tracking-[0.18em] uppercase"
+              className="text-[10px] font-semibold tracking-[0.06em] uppercase"
               style={{ color: '#000' }}
             >
               {labelText}
@@ -189,7 +189,7 @@ export default function BreakingBar() {
             }}
           >
             <span
-              className="flex-shrink-0 text-[9px] font-black tracking-widest
+              className="flex-shrink-0 text-[9px] font-semibold tracking-wide
                          uppercase px-2 py-0.5 rounded-sm"
               style={{
                 background: `${active.category_color}20`,

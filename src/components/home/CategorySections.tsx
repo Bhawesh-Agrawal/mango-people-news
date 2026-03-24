@@ -39,14 +39,14 @@ function MarketTicker() {
       <div className="flex items-center justify-between px-4 py-2.5"
         style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black tracking-[0.2em] uppercase"
+          <span className="text-[10px] font-semibold tracking-[0.06em] uppercase"
             style={{ color: 'var(--text-primary)' }}>
             Market Pulse
           </span>
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot"
               style={{ background: '#22c55e' }} />
-            <span className="text-[9px] font-bold uppercase tracking-widest"
+            <span className="text-[9px] font-bold uppercase tracking-wide"
               style={{ color: '#22c55e' }}>Live</span>
           </span>
         </div>
@@ -75,7 +75,7 @@ function MarketTicker() {
                 border:     '1px solid var(--border-muted)',
                 minWidth:   '100px',
               }}>
-              <div className="text-[9px] font-black tracking-widest uppercase"
+              <div className="text-[9px] font-semibold tracking-wide uppercase"
                 style={{ color: 'var(--text-muted)' }}>{item.symbol}</div>
               <div className="text-sm font-bold font-display mt-0.5"
                 style={{ color: 'var(--text-primary)' }}>{item.value}</div>
@@ -277,7 +277,7 @@ function ArticleCell({
             )}
             <span
               className="inline-block mt-3 text-xs font-bold
-                         tracking-widest uppercase
+                         tracking-wide uppercase
                          group-hover:opacity-70 transition-opacity"
               style={{ color: 'var(--accent)' }}
             >
@@ -532,7 +532,7 @@ function CategoryBlock({
         <Link
           to={`/category/${category.slug}`}
           className="flex items-center gap-1.5 text-xs font-bold
-                     tracking-widest uppercase flex-shrink-0
+                     tracking-wide uppercase flex-shrink-0
                      transition-all duration-200 hover:gap-2.5"
           style={{ color: category.color }}
         >
@@ -566,7 +566,7 @@ export default function CategorySections() {
         style={{ borderBottom: '2px solid var(--border)' }}
       >
         <span
-          className="font-display font-black tracking-tight uppercase"
+          className="font-display font-bold tracking-tight uppercase"
           style={{
             fontSize: 'clamp(28px, 5vw, 42px)',
             color:    'var(--text-primary)',
@@ -576,7 +576,7 @@ export default function CategorySections() {
         </span>
         <Link
           to="/articles"
-          className="text-xs font-bold tracking-widest uppercase
+          className="text-xs font-bold tracking-wide uppercase
                      hover:opacity-70 transition-opacity"
           style={{ color: 'var(--accent)' }}
         >

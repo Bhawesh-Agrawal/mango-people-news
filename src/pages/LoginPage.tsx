@@ -135,7 +135,7 @@ export default function LoginPage() {
       <Link
         to="/"
         className="relative mb-6 flex items-center gap-2 text-xs font-bold
-                   tracking-widest uppercase transition-opacity hover:opacity-60"
+                   tracking-wide uppercase transition-opacity hover:opacity-60"
         style={{ color: 'var(--text-muted)' }}
       >
         ← Back to Mango People News
@@ -166,13 +166,13 @@ export default function LoginPage() {
             </div>
             <div className="leading-none">
               <div
-                className="font-display text-base font-black tracking-tight"
+                className="font-display text-base font-bold tracking-tight"
                 style={{ color: 'var(--text-primary)' }}
               >
                 MANGO PEOPLE
               </div>
               <div
-                className="text-[8px] font-bold tracking-[0.18em] uppercase mt-0.5"
+                className="text-[8px] font-bold tracking-[0.06em] uppercase mt-0.5"
                 style={{ color: 'var(--accent)' }}
               >
                 News for Every Indian
@@ -192,7 +192,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h2
-                  className="font-display font-black text-xl uppercase tracking-tight"
+                  className="font-display font-bold text-xl uppercase tracking-tight"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   Check your inbox
@@ -210,7 +210,7 @@ export default function LoginPage() {
               </div>
               <button
                 onClick={() => { setView('login'); setError('') }}
-                className="text-xs font-bold tracking-widest uppercase
+                className="text-xs font-bold tracking-wide uppercase
                            transition-opacity hover:opacity-60"
                 style={{ color: 'var(--accent)' }}
               >
@@ -223,7 +223,7 @@ export default function LoginPage() {
               {/* Heading */}
               <div>
                 <h1
-                  className="font-display font-black text-2xl uppercase tracking-tight"
+                  className="font-display font-bold text-2xl uppercase tracking-tight"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   {view === 'magic' ? 'Magic Link' : 'Welcome back'}
@@ -294,7 +294,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => { setView('login'); setError('') }}
-                    className="w-full text-xs font-bold tracking-widest uppercase
+                    className="w-full text-xs font-bold tracking-wide uppercase
                                transition-opacity hover:opacity-60"
                     style={{ color: 'var(--text-muted)' }}
                   >
