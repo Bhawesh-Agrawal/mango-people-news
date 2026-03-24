@@ -755,6 +755,23 @@ export default function Navbar() {
               <ChevronRight size={15} style={{ color: 'var(--accent)' }} />
             </Link>
 
+            {isLoggedIn && (
+              <button
+                onClick={handleMobileLogout}
+                className="w-full flex items-center justify-between px-4 py-3.5
+                          transition-colors hover:bg-[var(--bg-subtle)] group"
+                style={{ borderTop: '1px solid var(--border)' }}
+              >
+                <span
+                  className="font-display text-2xl font-bold tracking-tight uppercase"
+                  style={{ color: 'var(--breaking)' }}
+                >
+                  Sign Out
+                </span>
+                <ChevronRight size={15} style={{ color: 'var(--breaking)' }} />
+              </button>
+            )}
+
             {/* Sign out — logged in only */}
             {isLoggedIn && (
               <div

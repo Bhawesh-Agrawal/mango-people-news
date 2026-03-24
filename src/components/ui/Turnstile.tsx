@@ -44,6 +44,8 @@ function loadTurnstile(cb: () => void) {
   document.head.appendChild(script)
 }
 
+
+
 export default function Turnstile({
   onVerify,
   onError,
@@ -100,3 +102,4 @@ export default function Turnstile({
     />
   )
 }
+

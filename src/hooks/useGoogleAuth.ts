@@ -15,15 +15,18 @@ declare global {
   }
 }
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string
 
-let gsiLoaded  = false
-let gsiLoading = false
-const pendingCallbacks: (() => void)[] = []
+// Module-level state — persists across component mounts/unmounts
+// This prevents the double-initialization error from StrictMode
+let gsiReady    = false
+let gsiLoading  = false
+let gsiInitDone = false   // ← tracks if initialize() was called
+const queue: (() => void)[] = []
 
 function loadGSI(cb: () => void) {
-  if (gsiLoaded)  { cb(); return }
-  pendingCallbacks.push(cb)
+  if (gsiReady)   { cb(); return }
+  queue.push(cb)
   if (gsiLoading) return
   gsiLoading = true
 
@@ -32,9 +35,9 @@ function loadGSI(cb: () => void) {
   script.async  = true
   script.defer  = true
   script.onload = () => {
-    gsiLoaded = true
-    pendingCallbacks.forEach(fn => fn())
-    pendingCallbacks.length = 0
+    gsiReady = true
+    queue.forEach(fn => fn())
+    queue.length = 0
   }
   document.head.appendChild(script)
 }
@@ -44,43 +47,44 @@ export function useGoogleButton(
   onSuccess:    (idToken: string) => Promise<void>,
   onError:      (msg: string)     => void,
 ) {
-  const rendered = useRef(false)
+  const buttonRendered = useRef(false)
 
   useEffect(() => {
-    if (
-      !GOOGLE_CLIENT_ID ||
-      GOOGLE_CLIENT_ID === 'your_google_client_id.apps.googleusercontent.com'
-    ) {
-      console.warn('[Google Auth] VITE_GOOGLE_CLIENT_ID not configured')
+    if (!CLIENT_ID) {
+      console.warn('[Google Auth] VITE_GOOGLE_CLIENT_ID not set')
       return
     }
 
-    const render = () => {
-      if (!window.google || !containerRef.current) return
-      if (rendered.current) return
+    const tryRender = () => {
+      if (!window.google)          return
+      if (!containerRef.current)   return
+      if (buttonRendered.current)  return
 
       const width = containerRef.current.offsetWidth
-      // Don't render until container actually has width
-      // (happens on mobile where layout hasn't settled yet)
       if (width === 0) return
 
-      rendered.current = true
-
-      window.google.accounts.id.initialize({
-        client_id:             GOOGLE_CLIENT_ID,
-        callback:              (res: { credential?: string }) => {
-          if (res.credential) {
-            onSuccess(res.credential).catch(() =>
+      // Only call initialize() once per page load
+      // Multiple calls cause the GSI warning and unpredictable behavior
+      if (!gsiInitDone) {
+        gsiInitDone = true
+        window.google.accounts.id.initialize({
+          client_id:             CLIENT_ID,
+          callback:              (res: { credential?: string }) => {
+            if (res.credential) {
+              onSuccess(res.credential).catch(() =>
+                onError('Google sign-in failed. Please try again.')
+              )
+            } else {
               onError('Google sign-in failed. Please try again.')
-            )
-          } else {
-            onError('Google sign-in failed. Please try again.')
-          }
-        },
-        auto_select:           false,
-        cancel_on_tap_outside: true,
-        use_fedcm_for_prompt:  false,
-      })
+            }
+          },
+          auto_select:           false,
+          cancel_on_tap_outside: true,
+          use_fedcm_for_prompt:  false,
+        })
+      }
+
+      buttonRendered.current = true
 
       window.google.accounts.id.renderButton(containerRef.current, {
         type:           'standard',
@@ -93,25 +97,23 @@ export function useGoogleButton(
       })
     }
 
-    // ResizeObserver waits for the container to have real dimensions
-    // This is the key fix for mobile — layout may not be settled on mount
+    // Wait for container to have real width (mobile fix)
     let observer: ResizeObserver | null = null
 
-    if (containerRef.current) {
-      observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          if (entry.contentRect.width > 0 && !rendered.current) {
-            render()
-          }
+    const el = containerRef.current
+    if (el) {
+      observer = new ResizeObserver(() => {
+        if (!buttonRendered.current && (el.offsetWidth > 0)) {
+          tryRender()
         }
       })
-      observer.observe(containerRef.current)
+      observer.observe(el)
     }
 
-    loadGSI(render)
+    loadGSI(tryRender)
 
     return () => {
       observer?.disconnect()
     }
-  }, [])
+  }, [])   // ← empty deps, runs once per mount
 }
