@@ -10,6 +10,7 @@ import RegisterPage  from './pages/RegisterPage'
 
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import MagicVerifyPage from './pages/MagicVerifyPage'
+import ArticlePage from './pages/ArticlePage'
 
 function App() {
   return (
@@ -23,7 +24,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
 
             {/* These pages come next */}
-            <Route path="/article/:slug"    element={<div>Article page coming</div>} />
+            <Route path="/article/:slug"    element={<ArticlePage />} />
             <Route path="/category/:slug"   element={<div>Category page coming</div>} />
             <Route path="/search"           element={<div>Search page coming</div>} />
             <Route path="/trending"         element={<div>Trending page coming</div>} />

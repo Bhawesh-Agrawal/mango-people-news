@@ -452,7 +452,7 @@ export default function Navbar() {
           className="md:hidden overflow-x-auto scrollbar-none"
           style={{ borderTop: '1px solid var(--border)' }}
         >
-          <div className="flex items-center px-4 gap-1 py-0">
+          <div className="flex items-center px-4 gap-1 py-0 scrollbar-none">
             <Link
               to="/"
               className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium

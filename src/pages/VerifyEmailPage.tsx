@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { verifyEmail } from '../api/auth'
@@ -20,15 +20,35 @@ function PageBg() {
 }
 
 export default function VerifyEmailPage() {
-  const [params]  = useSearchParams()
-  const navigate  = useNavigate()
+  const [params]    = useSearchParams()
+  const navigate    = useNavigate()
   const { refresh } = useAuth()
 
   const [state,   setState]   = useState<State>('loading')
   const [message, setMessage] = useState('')
   const [counter, setCounter] = useState(5)
 
+  // Use a ref so the interval always reads the latest counter value
+  const counterRef  = useRef(5)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   const token = params.get('token')
+
+  const startCountdown = () => {
+    // Reset ref and state together
+    counterRef.current = 5
+    setCounter(5)
+
+    intervalRef.current = setInterval(() => {
+      counterRef.current -= 1
+      setCounter(counterRef.current)
+
+      if (counterRef.current <= 0) {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        navigate('/login', { replace: true })
+      }
+    }, 1000)
+  }
 
   useEffect(() => {
     if (!token) {
@@ -39,34 +59,35 @@ export default function VerifyEmailPage() {
 
     verifyEmail(token)
       .then(async () => {
-        setState('success')
-        // Refresh auth context — if user is logged in, update their verified status
+        // Refresh auth context if user is already logged in
         await refresh().catch(() => {})
 
-        // Auto-redirect to login after countdown
-        let count = 5
-        const interval = setInterval(() => {
-          count -= 1
-          setCounter(count)
-          if (count <= 0) {
-            clearInterval(interval)
-            navigate('/login', { replace: true })
-          }
-        }, 1000)
+        // Set success state first so UI renders immediately
+        setState('success')
 
-        return () => clearInterval(interval)
+        // Start countdown after a tiny delay so React has
+        // painted the success state before we start ticking
+        setTimeout(startCountdown, 100)
       })
       .catch((err) => {
         setState('error')
-        const msg = err?.response?.data?.message ?? ''
-        if (msg.toLowerCase().includes('expired')) {
-          setMessage('This verification link has expired. Please register again or request a new link.')
-        } else if (msg.toLowerCase().includes('invalid')) {
-          setMessage('This verification link is invalid. It may have already been used.')
+        const msg: string = err?.response?.data?.message ?? ''
+
+        if (msg.toLowerCase().includes('already been used')) {
+          setMessage('This link has already been used. Please sign in.')
+        } else if (msg.toLowerCase().includes('expired')) {
+          setMessage('This link has expired. Please register again.')
+        } else if (msg.toLowerCase().includes('already verified')) {
+          setMessage('Your email is already verified. Please sign in.')
         } else {
-          setMessage('Email verification failed. Please try again or contact support.')
+          setMessage('This verification link is invalid. Please register again.')
         }
       })
+
+    // Cleanup interval on unmount
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
   }, [token])
 
   return (
@@ -88,9 +109,7 @@ export default function VerifyEmailPage() {
         <div
           className="h-1 w-full"
           style={{
-            background: state === 'error'
-              ? 'var(--breaking)'
-              : 'var(--accent)',
+            background: state === 'error' ? 'var(--breaking)' : 'var(--accent)',
           }}
         />
 
@@ -100,14 +119,14 @@ export default function VerifyEmailPage() {
           <Link to="/" className="inline-flex items-center gap-2">
             <span className="text-xl">🌳</span>
             <span
-              className="font-display text-base font-black tracking-tight"
+              className="font-display text-base font-bold tracking-tight"
               style={{ color: 'var(--text-primary)' }}
             >
               MANGO PEOPLE
             </span>
           </Link>
 
-          {/* State: Loading */}
+          {/* Loading */}
           {state === 'loading' && (
             <div className="space-y-4 py-4">
               <div
@@ -123,19 +142,19 @@ export default function VerifyEmailPage() {
               </div>
               <div>
                 <h2
-                  className="font-display font-black text-xl uppercase tracking-tight"
+                  className="font-display text-display-md"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  Verifying…
+                  Verifying your email
                 </h2>
                 <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Please wait while we verify your email address.
+                  Just a moment…
                 </p>
               </div>
             </div>
           )}
 
-          {/* State: Success */}
+          {/* Success */}
           {state === 'success' && (
             <div className="space-y-4 py-2">
               <div
@@ -148,51 +167,60 @@ export default function VerifyEmailPage() {
 
               <div>
                 <h2
-                  className="font-display font-black text-xl uppercase tracking-tight"
+                  className="font-display text-display-md"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  Email verified!
+                  Email verified
                 </h2>
                 <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
-                  Your account is now active. You can sign in and start reading.
+                  Your account is active. You can now sign in.
                 </p>
               </div>
 
+              {/* Countdown — shows immediately, ticks from 5 */}
               <div
-                className="px-4 py-3 rounded-xl text-sm"
+                className="flex items-center justify-center gap-2
+                           px-4 py-3 rounded-xl text-sm"
                 style={{
                   background: 'var(--accent-light)',
                   color:      'var(--text-secondary)',
                 }}
               >
-                Redirecting to sign in in{' '}
-                <strong style={{ color: 'var(--accent)' }}>{counter}s</strong>…
+                <span>Redirecting to sign in in</span>
+                <span
+                  className="font-display text-display-sm tabular-nums"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  {counter}
+                </span>
+                <span>seconds</span>
               </div>
 
               <Link
                 to="/login"
                 className="btn-accent inline-flex items-center gap-2
-                           text-sm px-6 py-2.5 rounded-xl"
+                           text-sm px-6 py-2.5 rounded-xl w-full
+                           justify-center"
               >
                 Sign In Now
               </Link>
             </div>
           )}
 
-          {/* State: Error */}
+          {/* Error */}
           {state === 'error' && (
             <div className="space-y-4 py-2">
               <div
                 className="w-16 h-16 rounded-full flex items-center
                            justify-center mx-auto"
-                style={{ background: 'rgba(192,57,43,0.1)' }}
+                style={{ background: 'rgba(185,28,28,0.08)' }}
               >
                 <XCircle size={32} style={{ color: 'var(--breaking)' }} />
               </div>
 
               <div>
                 <h2
-                  className="font-display font-black text-xl uppercase tracking-tight"
+                  className="font-display text-display-md"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   Verification failed
@@ -211,14 +239,14 @@ export default function VerifyEmailPage() {
                   className="btn-accent flex items-center justify-center
                              gap-2 text-sm h-11 rounded-xl"
                 >
-                  Create a new account
+                  Try registering again
                 </Link>
                 <Link
                   to="/login"
                   className="btn-ghost flex items-center justify-center
                              text-sm h-11 rounded-xl"
                 >
-                  Back to Sign In
+                  Back to sign in
                 </Link>
               </div>
             </div>

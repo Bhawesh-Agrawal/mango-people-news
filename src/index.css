@@ -316,6 +316,81 @@
     outline-offset: 2px;
     border-radius:  4px;
   }
+
+  /* ── Article prose ─────────────────────────────────────────── */
+/* Styles rendered HTML from the backend body field           */
+.prose-article h2 {
+  font-family:   'Barlow Condensed', sans-serif;
+  font-size:     1.6rem;
+  font-weight:   700;
+  line-height:   1.2;
+  color:         var(--text-primary);
+  margin-top:    2em;
+  margin-bottom: 0.5em;
+}
+
+.prose-article h3 {
+  font-family:   'DM Sans', sans-serif;
+  font-size:     1.1rem;
+  font-weight:   600;
+  color:         var(--text-primary);
+  margin-top:    1.75em;
+  margin-bottom: 0.4em;
+}
+
+.prose-article p {
+  margin-bottom: 1.25em;
+  color:         var(--text-secondary);
+}
+
+.prose-article strong {
+  font-weight: 600;
+  color:       var(--text-primary);
+}
+
+.prose-article a {
+  color:           var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose-article a:hover {
+  color: var(--accent-hover);
+}
+
+.prose-article blockquote {
+  border-left:  3px solid var(--accent);
+  padding-left: 1.25em;
+  margin:       1.5em 0;
+  font-family:  'Lora', serif;
+  font-style:   italic;
+  font-size:    1.05em;
+  color:        var(--text-secondary);
+}
+
+.prose-article ul,
+.prose-article ol {
+  padding-left:  1.5em;
+  margin-bottom: 1.25em;
+  color:         var(--text-secondary);
+}
+
+.prose-article li {
+  margin-bottom: 0.4em;
+  line-height:   1.7;
+}
+
+.prose-article img {
+  border-radius: 8px;
+  margin:        1.5em auto;
+  max-width:     100%;
+}
+
+.prose-article hr {
+  border:        none;
+  border-top:    1px solid var(--border);
+  margin:        2em 0;
+}
 }
 
 /* ================================================================
@@ -346,4 +421,14 @@
   .animate-fade-up   { animation: fadeUp  0.4s ease forwards; }
   .animate-fade-in   { animation: fadeIn  0.3s ease forwards; }
   .animate-ticker    { animation: tickerScroll 40s linear infinite; }
+
+  /* Hide scrollbar everywhere it shouldn't show */
+  .scrollbar-none {
+    -ms-overflow-style:  none;
+    scrollbar-width:     none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
