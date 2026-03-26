@@ -195,8 +195,9 @@ function CommentsSection({ articleId }: { articleId: string }) {
   const [body,        setBody]        = useState('')
   const [submitting,  setSubmitting]  = useState(false)
   const [error,       setError]       = useState('')
+  const [successMsg,  setSuccessMsg]  = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-
+ 
   const load = useCallback(async () => {
     try {
       const res = await getComments(articleId)
@@ -207,17 +208,21 @@ function CommentsSection({ articleId }: { articleId: string }) {
       setLoading(false)
     }
   }, [articleId])
-
+ 
   useEffect(() => { load() }, [load])
-
+ 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!body.trim()) return
     setSubmitting(true)
     setError('')
+    setSuccessMsg('')
     try {
-      await postComment(articleId, body.trim())
+      const result = await postComment(articleId, body.trim())
       setBody('')
+      // Backend message tells us if it was auto-approved or queued for review
+      setSuccessMsg(result.message ?? 'Comment posted')
+      setTimeout(() => setSuccessMsg(''), 6000)
       await load()
     } catch (err: any) {
       setError(
@@ -228,16 +233,16 @@ function CommentsSection({ articleId }: { articleId: string }) {
       setSubmitting(false)
     }
   }
-
+ 
   const remove = async (commentId: string) => {
     try {
       await deleteComment(commentId)
       setComments(prev => prev.filter(c => c.id !== commentId))
     } catch {}
   }
-
+ 
   const canComment = isLoggedIn && emailVerified
-
+ 
   return (
     <section className="mt-12">
       {/* Header */}
@@ -264,7 +269,7 @@ function CommentsSection({ articleId }: { articleId: string }) {
           </span>
         )}
       </div>
-
+ 
       {/* Comment form */}
       {canComment ? (
         <form onSubmit={submit} className="mb-8">
@@ -287,8 +292,8 @@ function CommentsSection({ articleId }: { articleId: string }) {
             <div
               className="flex items-center justify-between px-4 py-2"
               style={{
-                background:  'var(--bg-subtle)',
-                borderTop:   '1px solid var(--border-muted)',
+                background: 'var(--bg-subtle)',
+                borderTop:  '1px solid var(--border-muted)',
               }}
             >
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -305,9 +310,18 @@ function CommentsSection({ articleId }: { articleId: string }) {
               </button>
             </div>
           </div>
+ 
+          {/* Error message */}
           {error && (
             <p className="text-xs mt-2" style={{ color: 'var(--breaking)' }}>
               {error}
+            </p>
+          )}
+ 
+          {/* Success / pending message */}
+          {successMsg && (
+            <p className="text-xs mt-2" style={{ color: 'var(--positive, #16a34a)' }}>
+              {successMsg}
             </p>
           )}
         </form>
@@ -338,7 +352,7 @@ function CommentsSection({ articleId }: { articleId: string }) {
           )}
         </div>
       )}
-
+ 
       {/* Comment list */}
       {loading ? (
         <div className="space-y-4">
@@ -374,15 +388,15 @@ function CommentsSection({ articleId }: { articleId: string }) {
                 {comment.author_avatar
                   ? <img src={comment.author_avatar} alt=""
                       className="w-full h-full object-cover" />
-                  : comment.author_name.charAt(0).toUpperCase()
+                  : (comment.author_name?.charAt(0) ?? '?').toUpperCase()
                 }
               </div>
-
+ 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-sm font-semibold"
                     style={{ color: 'var(--text-primary)' }}>
-                    {comment.author_name}
+                    {comment.author_name ?? 'Anonymous'}
                   </span>
                   {comment.is_pinned && (
                     <span className="text-[10px] font-semibold px-1.5 py-0.5
@@ -403,9 +417,61 @@ function CommentsSection({ articleId }: { articleId: string }) {
                   style={{ color: 'var(--text-secondary)' }}>
                   {comment.body}
                 </p>
+ 
+                {/* Replies */}
+                {comment.replies && comment.replies.length > 0 && (
+                  <div className="mt-4 space-y-4 pl-4"
+                    style={{ borderLeft: '2px solid var(--border)' }}>
+                    {comment.replies.map(reply => (
+                      <div key={reply.id} className="flex gap-3 group/reply">
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center
+                                     flex-shrink-0 text-[10px] font-bold overflow-hidden"
+                          style={{
+                            background: 'var(--bg-subtle)',
+                            color:      'var(--text-muted)',
+                          }}
+                        >
+                          {reply.author_avatar
+                            ? <img src={reply.author_avatar} alt=""
+                                className="w-full h-full object-cover" />
+                            : (reply.author_name?.charAt(0) ?? '?').toUpperCase()
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-semibold"
+                              style={{ color: 'var(--text-primary)' }}>
+                              {reply.author_name ?? 'Anonymous'}
+                            </span>
+                            <span className="text-xs ml-auto"
+                              style={{ color: 'var(--text-muted)' }}>
+                              {timeAgo(reply.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-sm leading-relaxed"
+                            style={{ color: 'var(--text-secondary)' }}>
+                            {reply.body}
+                          </p>
+                        </div>
+                        {user?.id && (
+                          <button
+                            onClick={() => remove(reply.id)}
+                            className="opacity-0 group-hover/reply:opacity-100
+                                       transition-opacity p-1 rounded self-start mt-0.5"
+                            style={{ color: 'var(--text-faint)' }}
+                            title="Delete reply"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              {/* Delete — only own comments */}
+ 
+              {/* Delete — only own comments or editors */}
               {user?.id && (
                 <button
                   onClick={() => remove(comment.id)}
@@ -477,11 +543,16 @@ export default function ArticlePage() {
 
   // ── Load like status ────────────────────────────────────────
   useEffect(() => {
-    if (!article?.id || !isLoggedIn) return
-    getLikeStatus(article.id)
-      .then(res => setLiked(res.data?.liked ?? false))
-      .catch(() => {})
-  }, [article?.id, isLoggedIn])
+     if (!article?.id) return
+     getLikeStatus(article.id)
+       .then(res => {
+         setLiked(res.data?.liked ?? false)
+         if (res.data?.like_count !== undefined) {
+           setLikeCount(res.data.like_count)
+         }
+       })
+       .catch(() => {})
+   }, [article?.id, isLoggedIn])
 
   // ── Load related articles ───────────────────────────────────
   useEffect(() => {
@@ -739,7 +810,7 @@ export default function ArticlePage() {
                   {article.author_avatar
                     ? <img src={article.author_avatar} alt=""
                         className="w-full h-full object-cover" />
-                    : article.author_name.charAt(0).toUpperCase()
+                    : (article.author_name?.charAt(0) ?? '?').toUpperCase()
                   }
                 </div>
                 <div>
