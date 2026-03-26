@@ -556,7 +556,7 @@ function CommentsSection({ articleId }: { articleId: string }) {
 // ── Main Article Page ─────────────────────────────────────────
 export default function ArticlePage() {
   const { slug }       = useParams<{ slug: string }>()
-  const navigate       = useNavigate()
+  //const navigate       = useNavigate()
   const { isLoggedIn } = useAuth()
 
   const [article,   setArticle]   = useState<Article | null>(null)
