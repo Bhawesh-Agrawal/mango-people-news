@@ -1,45 +1,51 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import {
-  Clock, Eye, TrendingUp, ArrowRight,
-  LayoutGrid, List, SlidersHorizontal,
-} from 'lucide-react'
+import { Clock, Eye, ChevronRight, ArrowRight } from 'lucide-react'
 import { useCategories }  from '../hooks/useCategories'
 import { getArticles }    from '../api/articles'
 import type { Article, Category } from '../types'
 import { timeAgo, formatCount } from '../lib/utils'
 import { SEED_ARTICLES, SEED_CATEGORIES } from '../lib/seed'
-
-// ── Types ─────────────────────────────────────────────────────
-type SortOption = 'latest' | 'trending' | 'featured'
-type ViewMode   = 'grid' | 'list'
+import MarketTicker from '../components/ui/MarketTicker'
 
 // ── Skeleton ──────────────────────────────────────────────────
-function GridSkeleton() {
+function HeroSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {[1, 2, 3, 4, 5, 6].map(n => (
-        <div key={n} className="space-y-3">
-          <div className="skeleton h-48 w-full rounded-xl" />
-          <div className="skeleton h-3 w-20 rounded" />
-          <div className="skeleton h-5 w-full rounded" />
-          <div className="skeleton h-5 w-4/5 rounded" />
-          <div className="skeleton h-3 w-32 rounded" />
-        </div>
-      ))}
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-0 lg:gap-8 mb-8">
+      <div className="space-y-4">
+        <div className="skeleton h-3 w-20 rounded" />
+        <div className="skeleton h-9 w-full rounded" />
+        <div className="skeleton h-9 w-3/4 rounded" />
+        <div className="skeleton h-4 w-full rounded" />
+        <div className="skeleton h-4 w-5/6 rounded" />
+        <div className="skeleton h-[280px] w-full rounded-xl mt-2" />
+        <div className="skeleton h-3 w-48 rounded" />
+      </div>
+      <div className="hidden lg:block space-y-0 pt-1">
+        {[1,2,3,4,5].map(n => (
+          <div key={n} className="flex gap-3 py-4"
+            style={{ borderBottom: '1px solid var(--border-muted)' }}>
+            <div className="flex-1 space-y-2">
+              <div className="skeleton h-3 w-16 rounded" />
+              <div className="skeleton h-4 w-full rounded" />
+              <div className="skeleton h-4 w-4/5 rounded" />
+              <div className="skeleton h-3 w-24 rounded" />
+            </div>
+            <div className="skeleton rounded-lg flex-shrink-0"
+              style={{ width: '72px', height: '60px' }} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-function ListSkeleton() {
+function GridSkeleton() {
   return (
     <div className="space-y-0">
-      {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-        <div
-          key={n}
-          className="flex gap-4 py-5"
-          style={{ borderBottom: '1px solid var(--border-muted)' }}
-        >
+      {[1,2,3,4,5,6].map(n => (
+        <div key={n} className="flex gap-4 py-5"
+          style={{ borderBottom: '1px solid var(--border-muted)' }}>
           <div className="flex-1 space-y-2.5">
             <div className="skeleton h-3 w-20 rounded" />
             <div className="skeleton h-5 w-full rounded" />
@@ -47,46 +53,28 @@ function ListSkeleton() {
             <div className="skeleton h-3 w-40 rounded" />
           </div>
           <div className="skeleton rounded-xl flex-shrink-0"
-            style={{ width: '120px', height: '96px' }} />
+            style={{ width: '112px', height: '88px' }} />
         </div>
       ))}
     </div>
   )
 }
 
-// ── Article Grid Card ─────────────────────────────────────────
-function GridCard({ article }: { article: Article }) {
+// ── Hero lead article ─────────────────────────────────────────
+// Large, editorial — text first, image below
+function HeroArticle({ article }: { article: Article }) {
   return (
-    <Link
-      to={`/article/${article.slug}`}
-      className="group flex flex-col"
-    >
-      {/* Image */}
-      <div
-        className="w-full rounded-xl overflow-hidden mb-3 flex-shrink-0 img-zoom"
-        style={{
-          height:     '192px',
-          background: 'var(--bg-muted)',
-        }}
-      >
-        {article.cover_image && (
-          <img
-            src={article.cover_image}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        )}
-      </div>
+    <Link to={`/article/${article.slug}`} className="group block">
 
       {/* Badges */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-3">
         {article.is_breaking && (
           <span className="breaking-strip">● Breaking</span>
         )}
         {article.is_featured && !article.is_breaking && (
           <span
-            className="text-[10px] font-semibold px-2 py-0.5 rounded-sm"
+            className="text-[10px] font-semibold px-2 py-0.5 rounded-sm uppercase
+                       tracking-wide"
             style={{
               background: 'var(--accent-light)',
               color:      'var(--accent-text)',
@@ -97,20 +85,30 @@ function GridCard({ article }: { article: Article }) {
         )}
       </div>
 
-      {/* Headline */}
-      <h2
-        className="font-display text-display-sm leading-tight line-clamp-3
+      {/* Headline — large display */}
+      <h1
+        className="font-display text-display-xl leading-tight mb-3
                    transition-colors duration-150
                    group-hover:text-[var(--accent)]"
         style={{ color: 'var(--text-primary)' }}
       >
         {article.title}
-      </h2>
+      </h1>
+
+      {/* Subtitle serif */}
+      {article.subtitle && (
+        <p
+          className="serif-text text-lg leading-relaxed mb-3"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {article.subtitle}
+        </p>
+      )}
 
       {/* Excerpt */}
       {article.excerpt && (
         <p
-          className="text-sm leading-relaxed mt-2 line-clamp-2 flex-1"
+          className="text-sm leading-relaxed mb-4 line-clamp-3"
           style={{ color: 'var(--text-secondary)' }}
         >
           {article.excerpt}
@@ -119,13 +117,10 @@ function GridCard({ article }: { article: Article }) {
 
       {/* Meta */}
       <div
-        className="flex items-center gap-2 mt-3 text-xs"
+        className="flex items-center gap-2 text-xs mb-5"
         style={{ color: 'var(--text-muted)' }}
       >
-        <span
-          className="font-medium"
-          style={{ color: 'var(--text-secondary)' }}
-        >
+        <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>
           {article.author_name}
         </span>
         <span>·</span>
@@ -134,7 +129,7 @@ function GridCard({ article }: { article: Article }) {
           {timeAgo(article.published_at)}
         </span>
         <span>·</span>
-        <span>{article.reading_time} min</span>
+        <span>{article.reading_time} min read</span>
         {article.view_count > 500 && (
           <>
             <span>·</span>
@@ -145,18 +140,99 @@ function GridCard({ article }: { article: Article }) {
           </>
         )}
       </div>
+
+      {/* Image — below text */}
+      {article.cover_image && (
+        <div
+          className="w-full rounded-xl overflow-hidden img-zoom"
+          style={{ aspectRatio: '16/9' }}
+        >
+          <img
+            src={article.cover_image}
+            alt={article.title}
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+        </div>
+      )}
     </Link>
   )
 }
 
-// ── Article List Row ──────────────────────────────────────────
-function ListRow({
+// ── Secondary stacked list (right column) ─────────────────────
+// Small text rows — thumbnail right, text left
+function SecondaryList({ articles }: { articles: Article[] }) {
+  return (
+    <div>
+      {articles.map((article, i) => (
+        <Link
+          key={article.id}
+          to={`/article/${article.slug}`}
+          className="flex gap-3 py-4 group"
+          style={{
+            borderBottom: i < articles.length - 1
+              ? '1px solid var(--border-muted)'
+              : 'none',
+          }}
+        >
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            {article.is_breaking && (
+              <span className="breaking-strip mb-1.5 inline-block">● Breaking</span>
+            )}
+            <h3
+              className="text-sm font-semibold leading-snug line-clamp-3
+                         transition-colors duration-150
+                         group-hover:text-[var(--accent)]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {article.title}
+            </h3>
+            <div
+              className="flex items-center gap-1.5 mt-2 text-[11px]"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <Clock size={10} />
+              <span>{timeAgo(article.published_at)}</span>
+              <span>·</span>
+              <span>{article.reading_time} min</span>
+            </div>
+          </div>
+
+          {/* Thumbnail */}
+          {article.cover_image && (
+            <div
+              className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
+              style={{ width: '72px', height: '60px' }}
+            >
+              <img
+                src={article.cover_image}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          )}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+// ── Article row for the main list below hero ──────────────────
+// Full-width newspaper row — text left, image right
+function ArticleRow({
   article,
   isLast,
+  size = 'normal',
 }: {
   article: Article
   isLast:  boolean
+  size?:   'large' | 'normal' | 'small'
 }) {
+  const imgW = size === 'large' ? '160px' : size === 'small' ? '80px' : '112px'
+  const imgH = size === 'large' ? '120px' : size === 'small' ? '68px' : '88px'
+
   return (
     <Link
       to={`/article/${article.slug}`}
@@ -165,36 +241,43 @@ function ListRow({
         borderBottom: isLast ? 'none' : '1px solid var(--border-muted)',
       }}
     >
-      {/* Text — left */}
+      {/* Text — always first */}
       <div className="flex-1 min-w-0">
         {/* Badges */}
-        <div className="flex items-center gap-2 mb-1.5">
-          {article.is_breaking && (
-            <span className="breaking-strip">● Breaking</span>
-          )}
-          {article.is_featured && !article.is_breaking && (
-            <span
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-sm"
-              style={{
-                background: 'var(--accent-light)',
-                color:      'var(--accent-text)',
-              }}
-            >
-              Featured
-            </span>
-          )}
-        </div>
+        {(article.is_breaking || article.is_featured) && (
+          <div className="flex items-center gap-2 mb-1.5">
+            {article.is_breaking && (
+              <span className="breaking-strip">● Breaking</span>
+            )}
+            {article.is_featured && !article.is_breaking && (
+              <span
+                className="text-[10px] font-semibold px-2 py-0.5 rounded-sm"
+                style={{
+                  background: 'var(--accent-light)',
+                  color:      'var(--accent-text)',
+                }}
+              >
+                Featured
+              </span>
+            )}
+          </div>
+        )}
 
         <h2
-          className="font-display text-display-sm leading-tight line-clamp-2
-                     transition-colors duration-150
-                     group-hover:text-[var(--accent)]"
+          className={`font-display leading-tight transition-colors duration-150
+                      group-hover:text-[var(--accent)]
+                      ${size === 'large'
+                        ? 'text-display-md line-clamp-2'
+                        : size === 'small'
+                        ? 'text-display-sm line-clamp-2'
+                        : 'text-display-sm line-clamp-2'
+                      }`}
           style={{ color: 'var(--text-primary)' }}
         >
           {article.title}
         </h2>
 
-        {article.excerpt && (
+        {size !== 'small' && article.excerpt && (
           <p
             className="text-sm leading-relaxed mt-1.5 line-clamp-2"
             style={{ color: 'var(--text-secondary)' }}
@@ -204,13 +287,11 @@ function ListRow({
         )}
 
         <div
-          className="flex items-center gap-2 mt-2.5 text-xs"
+          className="flex items-center gap-2 mt-2 text-xs"
           style={{ color: 'var(--text-muted)' }}
         >
-          <span
-            className="font-medium"
-            style={{ color: 'var(--text-secondary)' }}
-          >
+          <span className="font-medium"
+            style={{ color: 'var(--text-secondary)' }}>
             {article.author_name}
           </span>
           <span>·</span>
@@ -232,11 +313,11 @@ function ListRow({
         </div>
       </div>
 
-      {/* Thumbnail — right */}
+      {/* Image — always right */}
       {article.cover_image && (
         <div
-          className="flex-shrink-0 rounded-xl overflow-hidden img-zoom"
-          style={{ width: '120px', height: '96px' }}
+          className="flex-shrink-0 rounded-xl overflow-hidden img-zoom self-start"
+          style={{ width: imgW, height: imgH }}
         >
           <img
             src={article.cover_image}
@@ -250,147 +331,66 @@ function ListRow({
   )
 }
 
-// ── Other Categories sidebar ──────────────────────────────────
-function OtherCategories({
-  current,
-  categories,
-}: {
-  current:    string
-  categories: Category[]
-}) {
-  const others = categories.filter(c => c.slug !== current)
-
+// ── Divider with label ────────────────────────────────────────
+function SectionDivider({ label }: { label: string }) {
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{
-        background: 'var(--bg-surface)',
-        border:     '1px solid var(--border)',
-      }}
-    >
-      <div
-        className="px-4 py-3"
-        style={{ borderBottom: '1px solid var(--border)' }}
-      >
-        <span className="section-label">Browse sections</span>
-      </div>
-
-      <div className="p-2">
-        {others.map(cat => (
-          <Link
-            key={cat.id}
-            to={`/category/${cat.slug}`}
-            className="flex items-center justify-between px-3 py-2.5
-                       rounded-lg transition-colors duration-150
-                       hover:bg-[var(--bg-subtle)] group"
-          >
-            <div className="flex items-center gap-2.5">
-              <div
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ background: cat.color }}
-              />
-              <span
-                className="text-sm font-medium transition-colors
-                           group-hover:text-[var(--accent)]"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                {cat.name}
-              </span>
-            </div>
-            <span
-              className="text-xs"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              {cat.article_count}
-            </span>
-          </Link>
-        ))}
-      </div>
+    <div className="flex items-center gap-3 my-6">
+      <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+      <span className="section-label px-2">{label}</span>
+      <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
     </div>
   )
 }
 
-// ── Main Category Page ────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────────
 export default function CategoryPage() {
-  const { slug }                  = useParams<{ slug: string }>()
+  const { slug }                            = useParams<{ slug: string }>()
   const { categories, loading: catLoading } = useCategories()
 
-  const [articles,    setArticles]    = useState<Article[]>([])
+  const [allArticles, setAllArticles] = useState<Article[]>([])
   const [loading,     setLoading]     = useState(true)
   const [page,        setPage]        = useState(1)
   const [hasMore,     setHasMore]     = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [sort,        setSort]        = useState<SortOption>('latest')
-  const [view,        setView]        = useState<ViewMode>('grid')
-  const [total,       setTotal]       = useState(0)
 
-  const LIMIT = 12
+  const LIMIT    = 20
+  const isMarkets = slug === 'markets'
 
-  // Find current category from the list
-  const category = categories.find(c => c.slug === slug)
-    ?? SEED_CATEGORIES.find(c => c.slug === slug)
+  const category: Category | undefined =
+    categories.find(c => c.slug === slug) ??
+    SEED_CATEGORIES.find(c => c.slug === slug)
 
-  // ── Reset and reload when slug or sort changes ─────────────
+  // ── Initial load ───────────────────────────────────────────
   useEffect(() => {
     if (!slug) return
-    setArticles([])
+    setAllArticles([])
     setPage(1)
     setHasMore(true)
     setLoading(true)
 
-    getArticles({
-      category: slug,
-      limit:    LIMIT,
-      page:     1,
-      // featured sort = featured:true first
-      ...(sort === 'featured' && { featured: true }),
-    })
+    getArticles({ category: slug, limit: LIMIT, page: 1 })
       .then(res => {
         const data = res.data ?? []
-        setArticles(
-          sort === 'trending'
-            ? [...data].sort((a, b) =>
-                (b.view_count * 1 + b.like_count * 3 + b.comment_count * 2) -
-                (a.view_count * 1 + a.like_count * 3 + a.comment_count * 2)
-              )
-            : data
-        )
-        setTotal(res.pagination?.total ?? data.length)
+        setAllArticles(data)
         setHasMore(res.pagination?.hasNextPage ?? false)
       })
       .catch(() => {
         const seed = SEED_ARTICLES.filter(a => a.category_slug === slug)
-        setArticles(seed)
-        setTotal(seed.length)
+        setAllArticles(seed)
         setHasMore(false)
       })
       .finally(() => setLoading(false))
-  }, [slug, sort])
+  }, [slug])
 
   // ── Load more ──────────────────────────────────────────────
-  const loadMore = async () => {
-    if (loadingMore || !hasMore) return
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !slug) return
     setLoadingMore(true)
-
     const nextPage = page + 1
+
     try {
-      const res = await getArticles({
-        category: slug,
-        limit:    LIMIT,
-        page:     nextPage,
-        ...(sort === 'featured' && { featured: true }),
-      })
-      const data = res.data ?? []
-      setArticles(prev => [
-        ...prev,
-        ...(sort === 'trending'
-          ? [...data].sort((a, b) =>
-              (b.view_count * 1 + b.like_count * 3 + b.comment_count * 2) -
-              (a.view_count * 1 + a.like_count * 3 + a.comment_count * 2)
-            )
-          : data
-        )
-      ])
+      const res = await getArticles({ category: slug, limit: LIMIT, page: nextPage })
+      setAllArticles(prev => [...prev, ...(res.data ?? [])])
       setPage(nextPage)
       setHasMore(res.pagination?.hasNextPage ?? false)
     } catch {
@@ -398,32 +398,13 @@ export default function CategoryPage() {
     } finally {
       setLoadingMore(false)
     }
-  }
+  }, [loadingMore, hasMore, slug, page])
 
-  // ── Sort button ────────────────────────────────────────────
-  const SortBtn = ({
-    value,
-    label,
-    icon: Icon,
-  }: {
-    value: SortOption
-    label: string
-    icon:  React.ElementType
-  }) => (
-    <button
-      onClick={() => setSort(value)}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                 text-sm font-medium transition-all duration-150"
-      style={{
-        background: sort === value ? 'var(--accent)'      : 'var(--bg-subtle)',
-        color:      sort === value ? '#fff'               : 'var(--text-secondary)',
-        border:     `1px solid ${sort === value ? 'var(--accent)' : 'var(--border)'}`,
-      }}
-    >
-      <Icon size={13} />
-      {label}
-    </button>
-  )
+  // Split articles for layout
+  const heroArticle     = allArticles[0]
+  const secondaryList   = allArticles.slice(1, 6)   // right column
+  const firstBatch      = allArticles.slice(6, 10)  // large rows
+  const remainingBatch  = allArticles.slice(10)     // normal rows
 
   // ── Not found ──────────────────────────────────────────────
   if (!catLoading && !category) {
@@ -434,15 +415,11 @@ export default function CategoryPage() {
         style={{ background: 'var(--bg)' }}
       >
         <p className="text-5xl">📂</p>
-        <h1
-          className="font-display text-display-xl"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          Category not found
+        <h1 className="font-display text-display-xl"
+          style={{ color: 'var(--text-primary)' }}>
+          Section not found
         </h1>
-        <Link to="/" className="btn-accent mt-2">
-          Back to homepage
-        </Link>
+        <Link to="/" className="btn-accent mt-2">Back to homepage</Link>
       </div>
     )
   }
@@ -451,263 +428,215 @@ export default function CategoryPage() {
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       <div className="page-container">
 
-        {/* ── Category header ── */}
-        <div className="py-8">
+        {/* ── Page header ───────────────────────────────────── */}
+        <div className="pt-6 pb-0">
 
           {/* Breadcrumb */}
           <nav
-            className="flex items-center gap-2 mb-5 text-xs"
+            className="flex items-center gap-1.5 mb-4 text-xs"
             style={{ color: 'var(--text-muted)' }}
           >
-            <Link
-              to="/"
-              className="transition-colors hover:text-[var(--accent)]"
-            >
+            <Link to="/"
+              className="transition-colors hover:text-[var(--accent)]">
               Home
             </Link>
-            <ArrowRight size={11} />
+            <ChevronRight size={11} />
             <span style={{ color: 'var(--text-primary)' }}>
               {category?.name ?? slug}
             </span>
           </nav>
 
-          {/* Category name + count */}
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              {/* Coloured accent line */}
-              <div
-                className="w-10 h-1 rounded-full mb-3"
-                style={{ background: category?.color ?? 'var(--accent)' }}
-              />
+          {/* Category title row */}
+          <div
+            className="flex items-end justify-between pb-4"
+            style={{ borderBottom: `3px solid ${category?.color ?? 'var(--accent)'}` }}
+          >
+            <div className="flex items-center gap-3">
               <h1
                 className="font-display text-display-2xl leading-none"
                 style={{ color: 'var(--text-primary)' }}
               >
                 {category?.name ?? slug}
               </h1>
-              {total > 0 && (
-                <p
-                  className="text-sm mt-2"
+              {allArticles.length > 0 && (
+                <span
+                  className="text-sm hidden sm:block"
                   style={{ color: 'var(--text-muted)' }}
                 >
-                  {total} {total === 1 ? 'story' : 'stories'}
-                </p>
+                  {allArticles.length} stories
+                </span>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* ── Controls bar ── */}
-        <div
-          className="flex items-center justify-between gap-3 py-3 mb-6
-                     flex-wrap"
-          style={{ borderTop: '1px solid var(--border)' }}
-        >
-          {/* Sort options */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className="text-xs font-medium flex items-center gap-1.5 mr-1"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <SlidersHorizontal size={12} />
-              Sort
-            </span>
-            <SortBtn value="latest"   label="Latest"   icon={Clock}      />
-            <SortBtn value="trending" label="Trending"  icon={TrendingUp} />
-            <SortBtn value="featured" label="Featured"  icon={ArrowRight} />
-          </div>
-
-          {/* View toggle */}
-          <div
-            className="flex items-center rounded-lg overflow-hidden"
-            style={{ border: '1px solid var(--border)' }}
-          >
-            <button
-              onClick={() => setView('grid')}
-              className="px-3 py-1.5 transition-colors duration-150"
-              style={{
-                background: view === 'grid' ? 'var(--bg-subtle)' : 'transparent',
-                color:      view === 'grid' ? 'var(--text-primary)' : 'var(--text-muted)',
-              }}
-              aria-label="Grid view"
-            >
-              <LayoutGrid size={15} />
-            </button>
-            <button
-              onClick={() => setView('list')}
-              className="px-3 py-1.5 transition-colors duration-150"
-              style={{
-                background:  view === 'list' ? 'var(--bg-subtle)' : 'transparent',
-                color:       view === 'list' ? 'var(--text-primary)' : 'var(--text-muted)',
-                borderLeft:  '1px solid var(--border)',
-              }}
-              aria-label="List view"
-            >
-              <List size={15} />
-            </button>
-          </div>
-        </div>
-
-        {/* ── Main content + sidebar ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-10 pb-16">
-
-          {/* Articles */}
-          <div>
-            {loading ? (
-              view === 'grid' ? <GridSkeleton /> : <ListSkeleton />
-            ) : articles.length === 0 ? (
-              <div
-                className="flex flex-col items-center justify-center
-                           py-20 text-center"
-              >
-                <p className="text-4xl mb-4">📰</p>
-                <p
-                  className="font-display text-display-sm mb-2"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  No stories yet
-                </p>
-                <p
-                  className="text-sm"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Check back soon — we publish daily.
-                </p>
+            {/* Live dot for markets */}
+            {isMarkets && (
+              <div className="flex items-center gap-1.5 pb-1">
+                <div
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: '#15803D' }}
+                />
+                <span className="text-xs font-medium"
+                  style={{ color: '#15803D' }}>
+                  Live data
+                </span>
               </div>
-            ) : view === 'grid' ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
-                  {articles.map(article => (
-                    <GridCard key={article.id} article={article} />
+            )}
+          </div>
+        </div>
+
+        {/* ── Markets: live quotes strip ─────────────────────── */}
+        {isMarkets && (
+          <div
+            className="py-1"
+            style={{ borderBottom: '1px solid var(--border)' }}
+          >
+            <MarketTicker />
+          </div>
+        )}
+
+        {/* ── Main content ──────────────────────────────────── */}
+        <div className="py-8">
+          {loading ? (
+            <>
+              <HeroSkeleton />
+              <GridSkeleton />
+            </>
+          ) : allArticles.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <p className="text-5xl mb-4">📰</p>
+              <p className="font-display text-display-sm mb-2"
+                style={{ color: 'var(--text-primary)' }}>
+                No stories yet in {category?.name}
+              </p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Check back soon — we publish daily.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ── HERO SECTION ── */}
+              {heroArticle && (
+                <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 pb-8"
+                  style={{ borderBottom: '1px solid var(--border)' }}>
+
+                  {/* Lead article — left */}
+                  <HeroArticle article={heroArticle} />
+
+                  {/* Secondary list — right */}
+                  {secondaryList.length > 0 && (
+                    <div className="lg:pl-8"
+                      style={{ borderLeft: '1px solid var(--border)' }}>
+                      <p className="section-label mb-0 pb-3"
+                        style={{ borderBottom: '1px solid var(--border-muted)' }}>
+                        Latest in {category?.name}
+                      </p>
+                      <SecondaryList articles={secondaryList} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── MORE STORIES — large rows ── */}
+              {firstBatch.length > 0 && (
+                <div className="mt-8">
+                  <SectionDivider label="More stories" />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10">
+                    {firstBatch.map((article, i) => (
+                      <ArticleRow
+                        key={article.id}
+                        article={article}
+                        isLast={i === firstBatch.length - 1}
+                        size="large"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── REMAINING STORIES ── */}
+              {remainingBatch.length > 0 && (
+                <div className="mt-2">
+                  <SectionDivider label="Continue reading" />
+                  {remainingBatch.map((article, i) => (
+                    <ArticleRow
+                      key={article.id}
+                      article={article}
+                      isLast={i === remainingBatch.length - 1}
+                      size="normal"
+                    />
                   ))}
                 </div>
-              </>
-            ) : (
-              <div>
-                {articles.map((article, i) => (
-                  <ListRow
-                    key={article.id}
-                    article={article}
-                    isLast={i === articles.length - 1}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Load more */}
-            {!loading && hasMore && (
-              <div className="flex justify-center mt-10">
-                <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="btn-ghost px-8 py-3 text-sm
-                             flex items-center gap-2 disabled:opacity-50"
-                >
-                  {loadingMore ? (
-                    <>
-                      <span
-                        className="w-4 h-4 rounded-full border-2
-                                   border-t-transparent animate-spin"
-                        style={{ borderColor: 'var(--accent) transparent var(--accent) var(--accent)' }}
-                      />
-                      Loading…
-                    </>
-                  ) : (
-                    <>
-                      Load more stories
-                      <ArrowRight size={14} />
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* End of results */}
-            {!loading && !hasMore && articles.length > 0 && (
-              <p
-                className="text-center text-xs mt-10 pb-4"
-                style={{ color: 'var(--text-faint)' }}
-              >
-                You've reached the end · {articles.length} stories
-              </p>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-24 space-y-6">
-
-              {/* Other categories */}
-              {!catLoading && categories.length > 0 && (
-                <OtherCategories
-                  current={slug ?? ''}
-                  categories={categories}
-                />
               )}
 
-              {/* Newsletter CTA */}
-              <div
-                className="p-5 rounded-xl"
-                style={{
-                  background: 'var(--accent-light)',
-                  border:     '1px solid rgba(200,130,10,0.15)',
-                }}
-              >
-                <p className="section-label mb-2">Newsletter</p>
-                <p
-                  className="font-semibold text-sm mb-1"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  Stay informed
+              {/* ── LOAD MORE ── */}
+              {hasMore && (
+                <div className="flex justify-center pt-10 pb-4">
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="btn-ghost px-10 py-3 text-sm flex items-center
+                               gap-2 disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <span
+                          className="w-4 h-4 rounded-full border-2 animate-spin"
+                          style={{
+                            borderColor: 'var(--accent) transparent var(--accent) var(--accent)',
+                          }}
+                        />
+                        Loading…
+                      </>
+                    ) : (
+                      <>Load more stories <ArrowRight size={14} /></>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {!hasMore && allArticles.length > 0 && (
+                <p className="text-center text-xs pt-8 pb-4"
+                  style={{ color: 'var(--text-faint)' }}>
+                  You've read it all · {allArticles.length} stories
                 </p>
-                <p
-                  className="text-xs leading-relaxed mb-4"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  Get India's top business and market stories every morning, free.
-                </p>
-                <Link
-                  to="/#newsletter"
-                  className="btn-accent text-sm w-full justify-center"
-                >
-                  Subscribe free
-                </Link>
-              </div>
-            </div>
-          </aside>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Mobile: other categories strip */}
-        <div
-          className="lg:hidden pb-8"
-          style={{ borderTop: '1px solid var(--border)' }}
-        >
-          <p className="section-label mt-5 mb-3">Other sections</p>
-          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2">
-            {categories
-              .filter(c => c.slug !== slug)
-              .map(cat => (
-                <Link
-                  key={cat.id}
-                  to={`/category/${cat.slug}`}
-                  className="flex-shrink-0 flex items-center gap-1.5
-                             px-3 py-2 rounded-lg text-sm font-medium
-                             transition-all duration-150 whitespace-nowrap"
-                  style={{
-                    background: 'var(--bg-surface)',
-                    border:     '1px solid var(--border)',
-                    color:      'var(--text-secondary)',
-                  }}
-                >
-                  <div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ background: cat.color }}
-                  />
-                  {cat.name}
-                </Link>
-              ))}
+        {/* ── Mobile: other sections strip ─────────────────── */}
+        {categories.length > 1 && (
+          <div
+            className="pb-10 pt-2"
+            style={{ borderTop: '1px solid var(--border)' }}
+          >
+            <p className="section-label mt-5 mb-3">Other sections</p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2">
+              {categories
+                .filter(c => c.slug !== slug)
+                .map(cat => (
+                  <Link
+                    key={cat.id}
+                    to={`/category/${cat.slug}`}
+                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2
+                               rounded-lg text-sm font-medium whitespace-nowrap
+                               transition-all duration-150"
+                    style={{
+                      background: 'var(--bg-surface)',
+                      border:     '1px solid var(--border)',
+                      color:      'var(--text-secondary)',
+                    }}
+                  >
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ background: cat.color }}
+                    />
+                    {cat.name}
+                  </Link>
+                ))}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

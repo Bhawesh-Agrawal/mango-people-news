@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import {
-  Eye, EyeOff, Mail, Lock, ArrowRight, Zap,
-} from 'lucide-react'
+import { Link, useNavigate, useLocation }            from 'react-router-dom'
+import { Eye, EyeOff, ArrowRight, Zap }              from 'lucide-react'
 import { useAuth }          from '../context/AuthContext'
 import { useGoogleButton }  from '../hooks/useGoogleAuth'
 import Turnstile            from '../components/ui/Turnstile'
@@ -10,65 +8,43 @@ import { requestMagicLink } from '../api/auth'
 
 type View = 'login' | 'magic' | 'magic-sent'
 
-// ── Minimal dot-grid background ────────────────────────────────
-function PageBg() {
-  return (
-    <div
-      className="fixed inset-0 pointer-events-none"
-      style={{
-        backgroundImage: `radial-gradient(var(--border) 1px, transparent 1px)`,
-        backgroundSize:  '28px 28px',
-        opacity: 0.5,
-      }}
-    />
-  )
-}
-
 export default function LoginPage() {
   const { login, googleLogin, isLoggedIn, loading } = useAuth()
-  const navigate  = useNavigate()
-  const location  = useLocation()
-  const from      = (location.state as { from?: string })?.from ?? '/'
+  const navigate = useNavigate()
+  const location = useLocation()
+  const from     = (location.state as { from?: string })?.from ?? '/'
 
-  const [view,         setView]         = useState<View>('login')
-  const [email,        setEmail]        = useState('')
-  const [password,     setPassword]     = useState('')
-  const [showPass,     setShowPass]     = useState(false)
-  const [submitting,   setSubmitting]   = useState(false)
-  const [error,        setError]        = useState('')
-  //const [tsToken,      setTsToken]      = useState('')
-  const [googleError,  setGoogleError]  = useState('')
+  const [view,        setView]        = useState<View>('login')
+  const [email,       setEmail]       = useState('')
+  const [password,    setPassword]    = useState('')
+  const [showPass,    setShowPass]    = useState(false)
+  const [submitting,  setSubmitting]  = useState(false)
+  const [error,       setError]       = useState('')
+  const [googleError, setGoogleError] = useState('')
 
   const tsTokenRef = useRef('')
+  const googleRef  = useRef<HTMLDivElement>(null!)
 
-  const googleRef = useRef<HTMLDivElement>(null!)
-
-  // Redirect if already logged in
   useEffect(() => {
     if (!loading && isLoggedIn) navigate(from, { replace: true })
   }, [isLoggedIn, loading])
 
-  // Google button
   const handleGoogleSuccess = useCallback(async (idToken: string) => {
     setGoogleError('')
     try {
       await googleLogin(idToken)
       navigate(from, { replace: true })
     } catch (err: any) {
-      setGoogleError(
-        err?.response?.data?.message ?? 'Google sign-in failed. Try again.'
-      )
+      setGoogleError(err?.response?.data?.message ?? 'Google sign-in failed.')
     }
   }, [googleLogin, navigate, from])
 
   useGoogleButton(googleRef, handleGoogleSuccess, setGoogleError)
 
-  // ── Password login ─────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
-
     try {
       await login({
         email,
@@ -77,12 +53,12 @@ export default function LoginPage() {
       })
       navigate(from, { replace: true })
     } catch (err: any) {
-      const msg: string = err?.response?.data?.message ?? ''
-      if (err?.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
-        setError('Please verify your email before signing in. Check your inbox.')
-      } else if (err?.response?.status === 403) {
-        setError('Please verify your email before signing in. Check your inbox.')
-      } else if (err?.response?.status === 429) {
+      const code   = err?.response?.data?.code
+      const status = err?.response?.status
+      const msg    = err?.response?.data?.message ?? ''
+      if (code === 'EMAIL_NOT_VERIFIED' || status === 403) {
+        setError('Please verify your email before signing in.')
+      } else if (status === 429) {
         setError('Too many attempts. Please wait a few minutes.')
       } else if (msg.toLowerCase().includes('security')) {
         setError('Security check failed. Please refresh and try again.')
@@ -94,7 +70,7 @@ export default function LoginPage() {
       setSubmitting(false)
     }
   }
-  // ── Magic link ─────────────────────────────────────────────
+
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -109,134 +85,144 @@ export default function LoginPage() {
     }
   }
 
-  // ── Shared input styles ────────────────────────────────────
-  const baseInput = `
-    w-full h-11 rounded-xl text-sm outline-none transition-all duration-200
-    px-4 placeholder-[var(--text-faint)]
-  `
-  const inputStyle = {
-    background: 'var(--bg)',
-    border:     '1px solid var(--border)',
-    color:      'var(--text-primary)',
-  }
-  const onFocus = (e: React.FocusEvent<HTMLInputElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--accent)')
-  const onBlur  = (e: React.FocusEvent<HTMLInputElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--border)')
-
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center p-4"
-      style={{ background: 'var(--bg)' }}
+      className="min-h-screen flex"
+      style={{ background: 'var(--bg)', fontFamily: 'var(--font-body, DM Sans, sans-serif)' }}
     >
-      <PageBg />
 
-      {/* Back to home */}
-      <Link
-        to="/"
-        className="relative mb-6 flex items-center gap-2 text-xs font-bold
-                   tracking-wide uppercase transition-opacity hover:opacity-60"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        ← Back to Mango People News
-      </Link>
-
-      {/* Card */}
+      {/*
+        ── LEFT PANEL — editorial brand presence ──────────────────
+        Hidden on mobile. On desktop this is the identity half.
+        No card, no gradient — just the masthead weight of a newspaper.
+      */}
       <div
-        className="relative w-full max-w-sm rounded-2xl overflow-hidden"
+        className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 px-16 py-14"
         style={{
-          background: 'var(--bg-surface)',
-          border:     '1px solid var(--border)',
-          boxShadow:  '0 12px 48px rgba(0,0,0,0.10)',
-          animation:  'fadeUp 0.3s ease both',
+          background:  'var(--text-primary)',
+          color:       'var(--bg)',
+          borderRight: '1px solid var(--border)',
         }}
       >
-        {/* Amber top accent bar */}
-        <div className="h-1 w-full" style={{ background: 'var(--accent)' }} />
+        {/* Masthead */}
+        <Link to="/" className="block">
+          <div
+            className="text-[11px] font-semibold tracking-[0.18em] uppercase mb-3 opacity-50"
+          >
+            Est. 2024
+          </div>
+          <div
+            className="font-display font-bold leading-none"
+            style={{ fontSize: '52px', letterSpacing: '-0.02em', color: 'var(--bg)' }}
+          >
+            MANGO
+            <br />PEOPLE
+            <br />NEWS
+          </div>
+          <div
+            className="mt-4 text-sm tracking-wide opacity-60"
+          >
+            News for Every Indian
+          </div>
+        </Link>
 
-        <div className="p-8 space-y-6">
+        {/* Editorial pull quote */}
+        <div>
+          <div
+            className="text-4xl font-bold leading-none mb-6 opacity-20 select-none"
+            style={{ fontFamily: 'Georgia, serif' }}
+          >
+            "
+          </div>
+          <p
+            className="text-base leading-relaxed opacity-70"
+            style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}
+          >
+            Credible, independent financial journalism for India's next generation of investors.
+          </p>
+          <div className="mt-8 flex items-center gap-3 opacity-40">
+            <div className="h-px flex-1" style={{ background: 'var(--bg)' }} />
+            <span className="text-[10px] tracking-widest uppercase">Mango People News</span>
+            <div className="h-px flex-1" style={{ background: 'var(--bg)' }} />
+          </div>
+        </div>
 
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5">
+        {/* Bottom links */}
+        <div className="flex gap-6 text-[11px] opacity-40 tracking-wide">
+          <Link to="/privacy" className="hover:opacity-100 transition-opacity">Privacy</Link>
+          <Link to="/terms"   className="hover:opacity-100 transition-opacity">Terms</Link>
+          <Link to="/about"   className="hover:opacity-100 transition-opacity">About</Link>
+        </div>
+      </div>
+
+      {/*
+        ── RIGHT PANEL — the form ──────────────────────────────────
+        Full screen on mobile. Right half on desktop.
+        Clean white/bg surface, generous vertical rhythm.
+      */}
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 lg:py-0">
+
+        {/* Mobile-only logo */}
+        <div className="lg:hidden mb-10">
+          <Link to="/" className="inline-block">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: 'var(--accent-light)' }}
+              className="font-display font-bold leading-none"
+              style={{
+                fontSize:      '28px',
+                letterSpacing: '-0.02em',
+                color:         'var(--text-primary)',
+              }}
             >
-              🌳
+              MANGO PEOPLE NEWS
             </div>
-            <div className="leading-none">
-              <div
-                className="font-display text-base font-bold tracking-tight"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                MANGO PEOPLE
-              </div>
-              <div
-                className="text-[8px] font-bold tracking-[0.06em] uppercase mt-0.5"
-                style={{ color: 'var(--accent)' }}
-              >
-                News for Every Indian
-              </div>
+            <div className="text-xs mt-1 tracking-wide"
+              style={{ color: 'var(--text-muted)' }}>
+              News for Every Indian
             </div>
           </Link>
+        </div>
+
+        <div className="w-full max-w-sm mx-auto lg:mx-0">
 
           {/* ── MAGIC LINK SENT ── */}
           {view === 'magic-sent' ? (
-            <div className="text-center space-y-4 py-2">
-              <div
-                className="w-14 h-14 rounded-full flex items-center
-                           justify-center text-2xl mx-auto"
-                style={{ background: 'var(--accent-light)' }}
-              >
-                ✉️
-              </div>
+            <div className="space-y-6">
               <div>
-                <h2
-                  className="font-display font-bold text-xl uppercase tracking-tight"
-                  style={{ color: 'var(--text-primary)' }}
-                >
+                <h1 className="text-2xl font-semibold tracking-tight"
+                  style={{ color: 'var(--text-primary)' }}>
                   Check your inbox
-                </h2>
-                <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
-                  We sent a magic link to
-                </p>
-                <p className="text-sm font-bold mt-0.5" style={{ color: 'var(--text-primary)' }}>
-                  {email}
-                </p>
-                <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-                  Click the link to sign in. It expires in 15 minutes.
-                  <br />Check your spam folder if you don't see it.
+                </h1>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+                  We sent a sign-in link to <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>.
+                  It expires in 15 minutes. Check your spam folder if you don't see it.
                 </p>
               </div>
               <button
                 onClick={() => { setView('login'); setError('') }}
-                className="text-xs font-bold tracking-wide uppercase
-                           transition-opacity hover:opacity-60"
-                style={{ color: 'var(--accent)' }}
+                className="text-sm font-medium transition-opacity hover:opacity-60"
+                style={{ color: 'var(--text-muted)' }}
               >
-                ← Try a different method
+                ← Use a different method
               </button>
             </div>
 
           ) : (
             <>
               {/* Heading */}
-              <div>
+              <div className="mb-8">
                 <h1
-                  className="font-display font-bold text-2xl uppercase tracking-tight"
+                  className="text-2xl font-semibold tracking-tight"
                   style={{ color: 'var(--text-primary)' }}
                 >
-                  {view === 'magic' ? 'Magic Link' : 'Welcome back'}
+                  {view === 'magic' ? 'Sign in with email' : 'Welcome back'}
                 </h1>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
                   {view === 'magic'
-                    ? 'Enter your email and we\'ll send a sign-in link'
-                    : <>No account yet?{' '}
-                        <Link
-                          to="/register"
-                          className="font-bold transition-opacity hover:opacity-70"
-                          style={{ color: 'var(--accent)' }}
-                        >
+                    ? "Enter your email and we'll send a sign-in link."
+                    : <>No account?{' '}
+                        <Link to="/register"
+                          className="font-medium transition-opacity hover:opacity-70"
+                          style={{ color: 'var(--accent)' }}>
                           Create one free
                         </Link>
                       </>
@@ -245,57 +231,28 @@ export default function LoginPage() {
               </div>
 
               {/* Error */}
-              {error && (
-                <div
-                  className="px-3.5 py-3 rounded-xl text-xs font-medium leading-relaxed"
-                  style={{
-                    background: 'rgba(192,57,43,0.08)',
-                    color:      'var(--breaking)',
-                    border:     '1px solid rgba(192,57,43,0.25)',
-                  }}
-                >
-                  {error}
+              {(error || googleError) && (
+                <div className="mb-6 text-sm" style={{ color: 'var(--breaking)' }}>
+                  {error || googleError}
                 </div>
               )}
 
               {/* ── MAGIC LINK FORM ── */}
               {view === 'magic' ? (
                 <form onSubmit={handleMagicLink} className="space-y-4">
-                  <div className="relative">
-                    <Mail
-                      size={14}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ color: 'var(--text-muted)' }}
-                    />
-                    <input
-                      type="email" required
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className={`${baseInput} pl-9`}
-                      style={inputStyle}
-                      onFocus={onFocus} onBlur={onBlur}
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="btn-accent w-full h-11 text-sm font-bold
-                               rounded-xl flex items-center justify-center gap-2
-                               disabled:opacity-50 transition-all"
-                  >
-                    {submitting
-                      ? 'Sending…'
-                      : <><Zap size={14} /> Send Magic Link</>
-                    }
-                  </button>
-
+                  <Field
+                    label="Email address"
+                    type="email"
+                    value={email}
+                    onChange={setEmail}
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                  />
+                  <SubmitButton submitting={submitting} label="Send sign-in link" />
                   <button
                     type="button"
                     onClick={() => { setView('login'); setError('') }}
-                    className="w-full text-xs font-bold tracking-wide uppercase
-                               transition-opacity hover:opacity-60"
+                    className="w-full text-sm text-center transition-opacity hover:opacity-60 pt-1"
                     style={{ color: 'var(--text-muted)' }}
                   >
                     ← Use password instead
@@ -304,106 +261,74 @@ export default function LoginPage() {
 
               ) : (
                 /* ── PASSWORD FORM ── */
-                <>
-                  <form onSubmit={handleLogin} className="space-y-3">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <Field
+                    label="Email address"
+                    type="email"
+                    value={email}
+                    onChange={setEmail}
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                  />
 
-                    {/* Email */}
-                    <div className="relative">
-                      <Mail
-                        size={14}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                        style={{ color: 'var(--text-muted)' }}
-                      />
-                      <input
-                        type="email" required
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder="Email address"
-                        className={`${baseInput} pl-9`}
-                        style={inputStyle}
-                        onFocus={onFocus} onBlur={onBlur}
-                        autoComplete="email"
-                      />
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-medium"
+                        style={{ color: 'var(--text-muted)' }}>
+                        Password
+                      </label>
+                      <Link to="/forgot-password"
+                        className="text-xs transition-opacity hover:opacity-60"
+                        style={{ color: 'var(--text-muted)' }}>
+                        Forgot?
+                      </Link>
                     </div>
-
-                    {/* Password */}
                     <div className="relative">
-                      <Lock
-                        size={14}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                        style={{ color: 'var(--text-muted)' }}
-                      />
                       <input
-                        type={showPass ? 'text' : 'password'} required
+                        type={showPass ? 'text' : 'password'}
+                        required
                         value={password}
                         onChange={e => setPassword(e.target.value)}
-                        placeholder="Password"
-                        className={`${baseInput} pl-9 pr-11`}
-                        style={inputStyle}
-                        onFocus={onFocus} onBlur={onBlur}
                         autoComplete="current-password"
+                        className="w-full text-sm outline-none py-3 pr-10"
+                        style={{
+                          background:   'transparent',
+                          color:        'var(--text-primary)',
+                          borderBottom: '1px solid var(--border)',
+                        }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPass(v => !v)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2
-                                   transition-opacity hover:opacity-60"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-60"
                         style={{ color: 'var(--text-muted)' }}
-                        aria-label={showPass ? 'Hide password' : 'Show password'}
+                        aria-label={showPass ? 'Hide' : 'Show'}
                       >
                         {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
                     </div>
+                  </div>
 
-                    {/* Forgot password */}
-                    <div className="flex justify-end">
-                      <Link
-                        to="/forgot-password"
-                        className="text-xs transition-opacity hover:opacity-60"
-                        style={{ color: 'var(--accent)' }}
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-
-                    {/* Cloudflare Turnstile */}
+                  {/* Turnstile — constrained so it never overflows on mobile */}
+                  <div className="overflow-hidden" style={{ maxWidth: '100%' }}>
                     <Turnstile
                       onVerify={token => { tsTokenRef.current = token }}
                       onError={() => { tsTokenRef.current = '' }}
                       onExpire={() => { tsTokenRef.current = '' }}
                       theme="auto"
                     />
+                  </div>
 
-                    {/* Submit */}
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="btn-accent w-full h-11 text-sm font-bold
-                                 rounded-xl flex items-center justify-center gap-2
-                                 disabled:opacity-50 transition-all"
-                    >
-                      {submitting
-                        ? 'Signing in…'
-                        : <>Sign In <ArrowRight size={14} /></>
-                      }
-                    </button>
-                  </form>
+                  <SubmitButton submitting={submitting} label="Sign in" />
 
                   {/* Divider */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4 py-2">
                     <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                    <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
-                      or continue with
-                    </span>
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>or</span>
                     <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
                   </div>
 
-                  {/* Google button — GSI renders here */}
-                  {googleError && (
-                    <p className="text-xs text-center" style={{ color: 'var(--breaking)' }}>
-                      {googleError}
-                    </p>
-                  )}
+                  {/* Google button */}
                   <div ref={googleRef} className="w-full min-h-[44px]" />
 
                   {/* Magic link */}
@@ -411,26 +336,84 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => { setView('magic'); setError('') }}
                     className="w-full flex items-center justify-center gap-2
-                               h-11 rounded-xl text-sm font-semibold
-                               transition-all btn-ghost"
+                               py-3 text-sm font-medium rounded-lg transition-opacity hover:opacity-70"
+                    style={{
+                      border:     '1px solid var(--border)',
+                      color:      'var(--text-secondary)',
+                      background: 'transparent',
+                    }}
                   >
-                    <Zap size={14} />
-                    Sign in with Magic Link
+                    <Zap size={13} />
+                    Sign in with magic link
                   </button>
-                </>
+                </form>
               )}
             </>
           )}
+
+          {/* Footer */}
+          <p className="mt-10 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+            By signing in you agree to our{' '}
+            <Link to="/terms" className="underline hover:opacity-70">Terms</Link>
+            {' '}and{' '}
+            <Link to="/privacy" className="underline hover:opacity-70">Privacy Policy</Link>
+          </p>
         </div>
       </div>
-
-      {/* Footer */}
-      <p className="relative mt-6 text-[11px]" style={{ color: 'var(--text-faint)' }}>
-        By signing in you agree to our{' '}
-        <Link to="/terms" className="underline hover:opacity-70">Terms</Link>
-        {' '}and{' '}
-        <Link to="/privacy" className="underline hover:opacity-70">Privacy Policy</Link>
-      </p>
     </div>
+  )
+}
+
+// ── Shared sub-components ─────────────────────────────────────
+
+function Field({
+  label, type, value, onChange, autoComplete, placeholder,
+}: {
+  label:        string
+  type:         string
+  value:        string
+  onChange:     (v: string) => void
+  autoComplete?: string
+  placeholder?: string
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1.5"
+        style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </label>
+      <input
+        type={type}
+        required
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        className="w-full text-sm outline-none py-3"
+        style={{
+          background:   'transparent',
+          color:        'var(--text-primary)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      />
+    </div>
+  )
+}
+
+function SubmitButton({ submitting, label }: { submitting: boolean; label: string }) {
+  return (
+    <button
+      type="submit"
+      disabled={submitting}
+      className="w-full flex items-center justify-center gap-2
+                 py-3 text-sm font-semibold rounded-lg transition-opacity
+                 disabled:opacity-50 hover:opacity-90 mt-2"
+      style={{
+        background: 'var(--text-primary)',
+        color:      'var(--bg)',
+      }}
+    >
+      {submitting ? 'Please wait…' : <>{label} <ArrowRight size={14} /></>}
+    </button>
   )
 }

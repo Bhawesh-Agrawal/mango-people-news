@@ -1,73 +1,35 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import {
-  Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2,
-} from 'lucide-react'
+import { Link, useNavigate, useLocation }             from 'react-router-dom'
+import { Eye, EyeOff, ArrowRight, CheckCircle2 }      from 'lucide-react'
 import { useAuth }         from '../context/AuthContext'
 import { useGoogleButton } from '../hooks/useGoogleAuth'
 import Turnstile           from '../components/ui/Turnstile'
 
-function PageBg() {
-  return (
-    <div
-      className="fixed inset-0 pointer-events-none"
-      style={{
-        backgroundImage: `radial-gradient(var(--border) 1px, transparent 1px)`,
-        backgroundSize:  '28px 28px',
-        opacity: 0.5,
-      }}
-    />
-  )
-}
+// Two-step registration:
+//   Step 1 — Name + Email   (who are you?)
+//   Step 2 — Password       (set your key)
+// Why: reduces perceived form length, each step has one clear intent,
+// and the transition gives a sense of progress without a progress bar.
+type Step = 1 | 2
 
-// Password strength indicator
 function PasswordHints({ password }: { password: string }) {
   if (!password) return null
-
-  const hints = [
-    { label: '8+ chars',  ok: password.length >= 8           },
-    { label: 'Uppercase', ok: /[A-Z]/.test(password)         },
-    { label: 'Number',    ok: /[0-9]/.test(password)         },
+  const checks = [
+    { label: '8+ characters', ok: password.length >= 8  },
+    { label: 'Uppercase',     ok: /[A-Z]/.test(password) },
+    { label: 'Number',        ok: /[0-9]/.test(password) },
   ]
-
-  const strength = hints.filter(h => h.ok).length
-  const colors   = ['var(--breaking)', '#f59e0b', '#f59e0b', '#16a34a']
-  const labels   = ['', 'Weak', 'Fair', 'Strong']
-
   return (
-    <div className="space-y-2">
-      {/* Strength bar */}
-      <div className="flex gap-1">
-        {[0, 1, 2].map(i => (
-          <div
-            key={i}
-            className="flex-1 h-1 rounded-full transition-all duration-300"
-            style={{
-              background: i < strength ? colors[strength] : 'var(--border)',
-            }}
-          />
-        ))}
-      </div>
-      {/* Hint chips */}
-      <div className="flex gap-2.5">
-        {hints.map(h => (
-          <span
-            key={h.label}
-            className="text-[10px] font-semibold transition-colors duration-200"
-            style={{ color: h.ok ? '#16a34a' : 'var(--text-muted)' }}
-          >
-            {h.ok ? '✓ ' : '○ '}{h.label}
-          </span>
-        ))}
-        {strength > 0 && (
-          <span
-            className="text-[10px] font-bold ml-auto"
-            style={{ color: colors[strength] }}
-          >
-            {labels[strength]}
-          </span>
-        )}
-      </div>
+    <div className="flex gap-4 mt-2">
+      {checks.map(c => (
+        <span
+          key={c.label}
+          className="text-[11px] transition-colors duration-200"
+          style={{ color: c.ok ? '#16a34a' : 'var(--text-muted)' }}
+        >
+          {c.ok ? '✓ ' : '· '}{c.label}
+        </span>
+      ))}
     </div>
   )
 }
@@ -75,43 +37,55 @@ function PasswordHints({ password }: { password: string }) {
 export default function RegisterPage() {
   const { register, googleLogin, isLoggedIn, loading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from     = (location.state as { from?: string })?.from ?? '/'
 
-  const [done,        setDone]        = useState(false)
-  const [regEmail,    setRegEmail]    = useState('')
-  const [fullName,    setFullName]    = useState('')
-  const [email,       setEmail]       = useState('')
-  const [password,    setPassword]    = useState('')
-  const [showPass,    setShowPass]    = useState(false)
+  const [step,       setStep]       = useState<Step>(1)
+  const [done,       setDone]       = useState(false)
+  const [regEmail,   setRegEmail]   = useState('')
+
+  // Form fields
+  const [fullName,   setFullName]   = useState('')
+  const [email,      setEmail]      = useState('')
+  const [password,   setPassword]   = useState('')
+  const [showPass,   setShowPass]   = useState(false)
+
   const [submitting,  setSubmitting]  = useState(false)
   const [error,       setError]       = useState('')
-  //const [tsToken,     setTsToken]     = useState('')
   const [googleError, setGoogleError] = useState('')
-  const tsTokenRef = useRef('')
 
-  const googleRef = useRef<HTMLDivElement>(null!)
+  const tsTokenRef = useRef('')
+  const googleRef  = useRef<HTMLDivElement>(null!)
 
   useEffect(() => {
-    if (!loading && isLoggedIn) navigate('/', { replace: true })
+    if (!loading && isLoggedIn) navigate(from, { replace: true })
   }, [isLoggedIn, loading])
 
   const handleGoogleSuccess = useCallback(async (idToken: string) => {
     setGoogleError('')
     try {
       await googleLogin(idToken)
-      navigate('/', { replace: true })
+      navigate(from, { replace: true })
     } catch (err: any) {
-      setGoogleError(
-        err?.response?.data?.message ?? 'Google sign-in failed. Try again.'
-      )
+      setGoogleError(err?.response?.data?.message ?? 'Google sign-in failed.')
     }
-  }, [googleLogin, navigate])
+  }, [googleLogin, navigate, from])
 
   useGoogleButton(googleRef, handleGoogleSuccess, setGoogleError)
 
+  // Step 1 → Step 2 transition
+  const handleStep1 = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!fullName.trim()) { setError('Please enter your name.'); return }
+    if (!email.trim())    { setError('Please enter your email.'); return }
+    setError('')
+    setStep(2)
+  }
+
   const validatePassword = () => {
-    if (password.length < 8)          return 'Password must be at least 8 characters'
-    if (!/[A-Z]/.test(password))      return 'Password must include an uppercase letter'
-    if (!/[0-9]/.test(password))      return 'Password must include a number'
+    if (password.length < 8)     return 'Password must be at least 8 characters.'
+    if (!/[A-Z]/.test(password)) return 'Password must include an uppercase letter.'
+    if (!/[0-9]/.test(password)) return 'Password must include a number.'
     return null
   }
 
@@ -119,13 +93,12 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
-    const pwError = validatePassword()
-    if (pwError) { setError(pwError); return }
+    const pwErr = validatePassword()
+    if (pwErr) { setError(pwErr); return }
 
-    // Check Turnstile token from ref — always current value
     const turnstileToken = tsTokenRef.current
     if (!turnstileToken && import.meta.env.VITE_TURNSTILE_SITE_KEY) {
-      setError('Please complete the security check before submitting.')
+      setError('Please complete the security check.')
       return
     }
 
@@ -145,313 +118,314 @@ export default function RegisterPage() {
         err?.response?.data?.errors?.[0]?.message ||
         'Registration failed. Please try again.'
       setError(msg)
-      // Reset Turnstile so user can try again
       tsTokenRef.current = ''
     } finally {
       setSubmitting(false)
     }
   }
 
-  const baseInput = `
-    w-full h-11 rounded-xl text-sm outline-none transition-all duration-200
-    px-4 placeholder-[var(--text-faint)]
-  `
-  const inputStyle = {
-    background: 'var(--bg)',
-    border:     '1px solid var(--border)',
-    color:      'var(--text-primary)',
-  }
-  const onFocus = (e: React.FocusEvent<HTMLInputElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--accent)')
-  const onBlur  = (e: React.FocusEvent<HTMLInputElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--border)')
-
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-center p-4"
-      style={{ background: 'var(--bg)' }}
+      className="min-h-screen flex"
+      style={{ background: 'var(--bg)', fontFamily: 'var(--font-body, DM Sans, sans-serif)' }}
     >
-      <PageBg />
 
-      <Link
-        to="/"
-        className="relative mb-6 flex items-center gap-2 text-xs font-bold
-                   tracking-wide uppercase transition-opacity hover:opacity-60"
-        style={{ color: 'var(--text-muted)' }}
-      >
-        ← Back to Mango People News
-      </Link>
-
+      {/*
+        ── LEFT PANEL — brand presence (desktop only) ──────────────
+        Same visual language as LoginPage — dark masthead, editorial feel.
+      */}
       <div
-        className="relative w-full max-w-sm rounded-2xl overflow-hidden"
+        className="hidden lg:flex flex-col justify-between w-[480px] flex-shrink-0 px-16 py-14"
         style={{
-          background: 'var(--bg-surface)',
-          border:     '1px solid var(--border)',
-          boxShadow:  '0 12px 48px rgba(0,0,0,0.10)',
-          animation:  'fadeUp 0.3s ease both',
+          background:  'var(--text-primary)',
+          color:       'var(--bg)',
+          borderRight: '1px solid var(--border)',
         }}
       >
-        <div className="h-1 w-full" style={{ background: 'var(--accent)' }} />
+        <Link to="/" className="block">
+          <div className="text-[11px] font-semibold tracking-[0.18em] uppercase mb-3 opacity-50">
+            Est. 2024
+          </div>
+          <div
+            className="font-display font-bold leading-none"
+            style={{ fontSize: '52px', letterSpacing: '-0.02em', color: 'var(--bg)' }}
+          >
+            MANGO
+            <br />PEOPLE
+            <br />NEWS
+          </div>
+          <div className="mt-4 text-sm tracking-wide opacity-60">
+            News for Every Indian
+          </div>
+        </Link>
 
-        <div className="p-8 space-y-6">
+        <div>
+          <p className="text-sm opacity-60 leading-relaxed mb-8">
+            Join thousands of readers who start their morning with India's most reliable financial news.
+          </p>
+          <div className="space-y-3">
+            {[
+              'Daily market briefings',
+              'Breaking business news',
+              'Deep-dive analysis',
+              'Sector & company coverage',
+            ].map(item => (
+              <div key={item} className="flex items-center gap-3 opacity-70">
+                <div
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ background: 'var(--accent)' }}
+                />
+                <span className="text-sm">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5">
+        <div className="flex gap-6 text-[11px] opacity-40 tracking-wide">
+          <Link to="/privacy" className="hover:opacity-100 transition-opacity">Privacy</Link>
+          <Link to="/terms"   className="hover:opacity-100 transition-opacity">Terms</Link>
+          <Link to="/about"   className="hover:opacity-100 transition-opacity">About</Link>
+        </div>
+      </div>
+
+      {/*
+        ── RIGHT PANEL — registration flow ────────────────────────
+      */}
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 py-12 lg:py-0">
+
+        {/* Mobile-only logo */}
+        <div className="lg:hidden mb-10">
+          <Link to="/" className="inline-block">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: 'var(--accent-light)' }}
+              className="font-display font-bold leading-none"
+              style={{ fontSize: '28px', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}
             >
-              🌳
+              MANGO PEOPLE NEWS
             </div>
-            <div className="leading-none">
-              <div
-                className="font-display text-base font-bold tracking-tight"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                MANGO PEOPLE
-              </div>
-              <div
-                className="text-[8px] font-bold tracking-[0.06em] uppercase mt-0.5"
-                style={{ color: 'var(--accent)' }}
-              >
-                News for Every Indian
-              </div>
+            <div className="text-xs mt-1 tracking-wide" style={{ color: 'var(--text-muted)' }}>
+              News for Every Indian
             </div>
           </Link>
+        </div>
 
-          {/* ── VERIFICATION SUCCESS STATE ── */}
+        <div className="w-full max-w-sm mx-auto lg:mx-0">
+
+          {/* ── DONE STATE ── */}
           {done ? (
-            <div className="text-center space-y-5 py-2">
+            <div className="space-y-6">
               <div
-                className="w-16 h-16 rounded-full flex items-center
-                           justify-center mx-auto"
-                style={{ background: 'var(--accent-light)' }}
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: 'var(--bg-subtle)' }}
               >
-                <CheckCircle2 size={32} style={{ color: 'var(--accent)' }} />
+                <CheckCircle2 size={24} style={{ color: '#16a34a' }} />
               </div>
-
-              <div className="space-y-2">
-                <h2
-                  className="font-display font-bold text-xl uppercase tracking-tight"
-                  style={{ color: 'var(--text-primary)' }}
-                >
-                  Verify your email
-                </h2>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  We sent a verification link to
-                </p>
-                <p
-                  className="text-sm font-bold px-3 py-1.5 rounded-lg inline-block"
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    color:      'var(--text-primary)',
-                  }}
-                >
-                  {regEmail}
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight mb-2"
+                  style={{ color: 'var(--text-primary)' }}>
+                  Check your inbox
+                </h1>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                  We sent a verification link to{' '}
+                  <strong style={{ color: 'var(--text-primary)' }}>{regEmail}</strong>.
+                  Click it to activate your account, then sign in.
+                  Check spam if you don't see it — link expires in 24 hours.
                 </p>
               </div>
-
-              <div
-                className="text-xs leading-relaxed px-4 py-3 rounded-xl text-left space-y-1.5"
-                style={{
-                  background: 'var(--bg-subtle)',
-                  color:      'var(--text-secondary)',
-                }}
-              >
-                <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  What happens next?
-                </p>
-                <p>1. Check your email for a verification link</p>
-                <p>2. Click the link to activate your account</p>
-                <p>3. Come back here and sign in</p>
-                <p className="text-[11px] pt-1" style={{ color: 'var(--text-muted)' }}>
-                  Don't see it? Check your spam folder.
-                  The link expires in 24 hours.
-                </p>
-              </div>
-
               <Link
                 to="/login"
-                className="inline-flex items-center gap-1.5 text-xs font-bold
-                           tracking-wide uppercase transition-opacity hover:opacity-60"
+                className="inline-flex items-center gap-2 text-sm font-medium
+                           transition-opacity hover:opacity-70"
                 style={{ color: 'var(--accent)' }}
               >
-                Go to Sign In <ArrowRight size={12} />
+                Go to sign in <ArrowRight size={13} />
               </Link>
             </div>
 
           ) : (
             <>
-              {/* Heading */}
-              <div>
-                <h1
-                  className="font-display font-bold text-2xl uppercase tracking-tight"
-                  style={{ color: 'var(--text-primary)' }}
+              {/* Step indicator — minimal, no bar */}
+              <div className="flex items-center gap-2 mb-8">
+                <span
+                  className="text-[11px] font-medium tracking-widest uppercase"
+                  style={{ color: 'var(--text-muted)' }}
                 >
-                  Create account
-                </h1>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Already have an account?{' '}
-                  <Link
-                    to="/login"
-                    className="font-bold transition-opacity hover:opacity-70"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    Sign in
-                  </Link>
-                </p>
+                  Step {step} of 2
+                </span>
+                <div className="flex gap-1.5 ml-2">
+                  {([1, 2] as Step[]).map(s => (
+                    <div
+                      key={s}
+                      className="h-0.5 w-6 rounded-full transition-all duration-300"
+                      style={{
+                        background: s <= step ? 'var(--text-primary)' : 'var(--border)',
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* Error */}
-              {error && (
-                <div
-                  className="px-3.5 py-3 rounded-xl text-xs font-medium leading-relaxed"
-                  style={{
-                    background: 'rgba(192,57,43,0.08)',
-                    color:      'var(--breaking)',
-                    border:     '1px solid rgba(192,57,43,0.25)',
-                  }}
-                >
-                  {error}
-                </div>
-              )}
+              {/* ── STEP 1 — Identity ── */}
+              {step === 1 && (
+                <>
+                  <div className="mb-8">
+                    <h1 className="text-2xl font-semibold tracking-tight"
+                      style={{ color: 'var(--text-primary)' }}>
+                      Create your account
+                    </h1>
+                    <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+                      Already have one?{' '}
+                      <Link to="/login"
+                        className="font-medium transition-opacity hover:opacity-70"
+                        style={{ color: 'var(--accent)' }}>
+                        Sign in
+                      </Link>
+                    </p>
+                  </div>
 
-              {/* Form */}
-              <form onSubmit={handleSubmit} className="space-y-3">
+                  {error && (
+                    <p className="text-sm mb-4" style={{ color: 'var(--breaking)' }}>{error}</p>
+                  )}
 
-                {/* Full name */}
-                <div className="relative">
-                  <User
-                    size={14}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ color: 'var(--text-muted)' }}
-                  />
-                  <input
-                    type="text" required
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    placeholder="Full name"
-                    className={`${baseInput} pl-9`}
-                    style={inputStyle}
-                    onFocus={onFocus} onBlur={onBlur}
-                    autoComplete="name"
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="relative">
-                  <Mail
-                    size={14}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                    style={{ color: 'var(--text-muted)' }}
-                  />
-                  <input
-                    type="email" required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="Email address"
-                    className={`${baseInput} pl-9`}
-                    style={inputStyle}
-                    onFocus={onFocus} onBlur={onBlur}
-                    autoComplete="email"
-                  />
-                </div>
-
-                {/* Password */}
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Lock
-                      size={14}
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-                      style={{ color: 'var(--text-muted)' }}
+                  <form onSubmit={handleStep1} className="space-y-5">
+                    <UnderlineField
+                      label="Full name"
+                      type="text"
+                      value={fullName}
+                      onChange={setFullName}
+                      autoComplete="name"
+                      placeholder="Ravi Kumar"
                     />
-                    <input
-                      type={showPass ? 'text' : 'password'} required
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder="Create a password"
-                      className={`${baseInput} pl-9 pr-11`}
-                      style={inputStyle}
-                      onFocus={onFocus} onBlur={onBlur}
-                      autoComplete="new-password"
+                    <UnderlineField
+                      label="Email address"
+                      type="email"
+                      value={email}
+                      onChange={setEmail}
+                      autoComplete="email"
+                      placeholder="ravi@example.com"
                     />
                     <button
-                      type="button"
-                      onClick={() => setShowPass(v => !v)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2
-                                 transition-opacity hover:opacity-60"
-                      style={{ color: 'var(--text-muted)' }}
-                      aria-label={showPass ? 'Hide password' : 'Show password'}
+                      type="submit"
+                      className="w-full flex items-center justify-center gap-2
+                                 py-3 text-sm font-semibold rounded-lg
+                                 transition-opacity hover:opacity-90 mt-2"
+                      style={{ background: 'var(--text-primary)', color: 'var(--bg)' }}
                     >
-                      {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                      Continue <ArrowRight size={14} />
                     </button>
+                  </form>
+
+                  {/* Google alternative */}
+                  <div className="mt-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                      <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>or</span>
+                      <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                    </div>
+                    {googleError && (
+                      <p className="text-xs mb-2" style={{ color: 'var(--breaking)' }}>{googleError}</p>
+                    )}
+                    <div ref={googleRef} className="w-full min-h-[44px]" />
                   </div>
-                  <PasswordHints password={password} />
-                </div>
-
-                {/* Verification notice */}
-                <div
-                  className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl text-xs"
-                  style={{
-                    background: 'var(--accent-light)',
-                    border:     '1px solid rgba(232,160,32,0.2)',
-                    color:      'var(--text-secondary)',
-                  }}
-                >
-                  <Mail size={12} className="flex-shrink-0 mt-0.5"
-                    style={{ color: 'var(--accent)' }} />
-                  <span>
-                    We'll email you a verification link to activate your account.
-                    You can sign in after clicking it.
-                  </span>
-                </div>
-
-                {/* Turnstile */}
-                <Turnstile
-                  onVerify={token => { tsTokenRef.current = token }}
-                  onError={() => { tsTokenRef.current = '' }}
-                  onExpire={() => { tsTokenRef.current = '' }}
-                  theme="auto"
-                />
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="btn-accent w-full h-11 text-sm font-bold
-                             rounded-xl flex items-center justify-center gap-2
-                             disabled:opacity-50 transition-all"
-                >
-                  {submitting
-                    ? 'Creating account…'
-                    : <>Create Account <ArrowRight size={14} /></>
-                  }
-                </button>
-              </form>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
-                  or continue with
-                </span>
-                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              </div>
-
-              {/* Google */}
-              {googleError && (
-                <p className="text-xs text-center" style={{ color: 'var(--breaking)' }}>
-                  {googleError}
-                </p>
+                </>
               )}
-              <div ref={googleRef} className="w-full min-h-[44px]" />
+
+              {/* ── STEP 2 — Password ── */}
+              {step === 2 && (
+                <>
+                  <div className="mb-8">
+                    <h1 className="text-2xl font-semibold tracking-tight"
+                      style={{ color: 'var(--text-primary)' }}>
+                      Set your password
+                    </h1>
+                    <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+                      Creating account for{' '}
+                      <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>.{' '}
+                      <button
+                        type="button"
+                        onClick={() => { setStep(1); setError('') }}
+                        className="transition-opacity hover:opacity-60"
+                        style={{ color: 'var(--text-muted)', textDecoration: 'underline' }}
+                      >
+                        Change
+                      </button>
+                    </p>
+                  </div>
+
+                  {error && (
+                    <p className="text-sm mb-4" style={{ color: 'var(--breaking)' }}>{error}</p>
+                  )}
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                      <label className="block text-xs font-medium mb-1.5"
+                        style={{ color: 'var(--text-muted)' }}>
+                        Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPass ? 'text' : 'password'}
+                          required
+                          value={password}
+                          onChange={e => setPassword(e.target.value)}
+                          autoComplete="new-password"
+                          placeholder="Create a strong password"
+                          className="w-full text-sm outline-none py-3 pr-10"
+                          style={{
+                            background:   'transparent',
+                            color:        'var(--text-primary)',
+                            borderBottom: '1px solid var(--border)',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPass(v => !v)}
+                          className="absolute right-0 top-1/2 -translate-y-1/2
+                                     transition-opacity hover:opacity-60"
+                          style={{ color: 'var(--text-muted)' }}
+                          aria-label={showPass ? 'Hide' : 'Show'}
+                        >
+                          {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <PasswordHints password={password} />
+                    </div>
+
+                    {/* Turnstile — max-width prevents mobile overflow */}
+                    <div style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                      <Turnstile
+                        onVerify={token => { tsTokenRef.current = token }}
+                        onError={() => { tsTokenRef.current = '' }}
+                        onExpire={() => { tsTokenRef.current = '' }}
+                        theme="auto"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full flex items-center justify-center gap-2
+                                 py-3 text-sm font-semibold rounded-lg
+                                 transition-opacity disabled:opacity-50 hover:opacity-90"
+                      style={{ background: 'var(--text-primary)', color: 'var(--bg)' }}
+                    >
+                      {submitting ? 'Creating account…' : <>Create account <ArrowRight size={14} /></>}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { setStep(1); setError('') }}
+                      className="w-full text-sm text-center transition-opacity hover:opacity-60"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      ← Back
+                    </button>
+                  </form>
+                </>
+              )}
 
               {/* Terms */}
-              <p
-                className="text-center text-[10px] leading-relaxed"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                By creating an account you agree to our{' '}
+              <p className="mt-8 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                By continuing you agree to our{' '}
                 <Link to="/terms" className="underline hover:opacity-70">Terms</Link>
                 {' '}and{' '}
                 <Link to="/privacy" className="underline hover:opacity-70">Privacy Policy</Link>
@@ -460,6 +434,42 @@ export default function RegisterPage() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Shared underline field ────────────────────────────────────
+
+function UnderlineField({
+  label, type, value, onChange, autoComplete, placeholder,
+}: {
+  label:         string
+  type:          string
+  value:         string
+  onChange:      (v: string) => void
+  autoComplete?: string
+  placeholder?:  string
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1.5"
+        style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </label>
+      <input
+        type={type}
+        required
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        className="w-full text-sm outline-none py-3"
+        style={{
+          background:   'transparent',
+          color:        'var(--text-primary)',
+          borderBottom: '1px solid var(--border)',
+        }}
+      />
     </div>
   )
 }
