@@ -131,11 +131,13 @@ export const getComments = async (
 
 export const postComment = async (
   articleId: string,
-  body:      string
+  body:      string,
+  parentId?: string,         // optional — omit for top-level, pass for replies
 ): Promise<ApiResponse<Comment>> => {
   const { data } = await client.post('/comments', {
     article_id: articleId,
     body,
+    ...(parentId ? { parent_id: parentId } : {}),
   })
   return data
 }
