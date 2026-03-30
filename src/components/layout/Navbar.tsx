@@ -678,7 +678,7 @@ export default function Navbar() {
           Search sits at index 2 — natural flex centering, no order hacks.
           Each item gets `flex-1` so spacing is mathematically equal.
         */}
-        {BOTTOM_NAV.map((slot, i) => {
+        {BOTTOM_NAV.map((slot) => {
           if (slot.kind === 'search') {
             return (
               <button
