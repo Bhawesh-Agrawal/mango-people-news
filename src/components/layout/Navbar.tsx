@@ -13,17 +13,19 @@ import { getArticles }   from '../../api/articles'
 import type { Category, Article, User } from '../../types'
 import { SEED_CATEGORIES, SEED_ARTICLES } from '../../lib/seed'
 import { timeAgo } from '../../lib/utils'
+import SearchOverlay from '../ui/Searchoverlay'
 
-// ── Bottom nav items ──────────────────────────────────────────────
-const BOTTOM_NAV = [
+// ── Bottom nav items ──────────────────────────────────────────
+// FIX: Search button no longer navigates to /search — it opens the overlay.
+// We handle it separately below using a button instead of a Link.
+const BOTTOM_NAV_ITEMS = [
   { to: '/',                 icon: Home,       label: 'Home'     },
   { to: '/category/markets', icon: BarChart2,  label: 'Markets'  },
-  { to: '/search',           icon: Search,     label: 'Search',  center: true },
   { to: '/trending',         icon: TrendingUp, label: 'Trending' },
   { to: '/saved',            icon: Bookmark,   label: 'Saved'    },
 ]
 
-// ── Desktop user dropdown ─────────────────────────────────────────
+// ── Desktop user dropdown ─────────────────────────────────────
 function DesktopUserMenu({ user }: { user: User }) {
   const { logout } = useAuth()
   const navigate   = useNavigate()
@@ -46,15 +48,13 @@ function DesktopUserMenu({ user }: { user: User }) {
     <div className="relative" onClick={e => e.stopPropagation()}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 h-9 px-3 rounded-lg
-                   transition-all duration-200"
+        className="flex items-center gap-2 h-9 px-3 rounded-lg transition-all duration-200"
         style={{
           background: 'var(--bg-subtle)',
           border:     '1px solid var(--border)',
           color:      'var(--text-primary)',
         }}
       >
-        {/* Avatar */}
         <div
           className="w-6 h-6 rounded-full flex items-center justify-center
                      text-xs font-bold flex-shrink-0 overflow-hidden"
@@ -70,8 +70,7 @@ function DesktopUserMenu({ user }: { user: User }) {
         </span>
         <svg
           width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className={`flex-shrink-0 transition-transform duration-200
-                      ${open ? 'rotate-180' : ''}`}
+          className={`flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           style={{ color: 'var(--text-muted)' }}
         >
           <path d="M2 4l4 4 4-4" stroke="currentColor"
@@ -79,71 +78,57 @@ function DesktopUserMenu({ user }: { user: User }) {
         </svg>
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-48 rounded-xl
-                     overflow-hidden z-50"
+          className="absolute right-0 top-full mt-2 w-48 rounded-xl overflow-hidden z-50"
           style={{
             background: 'var(--bg-surface)',
             border:     '1px solid var(--border)',
             boxShadow:  '0 8px 24px rgba(0,0,0,0.12)',
           }}
         >
-          {/* User info */}
-          <div
-            className="px-4 py-3"
-            style={{ borderBottom: '1px solid var(--border)' }}
-          >
-            <p className="text-sm font-bold truncate"
-              style={{ color: 'var(--text-primary)' }}>
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+            <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
               {user.full_name}
             </p>
-            <p className="text-xs truncate mt-0.5"
-              style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {user.email}
             </p>
           </div>
 
-          {/* Links */}
           {[
-            { to: '/account', label: 'My Account'    },
-            { to: '/saved',   label: 'Saved Articles' },
+            { to: '/account', label: 'My Account'     },
+            { to: '/saved',   label: 'Saved Articles'  },
           ].map(item => (
             <Link
               key={item.to}
               to={item.to}
               onClick={() => setOpen(false)}
-              className="flex items-center px-4 py-2.5 text-sm
-                         transition-colors duration-150
-                         hover:bg-[var(--bg-subtle)]"
+              className="flex items-center px-4 py-2.5 text-sm transition-colors
+                         duration-150 hover:bg-[var(--bg-subtle)]"
               style={{ color: 'var(--text-secondary)' }}
             >
               {item.label}
             </Link>
           ))}
 
-          {/* Admin — editor+ only */}
           {(user.role === 'editor' || user.role === 'super_admin') && (
             <Link
               to="/admin"
               onClick={() => setOpen(false)}
-              className="flex items-center px-4 py-2.5 text-sm
-                         transition-colors duration-150
-                         hover:bg-[var(--bg-subtle)]"
+              className="flex items-center px-4 py-2.5 text-sm transition-colors
+                         duration-150 hover:bg-[var(--bg-subtle)]"
               style={{ color: 'var(--text-secondary)' }}
             >
               Admin Dashboard
             </Link>
           )}
 
-          {/* Logout */}
           <div style={{ borderTop: '1px solid var(--border)' }}>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center px-4 py-2.5 text-sm
-                         transition-colors duration-150
-                         hover:bg-[var(--bg-subtle)]"
+              className="w-full flex items-center px-4 py-2.5 text-sm transition-colors
+                         duration-150 hover:bg-[var(--bg-subtle)]"
               style={{ color: 'var(--breaking)' }}
             >
               Sign Out
@@ -155,12 +140,12 @@ function DesktopUserMenu({ user }: { user: User }) {
   )
 }
 
-// ── Main Navbar ───────────────────────────────────────────────────
+// ── Main Navbar ───────────────────────────────────────────────
 export default function Navbar() {
-  const { theme, toggleTheme }  = useTheme()
+  const { theme, toggleTheme }       = useTheme()
   const { user, isLoggedIn, logout } = useAuth()
-  const location                = useLocation()
-  const navigate                = useNavigate()
+  const location                     = useLocation()
+  const navigate                     = useNavigate()
 
   const [categories,   setCategories]   = useState<Category[]>([])
   const [menuArticles, setMenuArticles] = useState<Record<string, Article[]>>({})
@@ -170,51 +155,48 @@ export default function Navbar() {
   const [searchOpen,   setSearchOpen]   = useState(false)
   const [navVisible,   setNavVisible]   = useState(true)
   const [lastScrollY,  setLastScrollY]  = useState(0)
-  const [query,        setQuery]        = useState('')
 
-  // ── Fetch categories ──────────────────────────────────────────
+  // ── Fetch categories ──────────────────────────────────────
   useEffect(() => {
     getCategories()
-      .then(res => {
-        if (res.data?.length > 0) setCategories(res.data)
-        else setCategories(SEED_CATEGORIES)
-      })
+      .then(res => setCategories(res.data?.length > 0 ? res.data : SEED_CATEGORIES))
       .catch(() => setCategories(SEED_CATEGORIES))
   }, [])
 
-  // ── Scroll detection ──────────────────────────────────────────
+  // ── Scroll detection ──────────────────────────────────────
   useEffect(() => {
     const fn = () => {
       const current = window.scrollY
       setScrolled(current > 10)
-      if (current > lastScrollY && current > 60) setNavVisible(false)
-      else setNavVisible(true)
+      setNavVisible(current <= lastScrollY || current <= 60)
       setLastScrollY(current)
     }
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
   }, [lastScrollY])
 
-  // ── Body scroll lock ──────────────────────────────────────────
+  // ── Body scroll lock (menu only — overlay handles its own) ─
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : ''
-    return () => { document.body.style.overflow = '' }
-  }, [menuOpen])
+    if (!searchOpen) {
+      document.body.style.overflow = menuOpen ? 'hidden' : ''
+    }
+    return () => { if (!searchOpen) document.body.style.overflow = '' }
+  }, [menuOpen, searchOpen])
 
-  // ── Close on route change ─────────────────────────────────────
+  // ── Close menu/search on route change ────────────────────
   useEffect(() => {
     setMenuOpen(false)
     setSearchOpen(false)
     setExpanded(null)
   }, [location.pathname])
 
-  // ── Lazy load articles per category ──────────────────────────
+  // ── Lazy-load articles per category (mobile menu) ────────
   const handleExpand = async (slug: string) => {
     if (expanded === slug) { setExpanded(null); return }
     setExpanded(slug)
     if (menuArticles[slug]) return
     try {
-      const res = await getArticles({ category: slug, limit: 3 })
+      const res     = await getArticles({ category: slug, limit: 3 })
       const articles = res.data?.length > 0
         ? res.data
         : SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3)
@@ -225,12 +207,6 @@ export default function Navbar() {
         [slug]: SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3),
       }))
     }
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (query.trim())
-      window.location.href = `/search?q=${encodeURIComponent(query.trim())}`
   }
 
   const handleMobileLogout = async () => {
@@ -244,16 +220,12 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ══════════════════════════════════════════
+      {/* ════════════════════════════════════════
           MAIN HEADER
-      ══════════════════════════════════════════ */}
+      ════════════════════════════════════════ */}
       <header
-        className={`sticky top-0 z-50 transition-shadow duration-300
-                   ${scrolled ? 'shadow-md' : ''}`}
-        style={{
-          background:   'var(--bg-surface)',
-          borderBottom: '1px solid var(--border)',
-        }}
+        className={`sticky top-0 z-50 transition-shadow duration-300 ${scrolled ? 'shadow-md' : ''}`}
+        style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="page-container">
 
@@ -268,23 +240,20 @@ export default function Navbar() {
             >
               <div
                 className="w-9 h-9 rounded-lg flex items-center justify-center
-                           text-xl flex-shrink-0 transition-transform
-                           duration-200 hover:scale-105"
+                           text-xl flex-shrink-0 transition-transform duration-200 hover:scale-105"
                 style={{ background: 'var(--accent-light)' }}
               >
                 🌳
               </div>
               <div className="leading-none select-none">
                 <div
-                  className="font-display text-xl font-bold
-                             tracking-tight leading-none"
+                  className="font-display text-xl font-bold tracking-tight leading-none"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   MANGO PEOPLE
                 </div>
                 <div
-                  className="text-[9px] font-bold tracking-[0.16em]
-                             uppercase mt-0.5"
+                  className="text-[9px] font-bold tracking-[0.16em] uppercase mt-0.5"
                   style={{ color: 'var(--accent)' }}
                 >
                   News for Every Indian
@@ -292,42 +261,27 @@ export default function Navbar() {
               </div>
             </Link>
 
-            {/* ── Desktop actions ───────────────── */}
+            {/* ── Desktop actions ─────────────────── */}
             <div className="hidden md:flex items-center gap-2">
-              {/* Search */}
-              <form onSubmit={handleSearch}>
-                <div
-                  className={`flex items-center gap-2 rounded-lg h-9
-                              transition-all duration-300 overflow-hidden
-                              ${searchOpen ? 'w-60 px-3' : 'w-9 justify-center'}`}
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    border:     '1px solid var(--border)',
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setSearchOpen(v => !v)}
-                    className="flex-shrink-0 transition-colors
-                               hover:text-[var(--accent)]"
-                    style={{ color: 'var(--text-muted)' }}
-                    aria-label="Search"
-                  >
-                    <Search size={15} />
-                  </button>
-                  {searchOpen && (
-                    <input
-                      autoFocus
-                      type="text"
-                      value={query}
-                      onChange={e => setQuery(e.target.value)}
-                      placeholder="Search news, markets, companies…"
-                      className="bg-transparent text-sm outline-none w-full"
-                      style={{ color: 'var(--text-primary)' }}
-                    />
-                  )}
-                </div>
-              </form>
+
+              {/*
+                FIX: Desktop search is now a button that opens the overlay,
+                not an inline expanding input form. The overlay handles its
+                own input, debounce, and results.
+              */}
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg
+                           transition-all duration-200 hover:text-[var(--accent)]"
+                style={{
+                  background: 'var(--bg-subtle)',
+                  border:     '1px solid var(--border)',
+                  color:      'var(--text-muted)',
+                }}
+                aria-label="Search"
+              >
+                <Search size={15} />
+              </button>
 
               {/* Theme toggle */}
               <button
@@ -344,7 +298,6 @@ export default function Navbar() {
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
               </button>
 
-              {/* Auth — logged in or out */}
               {isLoggedIn && user ? (
                 <DesktopUserMenu user={user} />
               ) : (
@@ -359,12 +312,11 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* ── Mobile actions ── Theme + Hamburger only ── */}
+            {/* ── Mobile actions — theme + hamburger ── */}
             <div className="flex md:hidden items-center gap-1.5">
               <button
                 onClick={toggleTheme}
-                className="w-9 h-9 flex items-center justify-center
-                           rounded-lg transition-all duration-150"
+                className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-150"
                 style={{
                   background: 'var(--bg-subtle)',
                   border:     '1px solid var(--border)',
@@ -377,8 +329,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => setMenuOpen(v => !v)}
-                className="w-9 h-9 flex items-center justify-center
-                           rounded-lg transition-all duration-150"
+                className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-150"
                 style={{
                   background: menuOpen ? 'var(--accent)' : 'var(--bg-subtle)',
                   border:     '1px solid var(--border)',
@@ -398,8 +349,8 @@ export default function Navbar() {
           >
             <Link
               to="/"
-              className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
-                         tracking-wide transition-all duration-150"
+              className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium tracking-wide
+                         transition-all duration-150"
               style={{
                 color:        isActive('/') ? 'var(--accent)' : 'var(--text-secondary)',
                 borderBottom: isActive('/') ? '2px solid var(--accent)' : '2px solid transparent',
@@ -412,8 +363,8 @@ export default function Navbar() {
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
-                         tracking-wide transition-all duration-150"
+                className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium tracking-wide
+                           transition-all duration-150"
                 style={{
                   color:        isActive(`/category/${cat.slug}`) ? cat.color : 'var(--text-secondary)',
                   borderBottom: isActive(`/category/${cat.slug}`)
@@ -437,9 +388,8 @@ export default function Navbar() {
 
             <Link
               to="/articles"
-              className="ml-auto flex-shrink-0 px-3 py-2.5 text-[11px]
-                         font-bold tracking-wide uppercase
-                         hover:opacity-75 transition-opacity"
+              className="ml-auto flex-shrink-0 px-3 py-2.5 text-[11px] font-bold
+                         tracking-wide uppercase hover:opacity-75 transition-opacity"
               style={{ color: 'var(--accent)' }}
             >
               All News →
@@ -452,12 +402,11 @@ export default function Navbar() {
           className="md:hidden overflow-x-auto scrollbar-none"
           style={{ borderTop: '1px solid var(--border)' }}
         >
-          <div className="flex items-center px-4 gap-1 py-0 scrollbar-none">
+          <div className="flex items-center px-4 gap-1 scrollbar-none">
             <Link
               to="/"
               className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
-                         tracking-wide transition-all duration-150
-                         whitespace-nowrap"
+                         tracking-wide transition-all duration-150 whitespace-nowrap"
               style={{
                 color:        isActive('/') ? 'var(--accent)' : 'var(--text-secondary)',
                 borderBottom: isActive('/') ? '2px solid var(--accent)' : '2px solid transparent',
@@ -470,8 +419,7 @@ export default function Navbar() {
                 key={cat.id}
                 to={`/category/${cat.slug}`}
                 className="flex-shrink-0 px-3 py-2.5 text-[12px] font-medium
-                         tracking-wide transition-all duration-150
-                           whitespace-nowrap"
+                           tracking-wide transition-all duration-150 whitespace-nowrap"
                 style={{
                   color:        isActive(`/category/${cat.slug}`) ? cat.color : 'var(--text-secondary)',
                   borderBottom: isActive(`/category/${cat.slug}`)
@@ -485,9 +433,9 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ══════════════════════════════════════════
+      {/* ════════════════════════════════════════
           MOBILE FULL-SCREEN MENU
-      ══════════════════════════════════════════ */}
+      ════════════════════════════════════════ */}
       {menuOpen && (
         <div
           className="md:hidden fixed inset-0 z-50 flex flex-col animate-fade-in"
@@ -520,18 +468,16 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Auth block — top, always visible */}
+          {/* Auth block */}
           <div
             className="flex-shrink-0 px-4 py-4"
             style={{ borderBottom: '2px solid var(--border)' }}
           >
             {isLoggedIn && user ? (
-              /* Logged in */
               <div className="flex items-center gap-3">
                 <div
-                  className="w-11 h-11 rounded-full flex items-center
-                             justify-center flex-shrink-0 text-lg font-bold
-                             overflow-hidden"
+                  className="w-11 h-11 rounded-full flex items-center justify-center
+                             flex-shrink-0 text-lg font-bold overflow-hidden"
                   style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
                 >
                   {user.avatar_url
@@ -540,8 +486,7 @@ export default function Navbar() {
                   }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate"
-                    style={{ color: 'var(--text-primary)' }}>
+                  <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>
                     {user.full_name}
                   </p>
                   <Link
@@ -563,10 +508,8 @@ export default function Navbar() {
                 </Link>
               </div>
             ) : (
-              /* Logged out */
               <div className="space-y-2.5">
-                <p className="text-xs font-semibold"
-                  style={{ color: 'var(--text-muted)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
                   Sign in to save articles, get personalised news and more.
                 </p>
                 <div className="flex gap-2.5 pt-1">
@@ -593,7 +536,6 @@ export default function Navbar() {
 
           {/* Scrollable nav */}
           <div className="flex-1 overflow-y-auto overscroll-contain">
-
             <div className="px-4 pt-4 pb-2">
               <span
                 className="text-[10px] font-bold tracking-[0.08em] uppercase"
@@ -611,9 +553,8 @@ export default function Navbar() {
               style={{ borderBottom: '1px solid var(--border-muted)' }}
             >
               <span
-                className="font-display text-2xl font-bold tracking-tight
-                           uppercase group-hover:text-[var(--accent)]
-                           transition-colors"
+                className="font-display text-2xl font-bold tracking-tight uppercase
+                           group-hover:text-[var(--accent)] transition-colors"
                 style={{ color: 'var(--text-primary)' }}
               >
                 Home
@@ -632,14 +573,12 @@ export default function Navbar() {
               >
                 <button
                   onClick={() => handleExpand(cat.slug)}
-                  className="w-full flex items-center justify-between px-4
-                             py-3.5 text-left transition-colors
-                             hover:bg-[var(--bg-subtle)]"
+                  className="w-full flex items-center justify-between px-4 py-3.5
+                             text-left transition-colors hover:bg-[var(--bg-subtle)]"
                   aria-expanded={expanded === cat.slug}
                 >
                   <span
-                    className="font-display text-2xl font-bold tracking-tight
-                               uppercase transition-colors"
+                    className="font-display text-2xl font-bold tracking-tight uppercase transition-colors"
                     style={{ color: expanded === cat.slug ? cat.color : 'var(--text-primary)' }}
                   >
                     {cat.name}
@@ -655,11 +594,8 @@ export default function Navbar() {
                 </button>
 
                 {expanded === cat.slug && (
-                  <div
-                    className="px-4 pb-3 animate-fade-in"
-                    style={{ background: 'var(--bg-subtle)' }}
-                  >
-                    {/* Skeleton */}
+                  <div className="px-4 pb-3 animate-fade-in"
+                    style={{ background: 'var(--bg-subtle)' }}>
                     {!menuArticles[cat.slug] && (
                       <div className="space-y-3 pt-3">
                         {[1, 2, 3].map(n => (
@@ -675,15 +611,12 @@ export default function Navbar() {
                       </div>
                     )}
 
-                    {/* Empty */}
                     {menuArticles[cat.slug]?.length === 0 && (
-                      <p className="text-sm py-4 text-center"
-                        style={{ color: 'var(--text-muted)' }}>
+                      <p className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>
                         No articles yet.
                       </p>
                     )}
 
-                    {/* Articles */}
                     {menuArticles[cat.slug]?.map((article, idx) => (
                       <Link
                         key={article.id}
@@ -704,15 +637,13 @@ export default function Navbar() {
                         )}
                         <div className="flex-1 min-w-0 pt-0.5">
                           <p
-                            className="text-sm font-semibold leading-snug
-                                       line-clamp-2 transition-colors
-                                       group-hover:text-[var(--accent)]"
+                            className="text-sm font-semibold leading-snug line-clamp-2
+                                       transition-colors group-hover:text-[var(--accent)]"
                             style={{ color: 'var(--text-primary)' }}
                           >
                             {article.title}
                           </p>
-                          <p className="text-xs mt-1.5"
-                            style={{ color: 'var(--text-muted)' }}>
+                          <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
                             {timeAgo(article.published_at)}
                             {article.reading_time && (
                               <span className="ml-2">· {article.reading_time} min read</span>
@@ -725,9 +656,8 @@ export default function Navbar() {
                     {menuArticles[cat.slug] && (
                       <Link
                         to={`/category/${cat.slug}`}
-                        className="inline-flex items-center gap-1 mt-3
-                                   text-xs font-bold tracking-wide uppercase
-                                   hover:opacity-75 transition-opacity"
+                        className="inline-flex items-center gap-1 mt-3 text-xs font-bold
+                                   tracking-wide uppercase hover:opacity-75 transition-opacity"
                         style={{ color: cat.color }}
                       >
                         See all {cat.name}
@@ -759,7 +689,7 @@ export default function Navbar() {
               <button
                 onClick={handleMobileLogout}
                 className="w-full flex items-center justify-between px-4 py-3.5
-                          transition-colors hover:bg-[var(--bg-subtle)] group"
+                           transition-colors hover:bg-[var(--bg-subtle)]"
                 style={{ borderTop: '1px solid var(--border)' }}
               >
                 <span
@@ -771,38 +701,17 @@ export default function Navbar() {
                 <ChevronRight size={15} style={{ color: 'var(--breaking)' }} />
               </button>
             )}
-
-            {/* Sign out — logged in only */}
-            {isLoggedIn && (
-              <div
-                className="px-4 py-4"
-                style={{ borderTop: '2px solid var(--border)' }}
-              >
-                <button
-                  onClick={handleMobileLogout}
-                  className="w-full py-3 rounded-xl text-sm font-bold
-                             transition-colors hover:opacity-80"
-                  style={{
-                    background: 'var(--bg-subtle)',
-                    color:      'var(--breaking)',
-                    border:     '1px solid var(--border)',
-                  }}
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {/* ══════════════════════════════════════════
-          BOTTOM FLOATING NAV
-      ══════════════════════════════════════════ */}
+      {/* ════════════════════════════════════════
+          BOTTOM FLOATING NAV (mobile)
+      ════════════════════════════════════════ */}
       <nav
         className={`
-          md:hidden fixed bottom-4 left-1/2 -translate-x-1/2
-          z-50 flex items-center rounded-2xl px-1.5 py-1.5
+          md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50
+          flex items-center rounded-2xl px-1.5 py-1.5
           transition-all duration-300
           ${menuOpen || !navVisible
             ? 'opacity-0 pointer-events-none translate-y-4'
@@ -821,40 +730,18 @@ export default function Navbar() {
         aria-label="Main navigation"
         aria-hidden={menuOpen}
       >
-        {BOTTOM_NAV.map(({ to, icon: Icon, label, center }) => {
+        {/* Regular nav items */}
+        {BOTTOM_NAV_ITEMS.map(({ to, icon: Icon, label }) => {
           const active = to === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(to)
-
-          if (center) {
-            return (
-              <Link
-                key={to}
-                to={to}
-                className="flex items-center justify-center mx-1.5
-                           rounded-xl transition-all duration-200 active:scale-90"
-                style={{
-                  width:      '48px',
-                  height:     '44px',
-                  background: 'var(--accent)',
-                  color:      '#fff',
-                  flexShrink: 0,
-                  boxShadow:  '0 2px 12px rgba(232,160,32,0.35)',
-                }}
-                aria-label={label}
-              >
-                <Icon size={20} strokeWidth={2.2} />
-              </Link>
-            )
-          }
 
           return (
             <Link
               key={to}
               to={to}
-              className="flex flex-col items-center justify-center flex-1
-                         py-1.5 px-1 rounded-xl transition-all duration-200
-                         gap-0.5 min-w-[52px] active:scale-90"
+              className="flex flex-col items-center justify-center flex-1 py-1.5 px-1
+                         rounded-xl transition-all duration-200 gap-0.5 min-w-[52px] active:scale-90"
               style={{
                 background: active ? 'var(--accent-light)' : 'transparent',
                 color:      active ? 'var(--accent)'       : 'var(--text-muted)',
@@ -871,11 +758,47 @@ export default function Navbar() {
             </Link>
           )
         })}
+
+        {/*
+          FIX: Search is the centre button — it opens the overlay,
+          NOT navigates to /search. Using a <button> not a <Link>.
+          The overlay itself has a "See all results" that links to /search.
+        */}
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="flex items-center justify-center mx-1.5 rounded-xl
+                     transition-all duration-200 active:scale-90 order-first"
+          style={{
+            width:      '48px',
+            height:     '44px',
+            background: searchOpen ? 'var(--accent-light)' : 'var(--accent)',
+            color:      '#fff',
+            flexShrink: 0,
+            boxShadow:  '0 2px 12px rgba(232,160,32,0.35)',
+            // Centre it between Home/Markets and Trending/Saved
+            order: 2,
+          }}
+          aria-label="Search"
+        >
+          <Search size={20} strokeWidth={2.2} />
+        </button>
+
       </nav>
 
-      {!menuOpen && (
-        <div className="md:hidden h-0" aria-hidden="true" />
-      )}
+      {/*
+        ════════════════════════════════════════
+        SEARCH OVERLAY
+        ════════════════════════════════════════
+        FIX: Placed here at the TOP LEVEL of the fragment — NOT inside
+        the {menuOpen && ...} block. This means it's always available
+        regardless of whether the hamburger menu is open, and it can
+        be triggered from both the desktop search button and the
+        mobile bottom-nav search button.
+      */}
+      <SearchOverlay
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
     </>
   )
 }
