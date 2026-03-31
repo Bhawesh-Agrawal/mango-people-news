@@ -12,6 +12,10 @@ import VerifyEmailPage from './pages/VerifyEmailPage'
 import MagicVerifyPage from './pages/MagicVerifyPage'
 import ArticlePage from './pages/ArticlePage'
 import CategoryPage from './pages/CategoryPage'
+import AccountPage from './pages/Accountpage'
+import TrendingPage from './pages/Trendingpage'
+import SavedPage from './pages/Savedpage'
+import ArticlesPage from './pages/Articlespage'
 
 function App() {
   return (
@@ -23,19 +27,20 @@ function App() {
             <Route path="/"         element={<HomePage />} />
             <Route path="/login"    element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/articles" element={<ArticlesPage />} />
 
             {/* These pages come next */}
             <Route path="/article/:slug"    element={<ArticlePage />} />
             <Route path="/category/:slug"   element={<CategoryPage />} />
-            <Route path="/search"           element={<div>Search page coming</div>} />
-            <Route path="/trending"         element={<div>Trending page coming</div>} />
+            {/* <Route path="/search"           element={<div>Search page coming</div>} /> */}
+            <Route path="/trending"         element={<TrendingPage />} />
 
             {/* Protected */}
             <Route path="/saved"   element={
-              <ProtectedRoute><div>Saved page coming</div></ProtectedRoute>
+              <ProtectedRoute><SavedPage /></ProtectedRoute>
             } />
             <Route path="/account" element={
-              <ProtectedRoute><div>Account page coming</div></ProtectedRoute>
+              <ProtectedRoute><AccountPage /></ProtectedRoute>
             } />
             <Route path="/admin/*" element={
               <ProtectedRoute requiredRole="editor">

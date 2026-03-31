@@ -61,6 +61,8 @@ export interface User {
   avatar_url?: string
   status:     string
   email_verified?: boolean
+  created_at:  string
+  auth_provider: string
 }
 
 export interface ArticleParams {
