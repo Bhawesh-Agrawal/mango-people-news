@@ -8,11 +8,12 @@ import {
 import type { ReactNode } from 'react'
 import type { User } from '../types'
 import {
-  login    as apiLogin,
-  register as apiRegister,
-  logout   as apiLogout,
+  login        as apiLogin,
+  register     as apiRegister,
+  logout       as apiLogout,
   getMe,
-  googleLogin as apiGoogleLogin,
+  googleLogin  as apiGoogleLogin,
+  refreshToken as apiRefreshToken,
 } from '../api/auth'
 import type { LoginPayload, RegisterPayload } from '../api/auth'
 
@@ -55,30 +56,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user,    setUser]    = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const isLoggedIn    = !!user
-  const isEditor      = user?.role === 'editor'      || user?.role === 'super_admin'
-  const isAuthor      = user?.role === 'author'      || isEditor
-  const isSuperAdmin  = user?.role === 'super_admin'
+  const isLoggedIn   = !!user
+  const isEditor     = user?.role === 'editor'     || user?.role === 'super_admin'
+  const isAuthor     = user?.role === 'author'     || isEditor
+  const isSuperAdmin = user?.role === 'super_admin'
   const emailVerified = user?.email_verified ?? false
 
   // ── Restore session on mount ──────────────────────────────────
+  //
+  // WHY: The access token is short-lived and only lives in memory
+  // (localStorage had it but it expires; after a page refresh it may
+  // be stale or missing). The httpOnly refresh token cookie persists
+  // across page reloads and is sent automatically by the browser.
+  //
+  // Strategy:
+  //   1. Hit /auth/refresh — if the cookie is valid, we get a fresh
+  //      access token back and store it in localStorage for the
+  //      axios interceptor to pick up.
+  //   2. Then call /auth/me to hydrate the user object.
+  //   3. If refresh fails (cookie expired / never existed), the user
+  //      is simply not logged in — no error shown.
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    const token = localStorage.getItem('mpn_token')
-    if (!token) {
-      setLoading(false)
-      return
-    }
+    const restoreSession = async () => {
+      try {
+        // Step 1: use the httpOnly cookie to get a fresh access token
+        const refreshRes = await apiRefreshToken()
+        if (refreshRes.data?.accessToken) {
+          localStorage.setItem('mpn_token', refreshRes.data.accessToken)
+        }
 
-    getMe()
-      .then(res => {
-        if (res.data) setUser(res.data)
-        else localStorage.removeItem('mpn_token')
-      })
-      .catch(() => {
+        // Step 2: fetch the full user profile
+        const meRes = await getMe()
+        if (meRes.data) setUser(meRes.data)
+
+      } catch {
+        // No valid refresh token cookie — user is logged out, that's fine
         localStorage.removeItem('mpn_token')
         setUser(null)
-      })
-      .finally(() => setLoading(false))
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    restoreSession()
   }, [])
 
   // ── Login ─────────────────────────────────────────────────────
@@ -94,8 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(res.data.user)
     }
 
-    // Then fetch full profile from /auth/me to get all fields
-    // (login response only returns id, email, full_name, role)
+    // Fetch full profile — login response only has id/email/name/role
     try {
       const me = await getMe()
       if (me.data) setUser(me.data)
@@ -123,7 +143,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(res.data.user)
     }
 
-    // Fetch full profile
     try {
       const me = await getMe()
       if (me.data) setUser(me.data)
@@ -140,7 +159,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   // ── Refresh user from server ──────────────────────────────────
-  // Call this after email verification or any profile update
+  // Call this after profile updates, email verification, etc.
   const handleRefresh = useCallback(async () => {
     try {
       const res = await getMe()
