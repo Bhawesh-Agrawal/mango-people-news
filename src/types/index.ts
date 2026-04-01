@@ -63,6 +63,7 @@ export interface User {
   email_verified?: boolean
   created_at:  string
   auth_provider: string
+  bio?:        string
 }
 
 export interface ArticleParams {
