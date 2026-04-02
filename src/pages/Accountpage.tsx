@@ -1,9 +1,10 @@
 /**
  * AccountPage.tsx — /account
+ * Mobile-first layout. Tested down to 320px.
  */
 
 import { useState, useRef, useCallback } from 'react'
-import { Link, useNavigate }              from 'react-router-dom'
+import { Link, useNavigate }             from 'react-router-dom'
 import {
   Edit2, Check, X, Camera, LogOut,
   ChevronRight, Bookmark, TrendingUp,
@@ -28,66 +29,6 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string }> 
   author:      { label: 'Author',      color: '#2563eb',            bg: 'rgba(37,99,235,0.08)'  },
   editor:      { label: 'Editor',      color: '#7c3aed',            bg: 'rgba(124,58,237,0.08)' },
   super_admin: { label: 'Super Admin', color: 'var(--accent)',      bg: 'var(--accent-light)'   },
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Avatar upload via XMLHttpRequest
-//
-//  WHY NOT axios / client.post for file uploads?
-//  axios interceptors (auth headers, base URL transforms, response
-//  interceptors that call refresh()) can interfere with FormData
-//  requests. More critically, some axios versions or interceptor
-//  patterns override Content-Type, stripping the multipart boundary.
-//
-//  XHR sets Content-Type automatically from the FormData object
-//  with the correct boundary — no interceptors, no surprises.
-//  We pull the auth token from localStorage directly using the
-//  same key the axios client uses: 'mpn_token'.
-// ─────────────────────────────────────────────────────────────
-function uploadAvatarXHR(file: File, token: string): Promise<{ avatar_url: string }> {
-  return new Promise((resolve, reject) => {
-    const form = new FormData()
-    form.append('avatar', file)   // field name must match multer's .single('avatar')
-
-    const xhr = new XMLHttpRequest()
-    // Must match client.ts: BASE_URL + /api/v1
-    const base = import.meta.env.VITE_API_URL ?? 'https://api.gallitify.tech'
-    xhr.open('POST', `${base}/api/v1/auth/me/avatar`, true)
-
-    // Set auth header manually — DO NOT set Content-Type (XHR does it for FormData)
-    xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-    xhr.withCredentials = true    // send httpOnly cookies (refresh token)
-
-    xhr.onload = () => {
-      try {
-        const body = JSON.parse(xhr.responseText)
-        if (xhr.status >= 200 && xhr.status < 300 && body.success) {
-          resolve(body.data)
-        } else {
-          reject(new Error(body.message ?? `Upload failed (${xhr.status})`))
-        }
-      } catch {
-        reject(new Error(`Upload failed (${xhr.status})`))
-      }
-    }
-
-    xhr.onerror   = () => reject(new Error('Network error during upload'))
-    xhr.ontimeout = () => reject(new Error('Upload timed out'))
-    xhr.timeout   = 30_000
-
-    xhr.send(form)
-  })
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Helper: get the current access token
-//  Uses the same key as client.ts ('mpn_token').
-// ─────────────────────────────────────────────────────────────
-function getAccessToken(): string {
-  const token = localStorage.getItem('mpn_token') ?? ''
-  console.log('[Avatar Upload] token found:', token ? `${token.slice(0, 20)}...` : 'EMPTY')
-  console.log('[Avatar Upload] all localStorage keys:', Object.keys(localStorage))
-  return token
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -121,8 +62,10 @@ export default function AccountPage() {
 
   if (!isLoggedIn || !user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center"
-        style={{ background: 'var(--bg)' }}>
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-4 p-8 text-center"
+        style={{ background: 'var(--bg)' }}
+      >
         <p className="text-4xl">👤</p>
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
           Sign in to view your account
@@ -132,7 +75,7 @@ export default function AccountPage() {
     )
   }
 
-  // ── Save name / bio via axios client (JSON — no file, no boundary issue) ──
+  // ── Save name / bio ───────────────────────────────────────────
   const saveProfile = async (fields: Record<string, string>) => {
     setSaving(true)
     setSaveError('')
@@ -150,48 +93,45 @@ export default function AccountPage() {
     }
   }
 
-  // ── Core upload: XHR → backend → Cloudinary ──────────────────
+  // ── File upload (device photo → Cloudinary via backend) ───────
   const uploadFile = useCallback(async (file: File) => {
     setAvatarUploading(true)
     setAvatarError('')
     setShowAvatarPicker(false)
     try {
-      const token = getAccessToken()
-      await uploadAvatarXHR(file, token)
-      // Refresh AuthContext so avatar_url updates in the UI
+      const form = new FormData()
+      form.append('avatar', file)
+      await client.post('/auth/me/avatar', form, {
+        headers: { 'Content-Type': undefined },
+      })
       await refresh()
     } catch (err: any) {
-      setAvatarError(err.message ?? 'Upload failed. Please try again.')
+      setAvatarError(err?.response?.data?.message ?? 'Upload failed. Please try again.')
     } finally {
       setAvatarUploading(false)
     }
   }, [refresh])
 
-  // ── Device file picker ────────────────────────────────────────
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) uploadFile(file)
-    // Reset so selecting the same file again still triggers onChange
     e.target.value = ''
   }, [uploadFile])
 
-  // ── DiceBear preset: fetch SVG → upload as File ───────────────
+  // ── DiceBear preset → save URL directly, no upload ───────────
   const handlePresetAvatar = useCallback(async (url: string) => {
     setAvatarUploading(true)
     setAvatarError('')
     setShowAvatarPicker(false)
     try {
-      const res  = await fetch(url)
-      const blob = await res.blob()
-      // Force mime to image/svg+xml regardless of what the CDN sends
-      // so the backend SVG detection is reliable
-      const file = new File([blob], 'preset-avatar.svg', { type: 'image/svg+xml' })
-      await uploadFile(file)
+      await client.patch('/auth/me/avatar-url', { avatar_url: url })
+      await refresh()
     } catch (err: any) {
-      setAvatarError(err.message ?? 'Could not load preset avatar.')
+      setAvatarError(err?.response?.data?.message ?? 'Could not set avatar.')
+    } finally {
       setAvatarUploading(false)
     }
-  }, [uploadFile])
+  }, [refresh])
 
   const handleLogout = async () => {
     await logout()
@@ -200,29 +140,56 @@ export default function AccountPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      <div className="page-container py-8" style={{ maxWidth: '680px' }}>
+      <div className="mx-auto w-full px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '680px' }}>
 
-        <h1 className="text-2xl font-bold tracking-tight mb-8"
-          style={{ color: 'var(--text-primary)' }}>
-          My Account
-        </h1>
+        {/* ── Page header ──────────────────────────────────────
+            Mobile: small title + sign-out button in top-right corner.
+            Keeps vertical space free for actual content.
+            Desktop: sign-out button is also shown at the bottom.
+        ── */}
+        <div className="flex items-center justify-between mb-5">
+          <h1 className="text-lg font-bold tracking-tight"
+            style={{ color: 'var(--text-primary)' }}>
+            My Account
+          </h1>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
+                       font-semibold transition-opacity hover:opacity-70"
+            style={{
+              background: 'rgba(185,28,28,0.06)',
+              color:      'var(--breaking)',
+              border:     '1px solid rgba(185,28,28,0.12)',
+            }}
+          >
+            <LogOut size={12} /> Sign out
+          </button>
+        </div>
 
         {/* ── Profile card ─────────────────────────────────── */}
-        <div className="rounded-2xl p-6 mb-5"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div
+          className="rounded-2xl p-4 sm:p-6 mb-4"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+        >
 
-          <div className="flex items-start gap-5 mb-6">
+          {/* ── Avatar + identity row ─────────────────────────
+              Avatar shrinks to 56px on mobile so the name column
+              gets enough width even on 320px screens.
+          ── */}
+          <div className="flex items-center gap-3 sm:gap-5 mb-5">
 
             {/* Avatar */}
             <div className="relative flex-shrink-0">
               <div
-                className="w-20 h-20 rounded-2xl overflow-hidden flex items-center
-                           justify-center text-2xl font-bold"
+                className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl overflow-hidden
+                           flex items-center justify-center text-xl sm:text-2xl font-bold"
                 style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
               >
                 {avatarUploading ? (
-                  <div className="animate-spin w-6 h-6 rounded-full"
-                    style={{ border: '2px solid var(--border)', borderTop: '2px solid var(--accent)' }} />
+                  <div
+                    className="animate-spin w-5 h-5 rounded-full"
+                    style={{ border: '2px solid var(--border)', borderTop: '2px solid var(--accent)' }}
+                  />
                 ) : user.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -231,12 +198,12 @@ export default function AccountPage() {
               </div>
               <button
                 onClick={() => setShowAvatarPicker(v => !v)}
-                className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-lg
+                className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-lg
                            flex items-center justify-center transition-opacity hover:opacity-80"
                 style={{ background: 'var(--accent)', color: '#fff' }}
                 title="Change photo"
               >
-                <Camera size={13} />
+                <Camera size={11} />
               </button>
             </div>
 
@@ -247,7 +214,7 @@ export default function AccountPage() {
                   <input
                     value={nameValue}
                     onChange={e => setNameValue(e.target.value)}
-                    className="w-full text-lg font-bold outline-none rounded-xl px-3 py-2"
+                    className="w-full text-base font-bold outline-none rounded-xl px-3 py-2"
                     style={{
                       background: 'var(--bg)',
                       border:     '1px solid var(--border)',
@@ -263,56 +230,67 @@ export default function AccountPage() {
                     <button
                       onClick={() => saveProfile({ full_name: nameValue })}
                       disabled={saving}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                                 text-sm font-semibold disabled:opacity-50"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg
+                                 text-xs font-semibold disabled:opacity-50"
                       style={{ background: 'var(--accent)', color: '#fff' }}
                     >
-                      <Check size={13} />{saving ? 'Saving…' : 'Save'}
+                      <Check size={12} />{saving ? 'Saving…' : 'Save'}
                     </button>
                     <button
                       onClick={() => { setEditingName(false); setNameValue(user.full_name ?? '') }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm"
-                      style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                      style={{
+                        background: 'var(--bg-subtle)',
+                        color:      'var(--text-muted)',
+                        border:     '1px solid var(--border)',
+                      }}
                     >
-                      <X size={13} /> Cancel
+                      <X size={12} /> Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold truncate" style={{ color: 'var(--text-primary)' }}>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h2
+                    className="text-base sm:text-xl font-bold truncate"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
                     {user.full_name}
                   </h2>
                   <button
                     onClick={() => setEditingName(true)}
-                    className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-subtle)]"
+                    className="flex-shrink-0 p-1 rounded-lg transition-colors
+                               hover:bg-[var(--bg-subtle)]"
                     style={{ color: 'var(--text-muted)' }}
                     title="Edit name"
                   >
-                    <Edit2 size={13} />
+                    <Edit2 size={12} />
                   </button>
                 </div>
               )}
 
               {saveSuccess && (
-                <p className="text-xs mt-1" style={{ color: '#16a34a' }}>✓ {saveSuccess}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#16a34a' }}>✓ {saveSuccess}</p>
               )}
               {saveError && (
-                <p className="text-xs mt-1" style={{ color: 'var(--breaking)' }}>{saveError}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--breaking)' }}>{saveError}</p>
               )}
 
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                 <span
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg
+                             text-xs font-semibold"
                   style={{ background: roleConfig.bg, color: roleConfig.color }}
                 >
-                  <Shield size={11} />
+                  <Shield size={10} />
                   {roleConfig.label}
                 </span>
                 {!user.email_verified && (
-                  <span className="text-xs px-2.5 py-1 rounded-lg font-semibold"
-                    style={{ background: 'rgba(185,28,28,0.08)', color: 'var(--breaking)' }}>
-                    Email unverified
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-lg font-semibold"
+                    style={{ background: 'rgba(185,28,28,0.08)', color: 'var(--breaking)' }}
+                  >
+                    Unverified
                   </span>
                 )}
               </div>
@@ -321,29 +299,29 @@ export default function AccountPage() {
 
           {/* Avatar error */}
           {avatarError && (
-            <p className="text-xs mb-4 -mt-2" style={{ color: 'var(--breaking)' }}>
+            <p className="text-xs mb-3 -mt-2" style={{ color: 'var(--breaking)' }}>
               {avatarError}
             </p>
           )}
 
-          {/* Avatar picker */}
+          {/* ── Avatar picker ─────────────────────────────── */}
           {showAvatarPicker && (
-            <div className="rounded-xl p-4 mb-5"
-              style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
-
-              <p className="text-xs font-semibold uppercase tracking-wider mb-3"
+            <div
+              className="rounded-xl p-3 sm:p-4 mb-4"
+              style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2.5"
                 style={{ color: 'var(--text-muted)' }}>
                 Upload a photo
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm
                            font-medium transition-opacity hover:opacity-80 mb-4"
                 style={{ background: 'var(--accent)', color: '#fff' }}
               >
-                <Camera size={14} /> Choose from device
+                <Camera size={13} /> Choose from device
               </button>
-              {/* Hidden file input — device uploads: jpg/png/webp only */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -352,11 +330,15 @@ export default function AccountPage() {
                 onChange={handleFileChange}
               />
 
-              <p className="text-xs font-semibold uppercase tracking-wider mb-3"
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2.5"
                 style={{ color: 'var(--text-muted)' }}>
-                Or choose a preset avatar
+                Or choose a preset
               </p>
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+              {/*
+                4 columns always — each avatar ~60-70px on mobile,
+                comfortable tap target. 8-col would be ~35px = too small.
+              */}
+              <div className="grid grid-cols-4 gap-2">
                 {AVATAR_STYLES.map(style => {
                   const url = getDiceBearUrl(style, user.email)
                   return (
@@ -364,7 +346,7 @@ export default function AccountPage() {
                       key={style}
                       onClick={() => handlePresetAvatar(url)}
                       disabled={avatarUploading}
-                      className="rounded-xl overflow-hidden transition-transform
+                      className="rounded-xl overflow-hidden aspect-square transition-transform
                                  hover:scale-105 active:scale-95 disabled:opacity-50"
                       style={{ border: '2px solid var(--border)' }}
                       title={style}
@@ -385,9 +367,9 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* Bio */}
-          <div className="mb-5">
-            <div className="flex items-center gap-2 mb-2">
+          {/* ── Bio ─────────────────────────────────────────── */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-1.5">
               <span className="text-xs font-semibold uppercase tracking-wider"
                 style={{ color: 'var(--text-muted)' }}>
                 Bio
@@ -398,7 +380,7 @@ export default function AccountPage() {
                   className="p-1 rounded transition-colors hover:bg-[var(--bg-subtle)]"
                   style={{ color: 'var(--text-muted)' }}
                 >
-                  <Edit2 size={12} />
+                  <Edit2 size={11} />
                 </button>
               )}
             </div>
@@ -427,18 +409,22 @@ export default function AccountPage() {
                     <button
                       onClick={() => saveProfile({ bio: bioValue })}
                       disabled={saving}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg
                                  text-xs font-semibold disabled:opacity-50"
                       style={{ background: 'var(--accent)', color: '#fff' }}
                     >
-                      <Check size={12} />{saving ? 'Saving…' : 'Save'}
+                      <Check size={11} />{saving ? 'Saving…' : 'Save'}
                     </button>
                     <button
                       onClick={() => { setEditingBio(false); setBioValue(user.bio ?? '') }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs"
-                      style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                      style={{
+                        background: 'var(--bg-subtle)',
+                        color:      'var(--text-muted)',
+                        border:     '1px solid var(--border)',
+                      }}
                     >
-                      <X size={12} /> Cancel
+                      <X size={11} /> Cancel
                     </button>
                   </div>
                 </div>
@@ -449,45 +435,69 @@ export default function AccountPage() {
                 style={{ color: user.bio ? 'var(--text-secondary)' : 'var(--text-muted)' }}
                 onClick={() => setEditingBio(true)}
               >
-                {user.bio || 'Click to add a bio…'}
+                {user.bio || 'Tap to add a bio…'}
               </p>
             )}
           </div>
 
-          {/* Info rows */}
+          {/* ── Info rows ────────────────────────────────────
+              Mobile: label stacks above value — email addresses and
+              dates get the full card width instead of being crammed
+              into ~160px on a 375px screen.
+          ── */}
           <div className="rounded-xl overflow-hidden"
             style={{ border: '1px solid var(--border)' }}>
             <InfoRow icon={Mail}  label="Email"        value={user.email} />
-            <InfoRow icon={User}  label="Auth method"  value={
-              user.auth_provider === 'google'      ? 'Google account'
+            <InfoRow icon={User}  label="Auth"         value={
+              user.auth_provider === 'google'       ? 'Google'
               : user.auth_provider === 'magic_link' ? 'Magic link'
               : 'Email & password'
             } />
             {joinedDate && (
-              <InfoRow icon={Clock} label="Member since" value={joinedDate} />
+              <InfoRow icon={Clock} label="Joined" value={joinedDate} />
             )}
           </div>
         </div>
 
-        {/* Quick links */}
-        <div className="rounded-2xl overflow-hidden mb-5"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-          <div className="px-5 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        {/* ── Quick links ──────────────────────────────────── */}
+        <div
+          className="rounded-2xl overflow-hidden mb-4"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+        >
+          <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
             <p className="text-xs font-semibold uppercase tracking-wider"
               style={{ color: 'var(--text-muted)' }}>
               Quick access
             </p>
           </div>
-          <QuickLink to="/saved"    icon={Bookmark}       label="Saved articles" description="Articles you've bookmarked" />
-          <QuickLink to="/trending" icon={TrendingUp}     label="Trending"        description="Most-read stories right now" />
+          <QuickLink
+            to="/saved"
+            icon={Bookmark}
+            label="Saved articles"
+            description="Your bookmarked stories"
+          />
+          <QuickLink
+            to="/trending"
+            icon={TrendingUp}
+            label="Trending"
+            description="Most-read right now"
+          />
           {['author', 'editor', 'super_admin'].includes(user.role) && (
-            <QuickLink to="/admin" icon={LayoutDashboard} label="Dashboard"       description="Manage articles and content" accent />
+            <QuickLink
+              to="/admin"
+              icon={LayoutDashboard}
+              label="Dashboard"
+              description="Manage content"
+              accent
+            />
           )}
         </div>
 
-        {/* Sign out */}
-        <div className="rounded-2xl p-5"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        {/* ── Sign out — desktop only (mobile has top-right button) */}
+        <div
+          className="hidden sm:block rounded-2xl p-5"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+        >
           <p className="text-xs font-semibold uppercase tracking-wider mb-4"
             style={{ color: 'var(--text-muted)' }}>
             Account
@@ -519,20 +529,35 @@ function InfoRow({ icon: Icon, label, value }: {
   value: string
 }) {
   return (
-    <div className="flex items-center gap-4 px-5 py-3.5"
-      style={{ borderBottom: '1px solid var(--border)' }}>
-      <Icon size={14} className="flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-      <span className="text-sm w-28 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </span>
-      <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+    /*
+      Stacked on mobile (flex-col), inline on sm+.
+      word-break: break-all on value handles long emails gracefully.
+    */
+    <div
+      className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4
+                 px-4 py-3"
+      style={{ borderBottom: '1px solid var(--border)' }}
+    >
+      <div className="flex items-center gap-2 sm:w-28 flex-shrink-0">
+        <Icon size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+        <span className="text-xs font-semibold uppercase tracking-wide"
+          style={{ color: 'var(--text-muted)' }}>
+          {label}
+        </span>
+      </div>
+      <span
+        className="text-sm font-medium pl-5 sm:pl-0"
+        style={{ color: 'var(--text-primary)', wordBreak: 'break-all' }}
+      >
         {value}
       </span>
     </div>
   )
 }
 
-function QuickLink({ to, icon: Icon, label, description, accent = false }: {
+function QuickLink({
+  to, icon: Icon, label, description, accent = false,
+}: {
   to:          string
   icon:        React.ElementType
   label:       string
@@ -542,22 +567,30 @@ function QuickLink({ to, icon: Icon, label, description, accent = false }: {
   return (
     <Link
       to={to}
-      className="flex items-center gap-4 px-5 py-4 transition-colors
+      className="flex items-center gap-3 px-4 py-3.5 transition-colors
                  hover:bg-[var(--bg-subtle)]"
       style={{ borderBottom: '1px solid var(--border)' }}
     >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+      <div
+        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
         style={{
           background: accent ? 'var(--accent-light)' : 'var(--bg-subtle)',
           color:      accent ? 'var(--accent)'        : 'var(--text-muted)',
-        }}>
-        <Icon size={16} />
+        }}
+      >
+        <Icon size={15} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</p>
-        <p className="text-xs mt-0.5"        style={{ color: 'var(--text-muted)' }}>{description}</p>
+        <p className="text-sm font-semibold leading-tight"
+          style={{ color: 'var(--text-primary)' }}>
+          {label}
+        </p>
+        <p className="text-xs mt-0.5 leading-tight"
+          style={{ color: 'var(--text-muted)' }}>
+          {description}
+        </p>
       </div>
-      <ChevronRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+      <ChevronRight size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
     </Link>
   )
 }

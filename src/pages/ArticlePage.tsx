@@ -5,17 +5,21 @@ import { Link, useParams, useLocation } from 'react-router-dom'
 import {
   Clock, Eye, Heart, Bookmark,
   Twitter, Link2, ChevronRight,
-  Trash2, CornerDownRight,
+  Trash2, CornerDownRight, X,
 } from 'lucide-react'
 import {
   getArticle, getTrending, toggleLike, getLikeStatus,
   trackView, getComments, postComment, deleteComment,
 } from '../api/articles'
 import type { Comment } from '../api/articles'
-import { useAuth }       from '../context/AuthContext'
-import type { Article }  from '../types'
+import { useAuth }        from '../context/AuthContext'
+import type { Article }   from '../types'
 import { timeAgo, formatCount, formatDate } from '../lib/utils'
-import { SEED_ARTICLES } from '../lib/seed'
+import { SEED_ARTICLES }  from '../lib/seed'
+import {
+  toggleSaveArticle,
+  getInitialSaveStatus,
+} from './Savedpage'
 
 // ── Reading progress bar ──────────────────────────────────────
 
@@ -60,25 +64,122 @@ function ArticleSkeleton() {
   )
 }
 
+// ── Save gate modal ───────────────────────────────────────────
+// Shown to guests when they tap Save. Clean, non-intrusive overlay.
+
+function SaveGateModal({ onClose }: { onClose: () => void }) {
+  // Close on backdrop click
+  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose()
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center
+                 justify-center p-4 sm:p-6"
+      style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+      onClick={handleBackdrop}
+    >
+      <div
+        className="w-full rounded-2xl p-6 relative"
+        style={{
+          maxWidth:   '400px',
+          background: 'var(--bg-surface)',
+          border:     '1px solid var(--border)',
+          boxShadow:  '0 20px 60px rgba(0,0,0,0.2)',
+        }}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1.5 rounded-lg transition-colors
+                     hover:bg-[var(--bg-subtle)]"
+          style={{ color: 'var(--text-muted)' }}
+          aria-label="Close"
+        >
+          <X size={16} />
+        </button>
+
+        {/* Icon */}
+        <div
+          className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+          style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+        >
+          <Bookmark size={22} />
+        </div>
+
+        <h2
+          className="text-lg font-bold mb-1.5 tracking-tight"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Save this article
+        </h2>
+        <p
+          className="text-sm leading-relaxed mb-5"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          Sign in to save articles and access them from any device — completely free.
+        </p>
+
+        <div className="flex flex-col gap-2.5">
+          <Link
+            to="/login"
+            state={{ from: window.location.pathname }}
+            onClick={onClose}
+            className="flex items-center justify-center w-full rounded-xl
+                       text-sm font-bold transition-opacity hover:opacity-90"
+            style={{
+              height:     '46px',
+              background: 'var(--accent)',
+              color:      '#fff',
+            }}
+          >
+            Sign in
+          </Link>
+          <Link
+            to="/register"
+            state={{ from: window.location.pathname }}
+            onClick={onClose}
+            className="flex items-center justify-center w-full rounded-xl
+                       text-sm font-semibold transition-opacity hover:opacity-80"
+            style={{
+              height:     '46px',
+              background: 'var(--bg-subtle)',
+              color:      'var(--text-secondary)',
+              border:     '1px solid var(--border)',
+            }}
+          >
+            Create free account
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Action bar ────────────────────────────────────────────────
 //
-// Samsung S23 fix: fixed height (36px) on every button, single row, no wrap.
-// Text labels hidden below sm (640px). marginLeft:auto on Save always works
-// because there is exactly one flex row — never wraps.
+// Save state is lifted to ArticlePage and passed down via props
+// so it's shared between the top and bottom ActionBar instances.
 
 function ActionBar({
   article,
   liked,
   likeCount,
+  saved,
+  savePending,
   onLike,
+  onSave,
 }: {
-  article:   Article
-  liked:     boolean
-  likeCount: number
-  onLike:    () => void
+  article:     Article
+  liked:       boolean
+  likeCount:   number
+  saved:       boolean
+  savePending: boolean
+  onLike:      () => void
+  onSave:      () => void
 }) {
   const [copied, setCopied] = useState(false)
-  const [saved,  setSaved]  = useState(false)
 
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href)
@@ -119,7 +220,7 @@ function ActionBar({
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
-      {/* Like — no login required, fingerprint handles anonymous */}
+      {/* Like */}
       <button
         onClick={onLike}
         style={{
@@ -167,12 +268,15 @@ function ActionBar({
         <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
       </button>
 
-      {/* Save */}
+      {/* Save — wired to real API, shows gate modal for guests */}
       <button
-        onClick={() => setSaved(v => !v)}
+        onClick={onSave}
+        disabled={savePending}
         style={{
           ...base,
-          marginLeft: 'auto',
+          marginLeft:  'auto',
+          opacity:     savePending ? 0.6 : 1,
+          cursor:      savePending ? 'not-allowed' : 'pointer',
           ...(saved ? {
             background: 'var(--accent-light)',
             border:     '1px solid var(--accent)',
@@ -190,13 +294,6 @@ function ActionBar({
 }
 
 // ── Comments section ──────────────────────────────────────────
-//
-// Design principles:
-// - Textarea always visible and typeable for everyone including guests
-// - Anonymous users can type freely; auth nudge shown only on Post click
-// - Comment box is clean and minimal — no focus rings, no colour changes
-// - Draft persisted in sessionStorage so login redirect doesn't lose text
-// - Reply inline composer per comment, same auth gate
 
 function CommentsSection({
   articleId,
@@ -210,7 +307,6 @@ function CommentsSection({
   const [comments,      setComments]      = useState<Comment[]>([])
   const [loading,       setLoading]       = useState(true)
 
-  // Draft persisted per article so it survives the login redirect
   const draftKey = `mpn_comment_draft_${articleId}`
   const [body,          setBody]          = useState<string>(() => {
     try { return sessionStorage.getItem(`mpn_comment_draft_${articleId}`) ?? '' } catch { return '' }
@@ -220,7 +316,6 @@ function CommentsSection({
   const [successMsg,    setSuccessMsg]    = useState('')
   const [showAuthNudge, setShowAuthNudge] = useState(false)
 
-  // Reply state
   const [replyingTo,      setReplyingTo]      = useState<string | null>(null)
   const [replyBody,       setReplyBody]       = useState('')
   const [replySubmitting, setReplySubmitting] = useState(false)
@@ -249,7 +344,6 @@ function CommentsSection({
     if (replyingTo) setTimeout(() => replyRef.current?.focus(), 50)
   }, [replyingTo])
 
-  // ── Submit top-level comment ──────────────────────────────
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isLoggedIn) { setShowAuthNudge(true); return }
@@ -275,7 +369,6 @@ function CommentsSection({
     }
   }
 
-  // ── Submit reply ──────────────────────────────────────────
   const submitReply = async (parentId: string) => {
     if (!isLoggedIn) { setReplyAuthNudge(true); return }
     if (!emailVerified) { setReplyError('Please verify your email before replying.'); return }
@@ -311,24 +404,17 @@ function CommentsSection({
     setReplyAuthNudge(false)
   }
 
-  // Shared minimal sign-in prompt — plain text, no coloured box
   const SignInPrompt = () => (
     <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-      <Link
-        to="/login"
-        {...loginState}
+      <Link to="/login" {...loginState}
         className="font-semibold hover:underline"
-        style={{ color: 'var(--text-secondary)' }}
-      >
+        style={{ color: 'var(--text-secondary)' }}>
         Sign in
       </Link>
       {' '}or{' '}
-      <Link
-        to="/register"
-        {...registerState}
+      <Link to="/register" {...registerState}
         className="font-semibold hover:underline"
-        style={{ color: 'var(--text-secondary)' }}
-      >
+        style={{ color: 'var(--text-secondary)' }}>
         create an account
       </Link>
       {' '}to post comments.
@@ -338,15 +424,12 @@ function CommentsSection({
   return (
     <section className="mt-12">
 
-      {/* Header */}
       <div
         className="flex items-center gap-3 pb-4 mb-8"
         style={{ borderBottom: '1px solid var(--border)' }}
       >
-        <h3
-          className="text-sm font-semibold uppercase tracking-wider"
-          style={{ color: 'var(--text-muted)' }}
-        >
+        <h3 className="text-sm font-semibold uppercase tracking-wider"
+          style={{ color: 'var(--text-muted)' }}>
           Discussion
         </h3>
         {comments.length > 0 && (
@@ -356,7 +439,6 @@ function CommentsSection({
         )}
       </div>
 
-      {/* Comment form — always visible */}
       <form onSubmit={submit} className="mb-10">
         <textarea
           value={body}
@@ -370,8 +452,8 @@ function CommentsSection({
           rows={3}
           className="w-full px-0 py-3 text-sm resize-none outline-none"
           style={{
-            background:  'transparent',
-            color:       'var(--text-primary)',
+            background:   'transparent',
+            color:        'var(--text-primary)',
             borderBottom: '1px solid var(--border)',
             borderTop:    'none',
             borderLeft:   'none',
@@ -380,7 +462,6 @@ function CommentsSection({
             lineHeight:   '1.6',
           }}
         />
-
         <div className="flex items-center justify-between mt-3">
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {isLoggedIn ? user?.full_name : 'Not signed in'}
@@ -390,18 +471,12 @@ function CommentsSection({
             disabled={submitting || (isLoggedIn && !body.trim())}
             className="text-xs font-semibold px-4 py-2 rounded disabled:opacity-40
                        transition-opacity hover:opacity-80"
-            style={{
-              background: 'var(--text-primary)',
-              color:      'var(--bg)',
-            }}
+            style={{ background: 'var(--text-primary)', color: 'var(--bg)' }}
           >
             {submitting ? 'Posting…' : 'Post comment'}
           </button>
         </div>
-
-        {/* Auth nudge — plain text, shown only after clicking Post */}
         {showAuthNudge && <SignInPrompt />}
-
         {isLoggedIn && !emailVerified && (
           <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
             Please verify your email to post comments.
@@ -415,7 +490,6 @@ function CommentsSection({
         )}
       </form>
 
-      {/* Comment list */}
       {loading ? (
         <div className="space-y-6">
           {[1, 2, 3].map(n => (
@@ -437,11 +511,7 @@ function CommentsSection({
         <div className="space-y-8">
           {comments.map(comment => (
             <div key={comment.id}>
-
-              {/* Top-level comment */}
               <div className="flex gap-3 group">
-
-                {/* Avatar initial */}
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center
                              flex-shrink-0 text-[11px] font-semibold overflow-hidden mt-0.5"
@@ -452,9 +522,7 @@ function CommentsSection({
                     : (comment.author_name?.charAt(0) ?? '?').toUpperCase()
                   }
                 </div>
-
                 <div className="flex-1 min-w-0">
-                  {/* Meta */}
                   <div className="flex items-baseline gap-2 mb-1">
                     <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
                       {comment.author_name ?? 'Anonymous'}
@@ -469,15 +537,14 @@ function CommentsSection({
                       {timeAgo(comment.created_at)}
                     </span>
                   </div>
-
-                  {/* Body */}
                   <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                     {comment.body}
                   </p>
-
-                  {/* Reply toggle */}
                   <button
-                    onClick={() => replyingTo === comment.id ? closeReply() : (setReplyingTo(comment.id), setReplyBody(''), setReplyError(''), setReplyAuthNudge(false))}
+                    onClick={() => replyingTo === comment.id
+                      ? closeReply()
+                      : (setReplyingTo(comment.id), setReplyBody(''), setReplyError(''), setReplyAuthNudge(false))
+                    }
                     className="mt-2 text-[11px] flex items-center gap-1 transition-opacity hover:opacity-60"
                     style={{ color: 'var(--text-muted)' }}
                   >
@@ -485,7 +552,6 @@ function CommentsSection({
                     {replyingTo === comment.id ? 'Cancel' : 'Reply'}
                   </button>
 
-                  {/* Inline reply composer */}
                   {replyingTo === comment.id && (
                     <div className="mt-3 pl-4" style={{ borderLeft: '2px solid var(--border)' }}>
                       <textarea
@@ -510,12 +576,9 @@ function CommentsSection({
                         }}
                       />
                       <div className="flex items-center justify-between mt-2">
-                        <button
-                          type="button"
-                          onClick={closeReply}
+                        <button type="button" onClick={closeReply}
                           className="text-[11px] transition-opacity hover:opacity-60"
-                          style={{ color: 'var(--text-muted)' }}
-                        >
+                          style={{ color: 'var(--text-muted)' }}>
                           Cancel
                         </button>
                         <button
@@ -536,7 +599,6 @@ function CommentsSection({
                     </div>
                   )}
 
-                  {/* Existing replies */}
                   {comment.replies && comment.replies.length > 0 && (
                     <div className="mt-5 space-y-5 pl-4"
                       style={{ borderLeft: '2px solid var(--border)' }}>
@@ -582,7 +644,6 @@ function CommentsSection({
                   )}
                 </div>
 
-                {/* Delete top-level */}
                 {user?.id && (
                   <button
                     onClick={() => remove(comment.id)}
@@ -595,7 +656,6 @@ function CommentsSection({
                   </button>
                 )}
               </div>
-
             </div>
           ))}
         </div>
@@ -605,67 +665,58 @@ function CommentsSection({
 }
 
 // ── Main Article Page ─────────────────────────────────────────
+
 export default function ArticlePage() {
   const { slug }       = useParams<{ slug: string }>()
-  //const navigate       = useNavigate()
   const location       = useLocation()
   const { isLoggedIn } = useAuth()
 
-  const [article,   setArticle]   = useState<Article | null>(null)
-  const [related,   setRelated]   = useState<Article[]>([])
-  const [loading,   setLoading]   = useState(true)
-  const [liked,     setLiked]     = useState(false)
-  const [likeCount, setLikeCount] = useState(0)
-  const [notFound,  setNotFound]  = useState(false)
+  const [article,      setArticle]      = useState<Article | null>(null)
+  const [related,      setRelated]      = useState<Article[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [liked,        setLiked]        = useState(false)
+  const [likeCount,    setLikeCount]    = useState(0)
+  const [notFound,     setNotFound]     = useState(false)
 
-  // Scroll to top on every article navigation
+  // ── Save state lifted here so both ActionBar instances share it ──
+  const [saved,        setSaved]        = useState(false)
+  const [savePending,  setSavePending]  = useState(false)
+  const [showSaveGate, setShowSaveGate] = useState(false)
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [slug])
 
-  // ── Load article ─────────────────────────────────────────────
-  // trackView is called here — inside the .then() — so it fires
-  // exactly once per article load regardless of React re-renders.
-  // Using a useEffect with article?.id as dependency caused the
-  // view counter to increment multiple times because the article
-  // state object triggers multiple re-renders during load.
+  // ── Load article ──────────────────────────────────────────────
   useEffect(() => {
     if (!slug) return
     setLoading(true)
     setNotFound(false)
     setArticle(null)
+    setSaved(false)
 
     getArticle(slug)
       .then(res => {
         const a = res.data
         if (!a) {
           const seed = SEED_ARTICLES.find(s => s.slug === slug)
-          if (seed) {
-            setArticle(seed)
-            setLikeCount(seed.like_count)
-          } else {
-            setNotFound(true)
-          }
+          if (seed) { setArticle(seed); setLikeCount(seed.like_count) }
+          else setNotFound(true)
           return
         }
         setArticle(a)
         setLikeCount(a.like_count)
-        // Single guaranteed call — not inside a useEffect so no double-fire
         trackView(a.id)
       })
       .catch(() => {
         const seed = SEED_ARTICLES.find(s => s.slug === slug)
-        if (seed) {
-          setArticle(seed)
-          setLikeCount(seed.like_count)
-        } else {
-          setNotFound(true)
-        }
+        if (seed) { setArticle(seed); setLikeCount(seed.like_count) }
+        else setNotFound(true)
       })
       .finally(() => setLoading(false))
   }, [slug])
 
-  // ── Like status + count sync ──────────────────────────────
+  // ── Like status ───────────────────────────────────────────────
   useEffect(() => {
     if (!article?.id) return
     getLikeStatus(article.id)
@@ -676,7 +727,15 @@ export default function ArticlePage() {
       .catch(() => {})
   }, [article?.id, isLoggedIn])
 
-  // ── Related articles ──────────────────────────────────────
+  // ── Save status — load from API for logged-in, localStorage for guest ──
+  useEffect(() => {
+    if (!article?.id) return
+    getInitialSaveStatus(article.id, isLoggedIn)
+      .then(isSaved => setSaved(isSaved))
+      .catch(() => setSaved(false))
+  }, [article?.id, isLoggedIn])
+
+  // ── Related articles ──────────────────────────────────────────
   useEffect(() => {
     if (!article) return
     getTrending(4)
@@ -687,28 +746,49 @@ export default function ArticlePage() {
       .catch(() => setRelated(SEED_ARTICLES.slice(0, 3)))
   }, [article, slug])
 
-  // ── Like handler — no login required ─────────────────────
-  // Anonymous likes are tracked via fingerprint (see articles.ts).
-  // Redirect to login is intentionally removed for this action.
+  // ── Like handler ──────────────────────────────────────────────
   const handleLike = async () => {
     if (!article?.id) return
-
     const wasLiked = liked
     setLiked(!wasLiked)
     setLikeCount(c => wasLiked ? c - 1 : c + 1)
-
     try {
       const res = await toggleLike(article.id)
       setLiked(res.data.liked)
       setLikeCount(res.data.like_count)
     } catch {
-      // Revert on failure
       setLiked(wasLiked)
       setLikeCount(c => wasLiked ? c + 1 : c - 1)
     }
   }
 
-  // ── 404 ──────────────────────────────────────────────────
+  // ── Save handler ──────────────────────────────────────────────
+  // Guests → show modal (no page redirect, no localStorage save).
+  // Logged-in → call API optimistically.
+  const handleSave = async () => {
+    if (!article) return
+
+    if (!isLoggedIn) {
+      setShowSaveGate(true)
+      return
+    }
+
+    // Optimistic update
+    const wasSaved = saved
+    setSaved(!wasSaved)
+    setSavePending(true)
+
+    try {
+      const result = await toggleSaveArticle(article, true)
+      setSaved(result.saved)
+    } catch {
+      setSaved(wasSaved) // revert on error
+    } finally {
+      setSavePending(false)
+    }
+  }
+
+  // ── 404 ───────────────────────────────────────────────────────
   if (notFound) {
     return (
       <div
@@ -736,6 +816,11 @@ export default function ArticlePage() {
     <>
       <ReadingProgress />
 
+      {/* Save gate modal — shown to guests only */}
+      {showSaveGate && (
+        <SaveGateModal onClose={() => setShowSaveGate(false)} />
+      )}
+
       <div style={{ background: 'var(--bg)' }}>
         <div className="page-container">
 
@@ -759,7 +844,6 @@ export default function ArticlePage() {
             {/* ══ Article ══ */}
             <article>
 
-              {/* Category + breaking */}
               <div className="flex items-center gap-2 mb-4">
                 {article.is_breaking && (
                   <span className="breaking-strip">● Breaking</span>
@@ -771,13 +855,11 @@ export default function ArticlePage() {
                 </Link>
               </div>
 
-              {/* Headline */}
               <h1 className="font-display text-display-xl mb-3 leading-tight"
                 style={{ color: 'var(--text-primary)' }}>
                 {article.title}
               </h1>
 
-              {/* Subtitle */}
               {article.subtitle && (
                 <p className="serif-text text-xl mb-5 leading-relaxed"
                   style={{ color: 'var(--text-secondary)' }}>
@@ -785,7 +867,6 @@ export default function ArticlePage() {
                 </p>
               )}
 
-              {/* Meta row */}
               <div
                 className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-5 mb-6 text-sm"
                 style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}
@@ -807,12 +888,18 @@ export default function ArticlePage() {
               {/* Action bar — top */}
               {article.id && (
                 <div className="mb-6">
-                  <ActionBar article={article} liked={liked}
-                    likeCount={likeCount} onLike={handleLike} />
+                  <ActionBar
+                    article={article}
+                    liked={liked}
+                    likeCount={likeCount}
+                    saved={saved}
+                    savePending={savePending}
+                    onLike={handleLike}
+                    onSave={handleSave}
+                  />
                 </div>
               )}
 
-              {/* Cover image */}
               {article.cover_image && (
                 <figure className="mb-8 -mx-4 sm:mx-0">
                   <div className="img-zoom sm:rounded-xl overflow-hidden"
@@ -823,7 +910,6 @@ export default function ArticlePage() {
                 </figure>
               )}
 
-              {/* Article body */}
               {article.body ? (
                 <div className="article-body prose-article"
                   dangerouslySetInnerHTML={{ __html: article.body }} />
@@ -831,7 +917,6 @@ export default function ArticlePage() {
                 <div className="article-body"><p>{article.excerpt}</p></div>
               ) : null}
 
-              {/* Tags */}
               {article.tags && article.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-10 pt-6"
                   style={{ borderTop: '1px solid var(--border)' }}>
@@ -855,38 +940,18 @@ export default function ArticlePage() {
               {/* Action bar — bottom */}
               {article.id && (
                 <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
-                  <ActionBar article={article} liked={liked}
-                    likeCount={likeCount} onLike={handleLike} />
+                  <ActionBar
+                    article={article}
+                    liked={liked}
+                    likeCount={likeCount}
+                    saved={saved}
+                    savePending={savePending}
+                    onLike={handleLike}
+                    onSave={handleSave}
+                  />
                 </div>
               )}
 
-              {/* Author card */}
-              {/* <div
-                className="mt-10 p-5 rounded-xl flex gap-4 items-center"
-                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-              >
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center
-                             text-base font-semibold flex-shrink-0 overflow-hidden"
-                  style={{ background: 'var(--border)', color: 'var(--text-muted)' }}
-                >
-                  {article.author_avatar
-                    ? <img src={article.author_avatar} alt="" className="w-full h-full object-cover" />
-                    : (article.author_name?.charAt(0) ?? '?').toUpperCase()
-                  }
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider mb-0.5"
-                    style={{ color: 'var(--text-muted)' }}>
-                    Written by
-                  </p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    {article.author_name ?? 'Mango People News'}
-                  </p>
-                </div>
-              </div> */}
-
-              {/* Comments */}
               {article.id && (
                 <CommentsSection
                   articleId={article.id}
@@ -899,8 +964,6 @@ export default function ArticlePage() {
             {/* ══ Sidebar ══ */}
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-8">
-
-                {/* Related articles */}
                 <div>
                   <div className="pb-3 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
                     <span className="text-xs font-semibold uppercase tracking-wider"
@@ -938,7 +1001,6 @@ export default function ArticlePage() {
                   </div>
                 </div>
 
-                {/* Newsletter */}
                 <div className="py-6" style={{ borderTop: '1px solid var(--border)' }}>
                   <p className="text-xs font-semibold uppercase tracking-wider mb-3"
                     style={{ color: 'var(--text-muted)' }}>
@@ -954,7 +1016,6 @@ export default function ArticlePage() {
                     Subscribe free
                   </Link>
                 </div>
-
               </div>
             </aside>
           </div>
