@@ -16,6 +16,7 @@ import AccountPage from './pages/Accountpage'
 import TrendingPage from './pages/Trendingpage'
 import SavedPage from './pages/Savedpage'
 import ArticlesPage from './pages/Articlespage'
+import SearchPage from './pages/Searchpage'
 
 function App() {
   return (
@@ -32,7 +33,7 @@ function App() {
             {/* These pages come next */}
             <Route path="/article/:slug"    element={<ArticlePage />} />
             <Route path="/category/:slug"   element={<CategoryPage />} />
-            {/* <Route path="/search"           element={<div>Search page coming</div>} /> */}
+            <Route path="/search"           element={<SearchPage />} /> 
             <Route path="/trending"         element={<TrendingPage />} />
 
             {/* Protected */}

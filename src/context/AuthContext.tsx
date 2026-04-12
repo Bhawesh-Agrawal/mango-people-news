@@ -16,6 +16,7 @@ import {
   refreshToken as apiRefreshToken,
 } from '../api/auth'
 import type { LoginPayload, RegisterPayload } from '../api/auth'
+import { client } from '../api/client'
 
 interface RegisterResult {
   needsVerification: boolean
@@ -96,6 +97,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     restoreSession()
   }, [])
 
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      // Clear all auth state — user will be redirected by ProtectedRoute
+      setUser(null)
+      localStorage.removeItem('mpn_token')
+      // Optional: show a toast or message to explain why they were logged out
+      // toast.info('Your session expired. Please sign in again.')
+    }
+  
+    window.addEventListener('auth:session-expired', handleSessionExpired)
+    return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
+  }, [])
+
   // ── Login ─────────────────────────────────────────────────────
   const handleLogin = useCallback(async (payload: LoginPayload) => {
     const res = await apiLogin(payload)
@@ -149,11 +163,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   // ── Refresh user ──────────────────────────────────────────────
-  const handleRefresh = useCallback(async () => {
+  const refresh = useCallback(async () => {
     try {
-      const res = await getMe()
-      if (res.data) setUser(res.data)
+      const { data } = await client.post('/auth/refresh')
+      const token    = data?.data?.accessToken
+      if (token) {
+        localStorage.setItem('mpn_token', token)
+        // Re-fetch user to keep context fresh
+        const meRes = await client.get('/auth/me')
+        setUser(meRes.data?.data ?? null)
+      }
     } catch {
+      // Refresh failed — this is handled by client.ts which dispatches
+      // 'auth:session-expired'. Don't throw here, it causes component crashes.
+      // Just clear silently:
       setUser(null)
       localStorage.removeItem('mpn_token')
     }
@@ -172,7 +195,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       register:    handleRegister,
       googleLogin: handleGoogleLogin,
       logout:      handleLogout,
-      refresh:     handleRefresh,
+      refresh:     refresh,
     }}>
       {children}
     </AuthContext.Provider>
