@@ -1,0 +1,20 @@
+# Mango People News — robots.txt
+# Update Sitemap URL once production domain is finalised
+
+User-agent: *
+Allow: /
+
+# Block account/settings pages from indexing
+Disallow: /account
+Disallow: /settings
+Disallow: /admin
+
+# Block auth flow pages
+Disallow: /auth/
+Disallow: /verify-email
+Disallow: /magic
+
+# Block search result pages (thin content, not useful in Google index)
+Disallow: /search
+
+Sitemap: https://dev.gallitify.tech/sitemap.xml

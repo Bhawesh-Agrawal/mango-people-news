@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { client }  from '../api/client'
+import SEO         from '../seo/Seo'
 
 // ── DiceBear preset avatars ───────────────────────────────────
 const AVATAR_STYLES = [
@@ -139,385 +140,364 @@ export default function AccountPage() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      <div className="mx-auto w-full px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '680px' }}>
+    <>
+      {/* noIndex — private page, must not appear in Google */}
+      <SEO title="My Account" path="/account" noIndex={true} />
 
-        {/* ── Page header ──────────────────────────────────────
-            Mobile: small title + sign-out button in top-right corner.
-            Keeps vertical space free for actual content.
-            Desktop: sign-out button is also shown at the bottom.
-        ── */}
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-lg font-bold tracking-tight"
-            style={{ color: 'var(--text-primary)' }}>
-            My Account
-          </h1>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
-                       font-semibold transition-opacity hover:opacity-70"
-            style={{
-              background: 'rgba(185,28,28,0.06)',
-              color:      'var(--breaking)',
-              border:     '1px solid rgba(185,28,28,0.12)',
-            }}
+      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+        <div className="mx-auto w-full px-4 sm:px-6 py-6 sm:py-8" style={{ maxWidth: '680px' }}>
+
+          <div className="flex items-center justify-between mb-5">
+            <h1 className="text-lg font-bold tracking-tight"
+              style={{ color: 'var(--text-primary)' }}>
+              My Account
+            </h1>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs
+                         font-semibold transition-opacity hover:opacity-70"
+              style={{
+                background: 'rgba(185,28,28,0.06)',
+                color:      'var(--breaking)',
+                border:     '1px solid rgba(185,28,28,0.12)',
+              }}
+            >
+              <LogOut size={12} /> Sign out
+            </button>
+          </div>
+
+          <div
+            className="rounded-2xl p-4 sm:p-6 mb-4"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
           >
-            <LogOut size={12} /> Sign out
-          </button>
-        </div>
 
-        {/* ── Profile card ─────────────────────────────────── */}
-        <div
-          className="rounded-2xl p-4 sm:p-6 mb-4"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-        >
+            <div className="flex items-center gap-3 sm:gap-5 mb-5">
 
-          {/* ── Avatar + identity row ─────────────────────────
-              Avatar shrinks to 56px on mobile so the name column
-              gets enough width even on 320px screens.
-          ── */}
-          <div className="flex items-center gap-3 sm:gap-5 mb-5">
-
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              <div
-                className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl overflow-hidden
-                           flex items-center justify-center text-xl sm:text-2xl font-bold"
-                style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
-              >
-                {avatarUploading ? (
-                  <div
-                    className="animate-spin w-5 h-5 rounded-full"
-                    style={{ border: '2px solid var(--border)', borderTop: '2px solid var(--accent)' }}
-                  />
-                ) : user.avatar_url ? (
-                  <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  initial
-                )}
+              <div className="relative flex-shrink-0">
+                <div
+                  className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl overflow-hidden
+                             flex items-center justify-center text-xl sm:text-2xl font-bold"
+                  style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+                >
+                  {avatarUploading ? (
+                    <div
+                      className="animate-spin w-5 h-5 rounded-full"
+                      style={{ border: '2px solid var(--border)', borderTop: '2px solid var(--accent)' }}
+                    />
+                  ) : user.avatar_url ? (
+                    <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    initial
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowAvatarPicker(v => !v)}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-lg
+                             flex items-center justify-center transition-opacity hover:opacity-80"
+                  style={{ background: 'var(--accent)', color: '#fff' }}
+                  title="Change photo"
+                >
+                  <Camera size={11} />
+                </button>
               </div>
-              <button
-                onClick={() => setShowAvatarPicker(v => !v)}
-                className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-lg
-                           flex items-center justify-center transition-opacity hover:opacity-80"
-                style={{ background: 'var(--accent)', color: '#fff' }}
-                title="Change photo"
-              >
-                <Camera size={11} />
-              </button>
+
+              <div className="flex-1 min-w-0">
+                {editingName ? (
+                  <div className="space-y-2">
+                    <input
+                      value={nameValue}
+                      onChange={e => setNameValue(e.target.value)}
+                      className="w-full text-base font-bold outline-none rounded-xl px-3 py-2"
+                      style={{
+                        background: 'var(--bg)',
+                        border:     '1px solid var(--border)',
+                        color:      'var(--text-primary)',
+                      }}
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter')  saveProfile({ full_name: nameValue })
+                        if (e.key === 'Escape') { setEditingName(false); setNameValue(user.full_name ?? '') }
+                      }}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveProfile({ full_name: nameValue })}
+                        disabled={saving}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg
+                                   text-xs font-semibold disabled:opacity-50"
+                        style={{ background: 'var(--accent)', color: '#fff' }}
+                      >
+                        <Check size={12} />{saving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => { setEditingName(false); setNameValue(user.full_name ?? '') }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                        style={{
+                          background: 'var(--bg-subtle)',
+                          color:      'var(--text-muted)',
+                          border:     '1px solid var(--border)',
+                        }}
+                      >
+                        <X size={12} /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <h2
+                      className="text-base sm:text-xl font-bold truncate"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      {user.full_name}
+                    </h2>
+                    <button
+                      onClick={() => setEditingName(true)}
+                      className="flex-shrink-0 p-1 rounded-lg transition-colors
+                                 hover:bg-[var(--bg-subtle)]"
+                      style={{ color: 'var(--text-muted)' }}
+                      title="Edit name"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                  </div>
+                )}
+
+                {saveSuccess && (
+                  <p className="text-xs mt-0.5" style={{ color: '#16a34a' }}>✓ {saveSuccess}</p>
+                )}
+                {saveError && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--breaking)' }}>{saveError}</p>
+                )}
+
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg
+                               text-xs font-semibold"
+                    style={{ background: roleConfig.bg, color: roleConfig.color }}
+                  >
+                    <Shield size={10} />
+                    {roleConfig.label}
+                  </span>
+                  {!user.email_verified && (
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-lg font-semibold"
+                      style={{ background: 'rgba(185,28,28,0.08)', color: 'var(--breaking)' }}
+                    >
+                      Unverified
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Name + role */}
-            <div className="flex-1 min-w-0">
-              {editingName ? (
+            {avatarError && (
+              <p className="text-xs mb-3 -mt-2" style={{ color: 'var(--breaking)' }}>
+                {avatarError}
+              </p>
+            )}
+
+            {showAvatarPicker && (
+              <div
+                className="rounded-xl p-3 sm:p-4 mb-4"
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
+              >
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2.5"
+                  style={{ color: 'var(--text-muted)' }}>
+                  Upload a photo
+                </p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm
+                             font-medium transition-opacity hover:opacity-80 mb-4"
+                  style={{ background: 'var(--accent)', color: '#fff' }}
+                >
+                  <Camera size={13} /> Choose from device
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2.5"
+                  style={{ color: 'var(--text-muted)' }}>
+                  Or choose a preset
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {AVATAR_STYLES.map(style => {
+                    const url = getDiceBearUrl(style, user.email)
+                    return (
+                      <button
+                        key={style}
+                        onClick={() => handlePresetAvatar(url)}
+                        disabled={avatarUploading}
+                        className="rounded-xl overflow-hidden aspect-square transition-transform
+                                   hover:scale-105 active:scale-95 disabled:opacity-50"
+                        style={{ border: '2px solid var(--border)' }}
+                        title={style}
+                      >
+                        <img src={url} alt={style} className="w-full h-full" />
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setShowAvatarPicker(false)}
+                  className="mt-3 text-xs transition-opacity hover:opacity-60"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-muted)' }}>
+                  Bio
+                </span>
+                {!editingBio && (
+                  <button
+                    onClick={() => setEditingBio(true)}
+                    className="p-1 rounded transition-colors hover:bg-[var(--bg-subtle)]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <Edit2 size={11} />
+                  </button>
+                )}
+              </div>
+
+              {editingBio ? (
                 <div className="space-y-2">
-                  <input
-                    value={nameValue}
-                    onChange={e => setNameValue(e.target.value)}
-                    className="w-full text-base font-bold outline-none rounded-xl px-3 py-2"
+                  <textarea
+                    value={bioValue}
+                    onChange={e => setBioValue(e.target.value)}
+                    placeholder="Tell readers a little about yourself…"
+                    rows={3}
+                    maxLength={500}
+                    className="w-full text-sm outline-none rounded-xl px-3 py-2.5 resize-none"
                     style={{
                       background: 'var(--bg)',
                       border:     '1px solid var(--border)',
                       color:      'var(--text-primary)',
                     }}
                     autoFocus
-                    onKeyDown={e => {
-                      if (e.key === 'Enter')  saveProfile({ full_name: nameValue })
-                      if (e.key === 'Escape') { setEditingName(false); setNameValue(user.full_name ?? '') }
-                    }}
                   />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => saveProfile({ full_name: nameValue })}
-                      disabled={saving}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg
-                                 text-xs font-semibold disabled:opacity-50"
-                      style={{ background: 'var(--accent)', color: '#fff' }}
-                    >
-                      <Check size={12} />{saving ? 'Saving…' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => { setEditingName(false); setNameValue(user.full_name ?? '') }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
-                      style={{
-                        background: 'var(--bg-subtle)',
-                        color:      'var(--text-muted)',
-                        border:     '1px solid var(--border)',
-                      }}
-                    >
-                      <X size={12} /> Cancel
-                    </button>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                      {bioValue.length}/500
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => saveProfile({ bio: bioValue })}
+                        disabled={saving}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg
+                                   text-xs font-semibold disabled:opacity-50"
+                        style={{ background: 'var(--accent)', color: '#fff' }}
+                      >
+                        <Check size={11} />{saving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => { setEditingBio(false); setBioValue(user.bio ?? '') }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                        style={{
+                          background: 'var(--bg-subtle)',
+                          color:      'var(--text-muted)',
+                          border:     '1px solid var(--border)',
+                        }}
+                      >
+                        <X size={11} /> Cancel
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <h2
-                    className="text-base sm:text-xl font-bold truncate"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {user.full_name}
-                  </h2>
-                  <button
-                    onClick={() => setEditingName(true)}
-                    className="flex-shrink-0 p-1 rounded-lg transition-colors
-                               hover:bg-[var(--bg-subtle)]"
-                    style={{ color: 'var(--text-muted)' }}
-                    title="Edit name"
-                  >
-                    <Edit2 size={12} />
-                  </button>
-                </div>
-              )}
-
-              {saveSuccess && (
-                <p className="text-xs mt-0.5" style={{ color: '#16a34a' }}>✓ {saveSuccess}</p>
-              )}
-              {saveError && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--breaking)' }}>{saveError}</p>
-              )}
-
-              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg
-                             text-xs font-semibold"
-                  style={{ background: roleConfig.bg, color: roleConfig.color }}
-                >
-                  <Shield size={10} />
-                  {roleConfig.label}
-                </span>
-                {!user.email_verified && (
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-lg font-semibold"
-                    style={{ background: 'rgba(185,28,28,0.08)', color: 'var(--breaking)' }}
-                  >
-                    Unverified
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Avatar error */}
-          {avatarError && (
-            <p className="text-xs mb-3 -mt-2" style={{ color: 'var(--breaking)' }}>
-              {avatarError}
-            </p>
-          )}
-
-          {/* ── Avatar picker ─────────────────────────────── */}
-          {showAvatarPicker && (
-            <div
-              className="rounded-xl p-3 sm:p-4 mb-4"
-              style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
-            >
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2.5"
-                style={{ color: 'var(--text-muted)' }}>
-                Upload a photo
-              </p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm
-                           font-medium transition-opacity hover:opacity-80 mb-4"
-                style={{ background: 'var(--accent)', color: '#fff' }}
-              >
-                <Camera size={13} /> Choose from device
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-
-              <p className="text-xs font-semibold uppercase tracking-wider mb-2.5"
-                style={{ color: 'var(--text-muted)' }}>
-                Or choose a preset
-              </p>
-              {/*
-                4 columns always — each avatar ~60-70px on mobile,
-                comfortable tap target. 8-col would be ~35px = too small.
-              */}
-              <div className="grid grid-cols-4 gap-2">
-                {AVATAR_STYLES.map(style => {
-                  const url = getDiceBearUrl(style, user.email)
-                  return (
-                    <button
-                      key={style}
-                      onClick={() => handlePresetAvatar(url)}
-                      disabled={avatarUploading}
-                      className="rounded-xl overflow-hidden aspect-square transition-transform
-                                 hover:scale-105 active:scale-95 disabled:opacity-50"
-                      style={{ border: '2px solid var(--border)' }}
-                      title={style}
-                    >
-                      <img src={url} alt={style} className="w-full h-full" />
-                    </button>
-                  )
-                })}
-              </div>
-
-              <button
-                onClick={() => setShowAvatarPicker(false)}
-                className="mt-3 text-xs transition-opacity hover:opacity-60"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-
-          {/* ── Bio ─────────────────────────────────────────── */}
-          <div className="mb-4">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: 'var(--text-muted)' }}>
-                Bio
-              </span>
-              {!editingBio && (
-                <button
+                <p
+                  className="text-sm leading-relaxed cursor-pointer"
+                  style={{ color: user.bio ? 'var(--text-secondary)' : 'var(--text-muted)' }}
                   onClick={() => setEditingBio(true)}
-                  className="p-1 rounded transition-colors hover:bg-[var(--bg-subtle)]"
-                  style={{ color: 'var(--text-muted)' }}
                 >
-                  <Edit2 size={11} />
-                </button>
+                  {user.bio || 'Tap to add a bio…'}
+                </p>
               )}
             </div>
 
-            {editingBio ? (
-              <div className="space-y-2">
-                <textarea
-                  value={bioValue}
-                  onChange={e => setBioValue(e.target.value)}
-                  placeholder="Tell readers a little about yourself…"
-                  rows={3}
-                  maxLength={500}
-                  className="w-full text-sm outline-none rounded-xl px-3 py-2.5 resize-none"
-                  style={{
-                    background: 'var(--bg)',
-                    border:     '1px solid var(--border)',
-                    color:      'var(--text-primary)',
-                  }}
-                  autoFocus
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    {bioValue.length}/500
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => saveProfile({ bio: bioValue })}
-                      disabled={saving}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg
-                                 text-xs font-semibold disabled:opacity-50"
-                      style={{ background: 'var(--accent)', color: '#fff' }}
-                    >
-                      <Check size={11} />{saving ? 'Saving…' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => { setEditingBio(false); setBioValue(user.bio ?? '') }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
-                      style={{
-                        background: 'var(--bg-subtle)',
-                        color:      'var(--text-muted)',
-                        border:     '1px solid var(--border)',
-                      }}
-                    >
-                      <X size={11} /> Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p
-                className="text-sm leading-relaxed cursor-pointer"
-                style={{ color: user.bio ? 'var(--text-secondary)' : 'var(--text-muted)' }}
-                onClick={() => setEditingBio(true)}
-              >
-                {user.bio || 'Tap to add a bio…'}
-              </p>
-            )}
+            <div className="rounded-xl overflow-hidden"
+              style={{ border: '1px solid var(--border)' }}>
+              <InfoRow icon={Mail}  label="Email"        value={user.email} />
+              <InfoRow icon={User}  label="Auth"         value={
+                user.auth_provider === 'google'       ? 'Google'
+                : user.auth_provider === 'magic_link' ? 'Magic link'
+                : 'Email & password'
+              } />
+              {joinedDate && (
+                <InfoRow icon={Clock} label="Joined" value={joinedDate} />
+              )}
+            </div>
           </div>
 
-          {/* ── Info rows ────────────────────────────────────
-              Mobile: label stacks above value — email addresses and
-              dates get the full card width instead of being crammed
-              into ~160px on a 375px screen.
-          ── */}
-          <div className="rounded-xl overflow-hidden"
-            style={{ border: '1px solid var(--border)' }}>
-            <InfoRow icon={Mail}  label="Email"        value={user.email} />
-            <InfoRow icon={User}  label="Auth"         value={
-              user.auth_provider === 'google'       ? 'Google'
-              : user.auth_provider === 'magic_link' ? 'Magic link'
-              : 'Email & password'
-            } />
-            {joinedDate && (
-              <InfoRow icon={Clock} label="Joined" value={joinedDate} />
-            )}
-          </div>
-        </div>
-
-        {/* ── Quick links ──────────────────────────────────── */}
-        <div
-          className="rounded-2xl overflow-hidden mb-4"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-        >
-          <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
-            <p className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: 'var(--text-muted)' }}>
-              Quick access
-            </p>
-          </div>
-          <QuickLink
-            to="/saved"
-            icon={Bookmark}
-            label="Saved articles"
-            description="Your bookmarked stories"
-          />
-          <QuickLink
-            to="/trending"
-            icon={TrendingUp}
-            label="Trending"
-            description="Most-read right now"
-          />
-          {['author', 'editor', 'super_admin'].includes(user.role) && (
-            <QuickLink
-              to="/admin"
-              icon={LayoutDashboard}
-              label="Dashboard"
-              description="Manage content"
-              accent
-            />
-          )}
-        </div>
-
-        {/* ── Sign out — desktop only (mobile has top-right button) */}
-        <div
-          className="hidden sm:block rounded-2xl p-5"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-wider mb-4"
-            style={{ color: 'var(--text-muted)' }}>
-            Account
-          </p>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl
-                       text-sm font-semibold transition-opacity hover:opacity-80"
-            style={{
-              background: 'rgba(185,28,28,0.06)',
-              color:      'var(--breaking)',
-              border:     '1px solid rgba(185,28,28,0.15)',
-            }}
+          <div
+            className="rounded-2xl overflow-hidden mb-4"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
           >
-            <LogOut size={16} /> Sign out
-          </button>
-        </div>
+            <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: 'var(--text-muted)' }}>
+                Quick access
+              </p>
+            </div>
+            <QuickLink
+              to="/saved"
+              icon={Bookmark}
+              label="Saved articles"
+              description="Your bookmarked stories"
+            />
+            <QuickLink
+              to="/trending"
+              icon={TrendingUp}
+              label="Trending"
+              description="Most-read right now"
+            />
+            {['author', 'editor', 'super_admin'].includes(user.role) && (
+              <QuickLink
+                to="/admin"
+                icon={LayoutDashboard}
+                label="Dashboard"
+                description="Manage content"
+                accent
+              />
+            )}
+          </div>
 
+          <div
+            className="hidden sm:block rounded-2xl p-5"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wider mb-4"
+              style={{ color: 'var(--text-muted)' }}>
+              Account
+            </p>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl
+                         text-sm font-semibold transition-opacity hover:opacity-80"
+              style={{
+                background: 'rgba(185,28,28,0.06)',
+                color:      'var(--breaking)',
+                border:     '1px solid rgba(185,28,28,0.15)',
+              }}
+            >
+              <LogOut size={16} /> Sign out
+            </button>
+          </div>
+
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
@@ -529,10 +509,6 @@ function InfoRow({ icon: Icon, label, value }: {
   value: string
 }) {
   return (
-    /*
-      Stacked on mobile (flex-col), inline on sm+.
-      word-break: break-all on value handles long emails gracefully.
-    */
     <div
       className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-4
                  px-4 py-3"

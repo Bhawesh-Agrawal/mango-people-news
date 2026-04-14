@@ -1,17 +1,7 @@
 /**
  * ArticlesPage.tsx — /articles  (also linked as "All News")
- *
- * Every published article, newest first, grouped by date section.
- * Layout: full-width horizontal rows (not cards) — dense newspaper index.
- * Infinite scroll with an intersection observer so the user never clicks
- * "load more" — it just flows as they read down.
- *
- * Differentiated from Homepage:
- *   - Homepage = editorial curation, hero stories, category sections, magazine feel
- *   - Articles  = complete chronological archive, grouping by date, no hierarchy,
- *                 every story treated equally regardless of category
- *
- * Backend: GET /articles?page=N&limit=20&category=&search=
+ * SEO: noIndex — this is a filterable archive, not a page
+ * Google should index. Individual articles are indexed instead.
  */
 
 import {
@@ -24,6 +14,7 @@ import { getCategories }          from '../api/categories'
 import type { Article, Category } from '../types'
 import { formatCount }            from '../lib/utils'
 import { SEED_ARTICLES }          from '../lib/seed'
+import SEO                        from '../seo/Seo'
 
 const LIMIT = 20
 
@@ -79,14 +70,12 @@ export default function ArticlesPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const isFetching  = useRef(false)
 
-  // Load categories once
   useEffect(() => {
     getCategories()
       .then(res => setCategories(res.data ?? []))
       .catch(() => {})
   }, [])
 
-  // Sync filters → URL
   useEffect(() => {
     const params: Record<string, string> = {}
     if (query)          params.q        = query
@@ -94,7 +83,6 @@ export default function ArticlesPage() {
     setSearchParams(params, { replace: true })
   }, [query, activeCategory])
 
-  // Reset + load when filters change
   const load = useCallback(async (pg: number, append: boolean) => {
     if (isFetching.current) return
     isFetching.current = true
@@ -112,7 +100,6 @@ export default function ArticlesPage() {
       const incoming: Article[] = res.data ?? []
 
       if (incoming.length === 0 && pg === 1) {
-        // Try seed fallback only on first page
         setArticles(SEED_ARTICLES.slice(0, 10))
         setHasMore(false)
       } else {
@@ -130,7 +117,6 @@ export default function ArticlesPage() {
     }
   }, [query, activeCategory])
 
-  // Re-fetch on filter change
   useEffect(() => {
     setArticles([])
     setPage(1)
@@ -138,7 +124,6 @@ export default function ArticlesPage() {
     load(1, false)
   }, [query, activeCategory])
 
-  // Intersection observer — triggers next page load
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
@@ -149,7 +134,7 @@ export default function ArticlesPage() {
           load(page + 1, true)
         }
       },
-      { rootMargin: '400px' }, // start loading before user reaches bottom
+      { rootMargin: '400px' },
     )
 
     observer.observe(el)
@@ -160,9 +145,19 @@ export default function ArticlesPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      {/*
+        noIndex — filtered/paginated archive pages should not be
+        indexed. Google finds articles via their individual URLs.
+      */}
+      <SEO
+        title="All News"
+        description="Browse every published article on Mango People News — India's financial and business news platform."
+        path="/articles"
+        noIndex={true}
+      />
+
       <div className="page-container py-8">
 
-        {/* ── Page header ────────────────────────────────── */}
         <div
           className="pb-5 mb-6"
           style={{ borderBottom: '3px solid var(--text-primary)' }}
@@ -187,7 +182,6 @@ export default function ArticlesPage() {
               </h1>
             </div>
 
-            {/* Search inline */}
             <div
               className="flex items-center gap-2 rounded-xl px-4"
               style={{
@@ -219,7 +213,6 @@ export default function ArticlesPage() {
           </div>
         </div>
 
-        {/* ── Category filter chips ───────────────────────── */}
         {categories.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap mb-6">
             <button
@@ -259,7 +252,6 @@ export default function ArticlesPage() {
           </div>
         )}
 
-        {/* ── Loading skeleton — first page ──────────────── */}
         {loading && (
           <div>
             {[...Array(3)].map((_, gi) => (
@@ -285,7 +277,6 @@ export default function ArticlesPage() {
           </div>
         )}
 
-        {/* ── Date-grouped article list ───────────────────── */}
         {!loading && (
           <>
             {articles.length === 0 ? (
@@ -307,10 +298,8 @@ export default function ArticlesPage() {
               </div>
             )}
 
-            {/* Infinite scroll sentinel */}
             <div ref={sentinelRef} className="h-1" />
 
-            {/* Loading more indicator */}
             {loadingMore && (
               <div className="flex justify-center py-8">
                 <div
@@ -326,7 +315,6 @@ export default function ArticlesPage() {
               </div>
             )}
 
-            {/* End of archive */}
             {!hasMore && articles.length > 0 && (
               <div
                 className="flex items-center gap-4 py-10"
@@ -352,7 +340,6 @@ export default function ArticlesPage() {
 function DateGroup({ label, articles }: { label: string; articles: Article[] }) {
   return (
     <div className="mb-2">
-      {/* Section date header */}
       <div
         className="flex items-center gap-3 py-3 sticky top-[105px] z-10"
         style={{ background: 'var(--bg)' }}
@@ -366,7 +353,6 @@ function DateGroup({ label, articles }: { label: string; articles: Article[] }) 
         <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
       </div>
 
-      {/* Articles in this date group */}
       {articles.map(article => (
         <ArticleRow key={article.id} article={article} />
       ))}
@@ -374,9 +360,7 @@ function DateGroup({ label, articles }: { label: string; articles: Article[] }) 
   )
 }
 
-// ── Article row — newspaper index style ───────────────────────
-// No full images. Pure text with a tiny thumbnail on the right.
-// Every story gets the same visual weight — no hero, no hierarchy.
+// ── Article row ───────────────────────────────────────────────
 
 function ArticleRow({ article }: { article: Article }) {
   const publishTime = new Date(article.published_at).toLocaleTimeString('en-IN', {
@@ -390,9 +374,7 @@ function ArticleRow({ article }: { article: Article }) {
                  transition-colors hover:bg-[var(--bg-subtle)]"
       style={{ borderBottom: '1px solid var(--border)' }}
     >
-      {/* Left — text content */}
       <div className="flex-1 min-w-0">
-        {/* Category + breaking */}
         <div className="flex items-center gap-2 mb-1">
           {article.category_name && (
             <span
@@ -415,7 +397,6 @@ function ArticleRow({ article }: { article: Article }) {
           )}
         </div>
 
-        {/* Headline */}
         <h2
           className="text-sm font-semibold leading-snug mb-1.5 transition-colors
                      group-hover:text-[var(--accent)]"
@@ -424,7 +405,6 @@ function ArticleRow({ article }: { article: Article }) {
           {article.title}
         </h2>
 
-        {/* Excerpt — shown on wider screens */}
         {article.excerpt && (
           <p
             className="text-xs leading-relaxed line-clamp-1 mb-2 hidden sm:block"
@@ -434,7 +414,6 @@ function ArticleRow({ article }: { article: Article }) {
           </p>
         )}
 
-        {/* Meta row */}
         <div
           className="flex items-center flex-wrap gap-x-3 gap-y-0.5 text-[11px]"
           style={{ color: 'var(--text-muted)' }}
@@ -459,7 +438,6 @@ function ArticleRow({ article }: { article: Article }) {
         </div>
       </div>
 
-      {/* Right — small thumbnail */}
       {article.cover_image && (
         <div
           className="flex-shrink-0 rounded-lg overflow-hidden"

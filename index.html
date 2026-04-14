@@ -2,9 +2,75 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>mango-people-news</title>
+
+    <!-- ═══════════════════════════════════════════════
+         PRIMARY META
+         These are defaults. Every page overrides these
+         via SEO.tsx using react-helmet-async.
+    ════════════════════════════════════════════════ -->
+    <title>Mango People News — News for Every Indian</title>
+    <meta name="description" content="Mango People News — India's financial and business news platform. Markets, economy, policy and more. News for Every Indian." />
+    <meta name="keywords" content="India news, Indian financial news, stock market India, economy, business news, Mango People News" />
+    <meta name="author" content="Mango People News" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://dev.gallitify.tech" />
+
+    <!-- ═══════════════════════════════════════════════
+         OPEN GRAPH (Facebook, WhatsApp, LinkedIn, Telegram)
+         Article pages override og:title, og:description,
+         og:image, og:url via SEO.tsx
+    ════════════════════════════════════════════════ -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mango People News" />
+    <meta property="og:title" content="Mango People News — News for Every Indian" />
+    <meta property="og:description" content="India's financial and business news platform. Markets, economy, policy and more." />
+    <meta property="og:url" content="https://dev.gallitify.tech" />
+    <meta property="og:image" content="https://dev.gallitify.tech/og-default.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Mango People News — News for Every Indian" />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- ═══════════════════════════════════════════════
+         TWITTER CARD
+    ════════════════════════════════════════════════ -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@mangopeoplenews" />
+    <meta name="twitter:title" content="Mango People News — News for Every Indian" />
+    <meta name="twitter:description" content="India's financial and business news platform. Markets, economy, policy and more." />
+    <meta name="twitter:image" content="https://dev.gallitify.tech/og-default.png" />
+
+    <!-- ═══════════════════════════════════════════════
+         ICONS & PWA
+         Replace emoji favicon with actual logo.
+         og-default.png = 1200×630 branding image (see /public)
+    ════════════════════════════════════════════════ -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <meta name="theme-color" content="#C8820A" />
+    <meta name="msapplication-TileColor" content="#C8820A" />
+
+    <!-- ═══════════════════════════════════════════════
+         GOOGLE SEARCH — STRUCTURED DATA (JSON-LD)
+         Marks this as a news organisation for Google News
+         eligibility. Update logo/url once domain is finalised.
+    ════════════════════════════════════════════════ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "NewsMediaOrganization",
+      "name": "Mango People News",
+      "alternateName": "MPN",
+      "url": "https://dev.gallitify.tech",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://dev.gallitify.tech/logo.png"
+      },
+      "sameAs": [],
+      "description": "India's financial and business news platform. News for Every Indian."
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

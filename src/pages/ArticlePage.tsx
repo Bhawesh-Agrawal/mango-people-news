@@ -20,6 +20,7 @@ import {
   toggleSaveArticle,
   getInitialSaveStatus,
 } from './Savedpage'
+import SEO from '../seo/Seo'
 
 // ── Reading progress bar ──────────────────────────────────────
 
@@ -65,10 +66,8 @@ function ArticleSkeleton() {
 }
 
 // ── Save gate modal ───────────────────────────────────────────
-// Shown to guests when they tap Save. Clean, non-intrusive overlay.
 
 function SaveGateModal({ onClose }: { onClose: () => void }) {
-  // Close on backdrop click
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose()
   }
@@ -89,7 +88,6 @@ function SaveGateModal({ onClose }: { onClose: () => void }) {
           boxShadow:  '0 20px 60px rgba(0,0,0,0.2)',
         }}
       >
-        {/* Close */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-lg transition-colors
@@ -100,7 +98,6 @@ function SaveGateModal({ onClose }: { onClose: () => void }) {
           <X size={16} />
         </button>
 
-        {/* Icon */}
         <div
           className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
           style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
@@ -158,9 +155,6 @@ function SaveGateModal({ onClose }: { onClose: () => void }) {
 }
 
 // ── Action bar ────────────────────────────────────────────────
-//
-// Save state is lifted to ArticlePage and passed down via props
-// so it's shared between the top and bottom ActionBar instances.
 
 function ActionBar({
   article,
@@ -220,7 +214,6 @@ function ActionBar({
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 
-      {/* Like */}
       <button
         onClick={onLike}
         style={{
@@ -237,13 +230,11 @@ function ActionBar({
         <span>{formatCount(likeCount)}</span>
       </button>
 
-      {/* X / Twitter */}
       <button onClick={shareTwitter} style={base} title="Share on X" aria-label="Share on X">
         <Twitter size={14} style={{ flexShrink: 0 }} />
         <span className="hidden sm:inline">Share</span>
       </button>
 
-      {/* WhatsApp */}
       <button onClick={shareWhatsApp} style={base} title="Share on WhatsApp" aria-label="Share on WhatsApp">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -251,7 +242,6 @@ function ActionBar({
         <span className="hidden sm:inline">WhatsApp</span>
       </button>
 
-      {/* Copy link */}
       <button
         onClick={copyLink}
         style={{
@@ -268,7 +258,6 @@ function ActionBar({
         <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
       </button>
 
-      {/* Save — wired to real API, shows gate modal for guests */}
       <button
         onClick={onSave}
         disabled={savePending}
@@ -678,7 +667,6 @@ export default function ArticlePage() {
   const [likeCount,    setLikeCount]    = useState(0)
   const [notFound,     setNotFound]     = useState(false)
 
-  // ── Save state lifted here so both ActionBar instances share it ──
   const [saved,        setSaved]        = useState(false)
   const [savePending,  setSavePending]  = useState(false)
   const [showSaveGate, setShowSaveGate] = useState(false)
@@ -687,7 +675,6 @@ export default function ArticlePage() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [slug])
 
-  // ── Load article ──────────────────────────────────────────────
   useEffect(() => {
     if (!slug) return
     setLoading(true)
@@ -716,7 +703,6 @@ export default function ArticlePage() {
       .finally(() => setLoading(false))
   }, [slug])
 
-  // ── Like status ───────────────────────────────────────────────
   useEffect(() => {
     if (!article?.id) return
     getLikeStatus(article.id)
@@ -727,7 +713,6 @@ export default function ArticlePage() {
       .catch(() => {})
   }, [article?.id, isLoggedIn])
 
-  // ── Save status — load from API for logged-in, localStorage for guest ──
   useEffect(() => {
     if (!article?.id) return
     getInitialSaveStatus(article.id, isLoggedIn)
@@ -735,7 +720,6 @@ export default function ArticlePage() {
       .catch(() => setSaved(false))
   }, [article?.id, isLoggedIn])
 
-  // ── Related articles ──────────────────────────────────────────
   useEffect(() => {
     if (!article) return
     getTrending(4)
@@ -746,7 +730,6 @@ export default function ArticlePage() {
       .catch(() => setRelated(SEED_ARTICLES.slice(0, 3)))
   }, [article, slug])
 
-  // ── Like handler ──────────────────────────────────────────────
   const handleLike = async () => {
     if (!article?.id) return
     const wasLiked = liked
@@ -762,9 +745,6 @@ export default function ArticlePage() {
     }
   }
 
-  // ── Save handler ──────────────────────────────────────────────
-  // Guests → show modal (no page redirect, no localStorage save).
-  // Logged-in → call API optimistically.
   const handleSave = async () => {
     if (!article) return
 
@@ -773,7 +753,6 @@ export default function ArticlePage() {
       return
     }
 
-    // Optimistic update
     const wasSaved = saved
     setSaved(!wasSaved)
     setSavePending(true)
@@ -782,13 +761,12 @@ export default function ArticlePage() {
       const result = await toggleSaveArticle(article, true)
       setSaved(result.saved)
     } catch {
-      setSaved(wasSaved) // revert on error
+      setSaved(wasSaved)
     } finally {
       setSavePending(false)
     }
   }
 
-  // ── 404 ───────────────────────────────────────────────────────
   if (notFound) {
     return (
       <div
@@ -814,9 +792,28 @@ export default function ArticlePage() {
 
   return (
     <>
+      {/*
+        SEO — uses real article data once loaded.
+        cover_image from Cloudinary is already an absolute URL so
+        SEO.tsx passes it straight through to og:image.
+        Falls back to /og-default.png if no cover image.
+      */}
+      <SEO
+        title={article.title}
+        description={article.excerpt ?? undefined}
+        path={`/article/${article.slug}`}
+        ogImage={article.cover_image ?? undefined}
+        ogType="article"
+        article={{
+          publishedTime: article.published_at,
+          authorName:    article.author_name,
+          section:       article.category_name,
+          tags:          article.tags?.map(t => t.name),
+        }}
+      />
+
       <ReadingProgress />
 
-      {/* Save gate modal — shown to guests only */}
       {showSaveGate && (
         <SaveGateModal onClose={() => setShowSaveGate(false)} />
       )}
@@ -824,7 +821,6 @@ export default function ArticlePage() {
       <div style={{ background: 'var(--bg)' }}>
         <div className="page-container">
 
-          {/* Breadcrumb */}
           <nav className="flex items-center gap-2 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
             <Link to="/" className="transition-opacity hover:opacity-70">Home</Link>
             <ChevronRight size={12} />
@@ -838,10 +834,8 @@ export default function ArticlePage() {
             </span>
           </nav>
 
-          {/* Two-column layout */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 pb-16">
 
-            {/* ══ Article ══ */}
             <article>
 
               <div className="flex items-center gap-2 mb-4">
@@ -885,7 +879,6 @@ export default function ArticlePage() {
                 </span>
               </div>
 
-              {/* Action bar — top */}
               {article.id && (
                 <div className="mb-6">
                   <ActionBar
@@ -937,7 +930,6 @@ export default function ArticlePage() {
                 </div>
               )}
 
-              {/* Action bar — bottom */}
               {article.id && (
                 <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
                   <ActionBar
@@ -961,7 +953,6 @@ export default function ArticlePage() {
 
             </article>
 
-            {/* ══ Sidebar ══ */}
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-8">
                 <div>
@@ -1020,7 +1011,6 @@ export default function ArticlePage() {
             </aside>
           </div>
 
-          {/* Mobile related */}
           {related.length > 0 && (
             <div className="lg:hidden pb-16">
               <div className="pb-3 mb-5" style={{ borderBottom: '1px solid var(--border)' }}>

@@ -7,6 +7,7 @@ import type { Article, Category } from '../types'
 import { timeAgo, formatCount } from '../lib/utils'
 import { SEED_ARTICLES, SEED_CATEGORIES } from '../lib/seed'
 import MarketTicker from '../components/ui/MarketTicker'
+import SEO          from '../seo/Seo'
 
 // ── Skeleton ──────────────────────────────────────────────────
 function HeroSkeleton() {
@@ -61,12 +62,9 @@ function GridSkeleton() {
 }
 
 // ── Hero lead article ─────────────────────────────────────────
-// Large, editorial — text first, image below
 function HeroArticle({ article }: { article: Article }) {
   return (
     <Link to={`/article/${article.slug}`} className="group block">
-
-      {/* Badges */}
       <div className="flex items-center gap-2 mb-3">
         {article.is_breaking && (
           <span className="breaking-strip">● Breaking</span>
@@ -85,7 +83,6 @@ function HeroArticle({ article }: { article: Article }) {
         )}
       </div>
 
-      {/* Headline — large display */}
       <h1
         className="font-display text-display-xl leading-tight mb-3
                    transition-colors duration-150
@@ -95,7 +92,6 @@ function HeroArticle({ article }: { article: Article }) {
         {article.title}
       </h1>
 
-      {/* Subtitle serif */}
       {article.subtitle && (
         <p
           className="serif-text text-lg leading-relaxed mb-3"
@@ -105,7 +101,6 @@ function HeroArticle({ article }: { article: Article }) {
         </p>
       )}
 
-      {/* Excerpt */}
       {article.excerpt && (
         <p
           className="text-sm leading-relaxed mb-4 line-clamp-3"
@@ -115,7 +110,6 @@ function HeroArticle({ article }: { article: Article }) {
         </p>
       )}
 
-      {/* Meta */}
       <div
         className="flex items-center gap-2 text-xs mb-5"
         style={{ color: 'var(--text-muted)' }}
@@ -141,7 +135,6 @@ function HeroArticle({ article }: { article: Article }) {
         )}
       </div>
 
-      {/* Image — below text */}
       {article.cover_image && (
         <div
           className="w-full rounded-xl overflow-hidden img-zoom"
@@ -159,8 +152,7 @@ function HeroArticle({ article }: { article: Article }) {
   )
 }
 
-// ── Secondary stacked list (right column) ─────────────────────
-// Small text rows — thumbnail right, text left
+// ── Secondary stacked list ─────────────────────────────────────
 function SecondaryList({ articles }: { articles: Article[] }) {
   return (
     <div>
@@ -175,7 +167,6 @@ function SecondaryList({ articles }: { articles: Article[] }) {
               : 'none',
           }}
         >
-          {/* Text */}
           <div className="flex-1 min-w-0">
             {article.is_breaking && (
               <span className="breaking-strip mb-1.5 inline-block">● Breaking</span>
@@ -199,7 +190,6 @@ function SecondaryList({ articles }: { articles: Article[] }) {
             </div>
           </div>
 
-          {/* Thumbnail */}
           {article.cover_image && (
             <div
               className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
@@ -219,8 +209,7 @@ function SecondaryList({ articles }: { articles: Article[] }) {
   )
 }
 
-// ── Article row for the main list below hero ──────────────────
-// Full-width newspaper row — text left, image right
+// ── Article row ───────────────────────────────────────────────
 function ArticleRow({
   article,
   isLast,
@@ -241,9 +230,7 @@ function ArticleRow({
         borderBottom: isLast ? 'none' : '1px solid var(--border-muted)',
       }}
     >
-      {/* Text — always first */}
       <div className="flex-1 min-w-0">
-        {/* Badges */}
         {(article.is_breaking || article.is_featured) && (
           <div className="flex items-center gap-2 mb-1.5">
             {article.is_breaking && (
@@ -268,8 +255,6 @@ function ArticleRow({
                       group-hover:text-[var(--accent)]
                       ${size === 'large'
                         ? 'text-display-md line-clamp-2'
-                        : size === 'small'
-                        ? 'text-display-sm line-clamp-2'
                         : 'text-display-sm line-clamp-2'
                       }`}
           style={{ color: 'var(--text-primary)' }}
@@ -313,7 +298,6 @@ function ArticleRow({
         </div>
       </div>
 
-      {/* Image — always right */}
       {article.cover_image && (
         <div
           className="flex-shrink-0 rounded-xl overflow-hidden img-zoom self-start"
@@ -360,7 +344,6 @@ export default function CategoryPage() {
     categories.find(c => c.slug === slug) ??
     SEED_CATEGORIES.find(c => c.slug === slug)
 
-  // ── Initial load ───────────────────────────────────────────
   useEffect(() => {
     if (!slug) return
     setAllArticles([])
@@ -382,7 +365,6 @@ export default function CategoryPage() {
       .finally(() => setLoading(false))
   }, [slug])
 
-  // ── Load more ──────────────────────────────────────────────
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || !slug) return
     setLoadingMore(true)
@@ -400,13 +382,11 @@ export default function CategoryPage() {
     }
   }, [loadingMore, hasMore, slug, page])
 
-  // Split articles for layout
   const heroArticle     = allArticles[0]
-  const secondaryList   = allArticles.slice(1, 6)   // right column
-  const firstBatch      = allArticles.slice(6, 10)  // large rows
-  const remainingBatch  = allArticles.slice(10)     // normal rows
+  const secondaryList   = allArticles.slice(1, 6)
+  const firstBatch      = allArticles.slice(6, 10)
+  const remainingBatch  = allArticles.slice(10)
 
-  // ── Not found ──────────────────────────────────────────────
   if (!catLoading && !category) {
     return (
       <div
@@ -425,220 +405,225 @@ export default function CategoryPage() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      <div className="page-container">
+    <>
+      {/*
+        SEO — uses real category name and description from DB.
+        category?.description comes from the categories table.
+        Falls back gracefully if category is still loading.
+      */}
+      {category && (
+        <SEO
+          title={`${category.name} News`}
+          description={
+            category.slug
+              ? category.slug
+              : `Latest ${category.name} news and analysis — Mango People News`
+          }
+          path={`/category/${slug}`}
+        />
+      )}
 
-        {/* ── Page header ───────────────────────────────────── */}
-        <div className="pt-6 pb-0">
+      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+        <div className="page-container">
 
-          {/* Breadcrumb */}
-          <nav
-            className="flex items-center gap-1.5 mb-4 text-xs"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <Link to="/"
-              className="transition-colors hover:text-[var(--accent)]">
-              Home
-            </Link>
-            <ChevronRight size={11} />
-            <span style={{ color: 'var(--text-primary)' }}>
-              {category?.name ?? slug}
-            </span>
-          </nav>
-
-          {/* Category title row */}
-          <div
-            className="flex items-end justify-between pb-4"
-            style={{ borderBottom: `3px solid ${category?.color ?? 'var(--accent)'}` }}
-          >
-            <div className="flex items-center gap-3">
-              <h1
-                className="font-display text-display-2xl leading-none"
-                style={{ color: 'var(--text-primary)' }}
-              >
+          <div className="pt-6 pb-0">
+            <nav
+              className="flex items-center gap-1.5 mb-4 text-xs"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <Link to="/"
+                className="transition-colors hover:text-[var(--accent)]">
+                Home
+              </Link>
+              <ChevronRight size={11} />
+              <span style={{ color: 'var(--text-primary)' }}>
                 {category?.name ?? slug}
-              </h1>
-              {allArticles.length > 0 && (
-                <span
-                  className="text-sm hidden sm:block"
-                  style={{ color: 'var(--text-muted)' }}
+              </span>
+            </nav>
+
+            <div
+              className="flex items-end justify-between pb-4"
+              style={{ borderBottom: `3px solid ${category?.color ?? 'var(--accent)'}` }}
+            >
+              <div className="flex items-center gap-3">
+                <h1
+                  className="font-display text-display-2xl leading-none"
+                  style={{ color: 'var(--text-primary)' }}
                 >
-                  {allArticles.length} stories
-                </span>
-              )}
-            </div>
-
-            {/* Live dot for markets */}
-            {isMarkets && (
-              <div className="flex items-center gap-1.5 pb-1">
-                <div
-                  className="w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: '#15803D' }}
-                />
-                <span className="text-xs font-medium"
-                  style={{ color: '#15803D' }}>
-                  Live data
-                </span>
+                  {category?.name ?? slug}
+                </h1>
+                {allArticles.length > 0 && (
+                  <span
+                    className="text-sm hidden sm:block"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {allArticles.length} stories
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* ── Markets: live quotes strip ─────────────────────── */}
-        {isMarkets && (
-          <div
-            className="py-1"
-            style={{ borderBottom: '1px solid var(--border)' }}
-          >
-            <MarketTicker />
-          </div>
-        )}
-
-        {/* ── Main content ──────────────────────────────────── */}
-        <div className="py-8">
-          {loading ? (
-            <>
-              <HeroSkeleton />
-              <GridSkeleton />
-            </>
-          ) : allArticles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <p className="text-5xl mb-4">📰</p>
-              <p className="font-display text-display-sm mb-2"
-                style={{ color: 'var(--text-primary)' }}>
-                No stories yet in {category?.name}
-              </p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Check back soon — we publish daily.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* ── HERO SECTION ── */}
-              {heroArticle && (
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 pb-8"
-                  style={{ borderBottom: '1px solid var(--border)' }}>
-
-                  {/* Lead article — left */}
-                  <HeroArticle article={heroArticle} />
-
-                  {/* Secondary list — right */}
-                  {secondaryList.length > 0 && (
-                    <div className="lg:pl-8"
-                      style={{ borderLeft: '1px solid var(--border)' }}>
-                      <p className="section-label mb-0 pb-3"
-                        style={{ borderBottom: '1px solid var(--border-muted)' }}>
-                        Latest in {category?.name}
-                      </p>
-                      <SecondaryList articles={secondaryList} />
-                    </div>
-                  )}
+              {isMarkets && (
+                <div className="flex items-center gap-1.5 pb-1">
+                  <div
+                    className="w-1.5 h-1.5 rounded-full animate-pulse"
+                    style={{ background: '#15803D' }}
+                  />
+                  <span className="text-xs font-medium"
+                    style={{ color: '#15803D' }}>
+                    Live data
+                  </span>
                 </div>
               )}
+            </div>
+          </div>
 
-              {/* ── MORE STORIES — large rows ── */}
-              {firstBatch.length > 0 && (
-                <div className="mt-8">
-                  <SectionDivider label="More stories" />
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10">
-                    {firstBatch.map((article, i) => (
+          {isMarkets && (
+            <div
+              className="py-1"
+              style={{ borderBottom: '1px solid var(--border)' }}
+            >
+              <MarketTicker />
+            </div>
+          )}
+
+          <div className="py-8">
+            {loading ? (
+              <>
+                <HeroSkeleton />
+                <GridSkeleton />
+              </>
+            ) : allArticles.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <p className="text-5xl mb-4">📰</p>
+                <p className="font-display text-display-sm mb-2"
+                  style={{ color: 'var(--text-primary)' }}>
+                  No stories yet in {category?.name}
+                </p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                  Check back soon — we publish daily.
+                </p>
+              </div>
+            ) : (
+              <>
+                {heroArticle && (
+                  <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 pb-8"
+                    style={{ borderBottom: '1px solid var(--border)' }}>
+
+                    <HeroArticle article={heroArticle} />
+
+                    {secondaryList.length > 0 && (
+                      <div className="lg:pl-8"
+                        style={{ borderLeft: '1px solid var(--border)' }}>
+                        <p className="section-label mb-0 pb-3"
+                          style={{ borderBottom: '1px solid var(--border-muted)' }}>
+                          Latest in {category?.name}
+                        </p>
+                        <SecondaryList articles={secondaryList} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {firstBatch.length > 0 && (
+                  <div className="mt-8">
+                    <SectionDivider label="More stories" />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10">
+                      {firstBatch.map((article, i) => (
+                        <ArticleRow
+                          key={article.id}
+                          article={article}
+                          isLast={i === firstBatch.length - 1}
+                          size="large"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {remainingBatch.length > 0 && (
+                  <div className="mt-2">
+                    <SectionDivider label="Continue reading" />
+                    {remainingBatch.map((article, i) => (
                       <ArticleRow
                         key={article.id}
                         article={article}
-                        isLast={i === firstBatch.length - 1}
-                        size="large"
+                        isLast={i === remainingBatch.length - 1}
+                        size="normal"
                       />
                     ))}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* ── REMAINING STORIES ── */}
-              {remainingBatch.length > 0 && (
-                <div className="mt-2">
-                  <SectionDivider label="Continue reading" />
-                  {remainingBatch.map((article, i) => (
-                    <ArticleRow
-                      key={article.id}
-                      article={article}
-                      isLast={i === remainingBatch.length - 1}
-                      size="normal"
-                    />
-                  ))}
-                </div>
-              )}
+                {hasMore && (
+                  <div className="flex justify-center pt-10 pb-4">
+                    <button
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="btn-ghost px-10 py-3 text-sm flex items-center
+                                 gap-2 disabled:opacity-50"
+                    >
+                      {loadingMore ? (
+                        <>
+                          <span
+                            className="w-4 h-4 rounded-full border-2 animate-spin"
+                            style={{
+                              borderColor: 'var(--accent) transparent var(--accent) var(--accent)',
+                            }}
+                          />
+                          Loading…
+                        </>
+                      ) : (
+                        <>Load more stories <ArrowRight size={14} /></>
+                      )}
+                    </button>
+                  </div>
+                )}
 
-              {/* ── LOAD MORE ── */}
-              {hasMore && (
-                <div className="flex justify-center pt-10 pb-4">
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="btn-ghost px-10 py-3 text-sm flex items-center
-                               gap-2 disabled:opacity-50"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <span
-                          className="w-4 h-4 rounded-full border-2 animate-spin"
-                          style={{
-                            borderColor: 'var(--accent) transparent var(--accent) var(--accent)',
-                          }}
-                        />
-                        Loading…
-                      </>
-                    ) : (
-                      <>Load more stories <ArrowRight size={14} /></>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {!hasMore && allArticles.length > 0 && (
-                <p className="text-center text-xs pt-8 pb-4"
-                  style={{ color: 'var(--text-faint)' }}>
-                  You've read it all · {allArticles.length} stories
-                </p>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* ── Mobile: other sections strip ─────────────────── */}
-        {categories.length > 1 && (
-          <div
-            className="pb-10 pt-2"
-            style={{ borderTop: '1px solid var(--border)' }}
-          >
-            <p className="section-label mt-5 mb-3">Other sections</p>
-            <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2">
-              {categories
-                .filter(c => c.slug !== slug)
-                .map(cat => (
-                  <Link
-                    key={cat.id}
-                    to={`/category/${cat.slug}`}
-                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2
-                               rounded-lg text-sm font-medium whitespace-nowrap
-                               transition-all duration-150"
-                    style={{
-                      background: 'var(--bg-surface)',
-                      border:     '1px solid var(--border)',
-                      color:      'var(--text-secondary)',
-                    }}
-                  >
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ background: cat.color }}
-                    />
-                    {cat.name}
-                  </Link>
-                ))}
-            </div>
+                {!hasMore && allArticles.length > 0 && (
+                  <p className="text-center text-xs pt-8 pb-4"
+                    style={{ color: 'var(--text-faint)' }}>
+                    You've read it all · {allArticles.length} stories
+                  </p>
+                )}
+              </>
+            )}
           </div>
-        )}
 
+          {categories.length > 1 && (
+            <div
+              className="pb-10 pt-2"
+              style={{ borderTop: '1px solid var(--border)' }}
+            >
+              <p className="section-label mt-5 mb-3">Other sections</p>
+              <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2">
+                {categories
+                  .filter(c => c.slug !== slug)
+                  .map(cat => (
+                    <Link
+                      key={cat.id}
+                      to={`/category/${cat.slug}`}
+                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2
+                                 rounded-lg text-sm font-medium whitespace-nowrap
+                                 transition-all duration-150"
+                      style={{
+                        background: 'var(--bg-surface)',
+                        border:     '1px solid var(--border)',
+                        color:      'var(--text-secondary)',
+                      }}
+                    >
+                      <div
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ background: cat.color }}
+                      />
+                      {cat.name}
+                    </Link>
+                  ))}
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
-    </div>
+    </>
   )
 }

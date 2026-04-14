@@ -243,9 +243,8 @@ export default function Navbar() {
               <div
                 className="w-9 h-9 rounded-lg flex items-center justify-center
                            text-xl flex-shrink-0 transition-transform duration-200 hover:scale-105"
-                style={{ background: 'var(--accent-light)' }}
               >
-                🌳
+                <img src="/logo.png" alt="Logo" className="w-9 h-9 object-cover" />
               </div>
               <div className="leading-none select-none">
                 <div
