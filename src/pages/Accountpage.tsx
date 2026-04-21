@@ -39,6 +39,8 @@ export default function AccountPage() {
   const { user, isLoggedIn, logout, refresh } = useAuth()
   const navigate = useNavigate()
 
+  console.log(user);
+
   const [editingName,    setEditingName]    = useState(false)
   const [editingBio,     setEditingBio]     = useState(false)
   const [nameValue,      setNameValue]      = useState(user?.full_name ?? '')
@@ -185,7 +187,12 @@ export default function AccountPage() {
                       style={{ border: '2px solid var(--border)', borderTop: '2px solid var(--accent)' }}
                     />
                   ) : user.avatar_url ? (
-                    <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={user.avatar_url}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
                   ) : (
                     initial
                   )}

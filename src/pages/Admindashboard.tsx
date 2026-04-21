@@ -3,7 +3,7 @@ import { useEffect }           from 'react'
 import { Link }                from 'react-router-dom'
 import {
   FileText, Eye, Heart, MessageCircle,
-  Users, TrendingUp, PenLine, Clock,
+  Users,
   ArrowRight,
 } from 'lucide-react'
 import { useAdmin } from '../context/AdminContext'

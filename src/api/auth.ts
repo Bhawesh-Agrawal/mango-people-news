@@ -24,6 +24,8 @@ export const login = async (payload: LoginPayload) => {
   const { data } = await client.post<ApiResponse<AuthResponse>>(
     '/auth/login', payload
   )
+
+  console.log(data);
   return data
 }
 

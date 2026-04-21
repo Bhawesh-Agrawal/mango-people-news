@@ -483,7 +483,6 @@ function CategoryBlock({
   const { articles, loading } = useArticles({
     category: category.slug,
     limit:    6,
-    stagger: index, // Stagger API calls to prevent overload on load
   })
 
   const flip      = index % 2 !== 0

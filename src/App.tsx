@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth }    from './context/AuthContext'
 import Navbar         from './components/layout/Navbar'
 import Footer         from './components/layout/Footer'
 import ProtectedRoute from './components/ui/ProtectedRoutes'
@@ -27,72 +28,110 @@ import {
   AdminSettings,
 }                             from './pages/Adminnewsletter'
 import AdminUsers             from './pages/Adminuser'
+import AdminEditorList        from './pages/Admineditorlist'
+import AdminEditor            from './pages/Admineditor'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* ── Public routes (with Navbar + Footer) ────────── */}
-        <Route element={
-          <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-            <Navbar />
-            <main>
-              <Routes>
-                <Route path="/"                    element={<HomePage />} />
-                <Route path="/login"               element={<LoginPage />} />
-                <Route path="/register"            element={<RegisterPage />} />
-                <Route path="/articles"            element={<ArticlesPage />} />
-                <Route path="/article/:slug"       element={<ArticlePage />} />
-                <Route path="/category/:slug"      element={<CategoryPage />} />
-                <Route path="/search"              element={<SearchPage />} />
-                <Route path="/trending"            element={<TrendingPage />} />
-                <Route path="/auth/verify-email"   element={<VerifyEmailPage />} />
-                <Route path="/auth/magic"          element={<MagicVerifyPage />} />
+        {/* ── Public routes (with Navbar + Footer) ── */}
+        <Route
+          path="/*"
+          element={
+            <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+              <Navbar />
+              <main>
+                <Routes>
+                  <Route path="/"                    element={<HomePage />} />
+                  <Route path="/login"               element={<LoginPage />} />
+                  <Route path="/register"            element={<RegisterPage />} />
+                  <Route path="/articles"            element={<ArticlesPage />} />
+                  <Route path="/article/:slug"       element={<ArticlePage />} />
+                  <Route path="/category/:slug"      element={<CategoryPage />} />
+                  <Route path="/search"              element={<SearchPage />} />
+                  <Route path="/trending"            element={<TrendingPage />} />
+                  <Route path="/auth/verify-email"   element={<VerifyEmailPage />} />
+                  <Route path="/auth/magic"          element={<MagicVerifyPage />} />
 
-                <Route path="/saved" element={
-                  <ProtectedRoute><SavedPage /></ProtectedRoute>
-                } />
-                <Route path="/account" element={
-                  <ProtectedRoute><AccountPage /></ProtectedRoute>
-                } />
+                  <Route path="/saved" element={
+                    <ProtectedRoute><SavedPage /></ProtectedRoute>
+                  } />
+                  <Route path="/account" element={
+                    <ProtectedRoute><AccountPage /></ProtectedRoute>
+                  } />
 
-                <Route path="*" element={
-                  <div className="page-container py-20 text-center">
-                    <h1 className="font-display text-4xl font-black"
-                      style={{ color: 'var(--text-primary)' }}>
-                      404 — Page Not Found
-                    </h1>
-                  </div>
-                } />
-              </Routes>
-            </main>
-            <Footer />
-          </div>
-        } path="/*" />
+                  <Route path="*" element={
+                    <div className="page-container py-20 text-center">
+                      <h1 className="font-display text-4xl font-black"
+                        style={{ color: 'var(--text-primary)' }}>
+                        404 — Page Not Found
+                      </h1>
+                    </div>
+                  } />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+          }
+        />
 
-        <Route path="/admin" element={
-          <ProtectedRoute requiredRole="editor">
-            <AdminLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+        {/* ── Admin routes ──────────────────────────────────────────
+            FIX: requiredRole="author" so both authors AND editors can
+            enter the /admin shell. Individual pages further restrict
+            access (e.g. AdminDashboard, AdminUsers are editor-only).
+            Authors land directly on /admin/editor.
+        ─────────────────────────────────────────────────────────── */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="author">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Redirect: editors go to dashboard, authors go to editor list */}
+          <Route index element={<AdminIndexRedirect />} />
 
-          <Route path="dashboard"     element={<AdminDashboard />} />
-          <Route path="articles"      element={<AdminArticles />} />
-          <Route path="analytics/:id" element={<AdminArticleAnalytics />} />
+          {/* Editor/super_admin only pages */}
+          <Route path="dashboard" element={
+            <ProtectedRoute requiredRole="editor"><AdminDashboard /></ProtectedRoute>
+          } />
+          <Route path="articles" element={
+            <ProtectedRoute requiredRole="editor"><AdminArticles /></ProtectedRoute>
+          } />
+          <Route path="analytics/:id" element={
+            <ProtectedRoute requiredRole="editor"><AdminArticleAnalytics /></ProtectedRoute>
+          } />
+          <Route path="users" element={
+            <ProtectedRoute requiredRole="editor"><AdminUsers /></ProtectedRoute>
+          } />
+          <Route path="newsletter" element={
+            <ProtectedRoute requiredRole="editor"><AdminNewsletter /></ProtectedRoute>
+          } />
+          <Route path="settings" element={
+            <ProtectedRoute requiredRole="editor"><AdminSettings /></ProtectedRoute>
+          } />
 
-          <Route path="users"      element={<AdminUsers />} />
-          <Route path="newsletter" element={<AdminNewsletter />} />
-          <Route path="settings"   element={<AdminSettings />} />
+          {/* Author + editor pages */}
+          <Route path="editor"     element={<AdminEditorList />} />
+          <Route path="editor/new" element={<AdminEditor />} />
+          <Route path="editor/:id" element={<AdminEditor />} />
 
-          {/* Catch-all inside admin */}
-          <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="*" element={<AdminIndexRedirect />} />
         </Route>
 
       </Routes>
     </BrowserRouter>
   )
+}
+
+/** Redirects based on role: editor/super_admin → dashboard, author → editor list */
+function AdminIndexRedirect() {
+  const { user } = useAuth()
+  const isEditorPlus = user?.role === 'editor' || user?.role === 'super_admin'
+  return <Navigate to={isEditorPlus ? '/admin/dashboard' : '/admin/editor'} replace />
 }
 
 export default App
