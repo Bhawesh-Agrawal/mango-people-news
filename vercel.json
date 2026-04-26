@@ -6,10 +6,10 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(bot|crawler|spider|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot|ia_archiver).*"
+          "value": "(?i).*(bot|crawler|spider|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
         }
       ],
-      "destination": "https://api.gallitify.tech/api/v1/articles/:slug"
+      "destination": "https://api2.gallitify.tech/meta/article/:slug"
     },
     {
       "source": "/category/:slug",
@@ -17,10 +17,10 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(bot|crawler|spider|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot|ia_archiver).*"
+          "value": "(?i).*(bot|crawler|spider|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
         }
       ],
-      "destination": "https://api.gallitify.tech/meta/category/:slug"
+      "destination": "https://api2.gallitify.tech/meta/category/:slug"
     },
     {
       "source": "/(.*)",
@@ -31,33 +31,17 @@
     {
       "source": "/(.*)",
       "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "DENY" },
+        { "key": "X-XSS-Protection",         "value": "1; mode=block" },
+        { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" }
       ]
     },
     {
-      "source": "/og-default.png",
+      "source": "/logo.png",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=86400"
-        }
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     }
   ]
 }
-

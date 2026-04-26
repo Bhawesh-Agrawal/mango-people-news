@@ -7,7 +7,7 @@ const SITE_URL = "https://dev.gallitify.tech";
 const SITE_NAME = "Mango People News";
 const DEFAULT_DESCRIPTION =
   "India's financial and business news platform. Markets, economy, policy and more. News for Every Indian.";
-const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`;
 const TWITTER_HANDLE = "@mangopeoplenews";
 
 // ─────────────────────────────────────────────────────────────
