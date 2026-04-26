@@ -43,19 +43,27 @@
 
     <!-- ═══════════════════════════════════════════════
          ICONS & PWA
-         Replace emoji favicon with actual logo.
-         og-default.png = 1200×630 branding image (see /public)
     ════════════════════════════════════════════════ -->
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="theme-color" content="#C8820A" />
     <meta name="msapplication-TileColor" content="#C8820A" />
 
-    <!-- ═══════════════════════════════════════════════
-         GOOGLE SEARCH — STRUCTURED DATA (JSON-LD)
-         Marks this as a news organisation for Google News
-         eligibility. Update logo/url once domain is finalised.
-    ════════════════════════════════════════════════ -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap"
+      />
+    </noscript>
+
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",

@@ -4,6 +4,17 @@ import { useArticles } from '../../hooks/useArticles'
 import { timeAgo, formatCount, truncate } from '../../lib/utils'
 import type { Article } from '../../types'
 
+// ── Cloudinary URL optimizer ───────────────────────────────────────
+// Injects w, h, f_auto, q_auto transforms into Cloudinary URLs.
+// Safe to call on any URL — returns original if not Cloudinary.
+function cloudinaryUrl(url: string, width: number, height: number): string {
+  if (!url || !url.includes('res.cloudinary.com')) return url
+  return url.replace(
+    '/image/upload/',
+    `/image/upload/w_${width},h_${height},c_fill,f_auto,q_auto/`
+  )
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────
 function HeroSkeleton() {
   return (
@@ -84,11 +95,13 @@ function ArticleRow({ article }: { article: Article }) {
       >
         {article.cover_image && (
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 144, 128)}
             alt=""
             className="w-full h-full object-cover transition-transform
                        duration-300 group-hover:scale-105"
             loading="lazy"
+            width={144}
+            height={128}
           />
         )}
       </div>
@@ -213,6 +226,7 @@ export default function Hero() {
         </div>
 
         {/* Cover image — full bleed, button inside */}
+        {/* LCP image: eager + high priority, no lazy */}
         <Link
           to={`/article/${main.slug}`}
           className="block w-full relative overflow-hidden group"
@@ -220,10 +234,14 @@ export default function Hero() {
         >
           {main.cover_image
             ? <img
-                src={main.cover_image}
+                src={cloudinaryUrl(main.cover_image, 800, 440)}
                 alt={main.title}
                 className="w-full h-full object-cover transition-transform
                            duration-700 group-hover:scale-105"
+                loading="eager"
+                fetchPriority="high"
+                width={800}
+                height={440}
               />
             : <div
                 className="w-full h-full"
@@ -315,10 +333,10 @@ export default function Hero() {
           DESKTOP
       ════════════════════════════════════════════ */}
       <div className="hidden md:block page-container py-6">
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 gap-6 items-stretch">
 
-          {/* Left — editorial hero */}
-          <div className="col-span-2 flex flex-col gap-4">
+          {/* Left — editorial hero, stretch to match sidebar height */}
+          <div className="col-span-2 flex flex-col gap-4 h-full">
 
             {/* Text above image */}
             <div className="space-y-3">
@@ -389,18 +407,22 @@ export default function Hero() {
               </div>
             </div>
 
-            {/* Cover image — button lives inside */}
+            {/* Cover image — LCP image: eager + high priority, no lazy */}
             <Link
               to={`/article/${main.slug}`}
-              className="block relative rounded-2xl overflow-hidden group"
-              style={{ height: '340px' }}
+              className="block relative rounded-2xl overflow-hidden group flex-1"
+              style={{ minHeight: '240px' }}
             >
               {main.cover_image
                 ? <img
-                    src={main.cover_image}
+                    src={cloudinaryUrl(main.cover_image, 1330, 680)}
                     alt={main.title}
                     className="w-full h-full object-cover transition-transform
                                duration-700 group-hover:scale-105"
+                    loading="eager"
+                    fetchPriority="high"
+                    width={1330}
+                    height={680}
                   />
                 : <div
                     className="w-full h-full"

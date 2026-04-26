@@ -1,19 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ================================================================
-   DESIGN TOKENS
-   Single source of truth for every colour, space and radius.
-   Light mode is default. .dark class flips all tokens.
-================================================================ */
-
 @layer base {
   :root {
     /* ── Surfaces ── */
-    --bg:             #F7F6F2;   /* warm off-white — not clinical pure white */
+    --bg:             #F7F6F2;
     --bg-surface:     #FFFFFF;
     --bg-subtle:      #F0EFE9;
     --bg-muted:       #E8E7E0;
@@ -23,16 +15,16 @@
     --border-muted:   #E8E7E0;
 
     /* ── Text ── */
-    --text-primary:   #141210;   /* warm near-black */
+    --text-primary:   #141210;
     --text-secondary: #4A4540;
     --text-muted:     #8C8680;
     --text-faint:     #B8B2AC;
 
     /* ── Accent — amber, used sparingly ── */
-    --accent:         #C8820A;   /* darker, more refined than the old orange-y amber */
+    --accent:         #C8820A;
     --accent-hover:   #A86D08;
     --accent-light:   #FDF3DC;
-    --accent-text:    #7A4E05;   /* for text on light bg that needs amber */
+    --accent-text:    #7A4E05;
 
     /* ── Semantic ── */
     --breaking:       #B91C1C;
@@ -78,14 +70,14 @@
     -webkit-font-smoothing:  antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 16px;
-    /* Prevent flash when switching theme */
     color-scheme: light dark;
   }
 
   body {
     background-color: var(--bg);
     color:            var(--text-primary);
-    font-family:      'DM Sans', sans-serif;
+    /* System fonts as fallback while DM Sans loads — prevents invisible text */
+    font-family:      'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-size:        15px;
     line-height:      1.6;
     min-height:       100vh;
@@ -119,7 +111,7 @@
     max-width: 100%;
   }
 
-  /* ── Headings — no bold by default, controlled explicitly ── */
+  /* ── Headings ── */
   h1, h2, h3, h4, h5, h6 {
     font-weight:  600;
     line-height:  1.25;
@@ -129,20 +121,19 @@
 
 /* ================================================================
    COMPONENT CLASSES
-   Reusable primitives. Keep these minimal and purposeful.
 ================================================================ */
 
 @layer components {
 
-  /* ── Layout container ──────────────────────────────────────── */
+  /* ── Layout container ── */
   .page-container {
     @apply w-full max-w-7xl mx-auto px-4 sm:px-6;
   }
 
-  /* ── Typography: Display headlines ─────────────────────────── */
-  /* Barlow Condensed ONLY for these — not for UI chrome        */
+  /* ── Typography: Display headlines ── */
   .headline-xl {
-    font-family:    'Barlow Condensed', sans-serif;
+    /* Arial Narrow as fallback — visually closest to Barlow Condensed */
+    font-family:    'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
     font-weight:    700;
     line-height:    1.05;
     letter-spacing: -0.01em;
@@ -150,26 +141,26 @@
   }
 
   .headline-lg {
-    font-family:    'Barlow Condensed', sans-serif;
+    font-family:    'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
     font-weight:    700;
     line-height:    1.1;
     letter-spacing: -0.005em;
     color:          var(--text-primary);
   }
 
-  /* ── Typography: Serif accent ──────────────────────────────── */
-  /* Lora for subtitles, pull quotes, article decks             */
+  /* ── Typography: Serif accent ── */
   .serif-text {
-    font-family: 'Lora', serif;
+    /* Georgia as fallback — closest system serif to Lora */
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
     font-weight: 400;
     font-style:  italic;
     line-height: 1.5;
     color:       var(--text-secondary);
   }
 
-  /* ── Article body text ─────────────────────────────────────── */
+  /* ── Article body text ── */
   .article-body {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     font-size:   17px;
     line-height: 1.75;
     color:       var(--text-secondary);
@@ -179,10 +170,9 @@
     margin-top: 1.25em;
   }
 
-  /* ── Category label ────────────────────────────────────────── */
-  /* Small, understated — not screaming                         */
+  /* ── Category label ── */
   .cat-label {
-    font-family:    'DM Sans', sans-serif;
+    font-family:    'DM Sans', system-ui, sans-serif;
     font-size:      11px;
     font-weight:    600;
     letter-spacing: 0.06em;
@@ -190,10 +180,9 @@
     display:        inline-block;
   }
 
-  /* ── Section label ─────────────────────────────────────────── */
-  /* Used above section titles — e.g. "Markets", "Top Stories"  */
+  /* ── Section label ── */
   .section-label {
-    font-family:    'DM Sans', sans-serif;
+    font-family:    'DM Sans', system-ui, sans-serif;
     font-size:      11px;
     font-weight:    600;
     letter-spacing: 0.1em;
@@ -201,10 +190,10 @@
     color:          var(--accent-text);
   }
 
-  /* ── Breaking badge ────────────────────────────────────────── */
+  /* ── Breaking badge ── */
   .breaking-strip {
     @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm;
-    font-family:    'DM Sans', sans-serif;
+    font-family:    'DM Sans', system-ui, sans-serif;
     font-size:      10px;
     font-weight:    700;
     letter-spacing: 0.08em;
@@ -213,12 +202,12 @@
     color:          #fff;
   }
 
-  /* ── Buttons ───────────────────────────────────────────────── */
+  /* ── Buttons ── */
   .btn-accent {
     @apply inline-flex items-center justify-center
            px-5 py-2.5 rounded-lg
            transition-all duration-150 active:scale-95;
-    font-family:  'DM Sans', sans-serif;
+    font-family:  'DM Sans', system-ui, sans-serif;
     font-size:    14px;
     font-weight:  600;
     background:   var(--accent);
@@ -235,7 +224,7 @@
     @apply inline-flex items-center justify-center
            px-4 py-2 rounded-lg
            transition-all duration-150;
-    font-family:  'DM Sans', sans-serif;
+    font-family:  'DM Sans', system-ui, sans-serif;
     font-size:    14px;
     font-weight:  500;
     background:   transparent;
@@ -249,7 +238,7 @@
     color:        var(--text-primary);
   }
 
-  /* ── Card ──────────────────────────────────────────────────── */
+  /* ── Card ── */
   .news-card {
     background:    var(--bg-surface);
     border:        1px solid var(--border-muted);
@@ -264,23 +253,22 @@
     box-shadow:   0 2px 16px rgba(0, 0, 0, 0.06);
   }
 
-  /* ── Divider ───────────────────────────────────────────────── */
+  /* ── Divider ── */
   .divider {
     border: none;
     border-top: 1px solid var(--border);
   }
 
-  /* ── Skeleton loader ───────────────────────────────────────── */
+  /* ── Skeleton loader ── */
   .skeleton {
     border-radius: 4px;
     background:    var(--bg-muted);
     animation:     skeleton-pulse 1.5s ease-in-out infinite;
   }
 
-  /* ── Meta text ─────────────────────────────────────────────── */
-  /* Reading time, author, date — consistent small text         */
+  /* ── Meta text ── */
   .meta-text {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'DM Sans', system-ui, sans-serif;
     font-size:   12px;
     font-weight: 400;
     color:       var(--text-muted);
@@ -289,15 +277,14 @@
     gap:         4px;
   }
 
-  /* ── Horizontal rule with label ────────────────────────────── */
-  /* Used between sections                                      */
+  /* ── Section rule ── */
   .section-rule {
     border:        none;
     border-top:    2px solid var(--text-primary);
     margin-bottom: 16px;
   }
 
-  /* ── Image hover zoom wrapper ──────────────────────────────── */
+  /* ── Image hover zoom wrapper ── */
   .img-zoom {
     overflow: hidden;
   }
@@ -310,87 +297,86 @@
     transform: scale(1.03);
   }
 
-  /* ── Focus ring for accessibility ──────────────────────────── */
+  /* ── Focus ring for accessibility ── */
   .focus-ring:focus-visible {
     outline:        2px solid var(--accent);
     outline-offset: 2px;
     border-radius:  4px;
   }
 
-  /* ── Article prose ─────────────────────────────────────────── */
-/* Styles rendered HTML from the backend body field           */
-.prose-article h2 {
-  font-family:   'Barlow Condensed', sans-serif;
-  font-size:     1.6rem;
-  font-weight:   700;
-  line-height:   1.2;
-  color:         var(--text-primary);
-  margin-top:    2em;
-  margin-bottom: 0.5em;
-}
+  /* ── Article prose ── */
+  .prose-article h2 {
+    font-family:   'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+    font-size:     1.6rem;
+    font-weight:   700;
+    line-height:   1.2;
+    color:         var(--text-primary);
+    margin-top:    2em;
+    margin-bottom: 0.5em;
+  }
 
-.prose-article h3 {
-  font-family:   'DM Sans', sans-serif;
-  font-size:     1.1rem;
-  font-weight:   600;
-  color:         var(--text-primary);
-  margin-top:    1.75em;
-  margin-bottom: 0.4em;
-}
+  .prose-article h3 {
+    font-family:   'DM Sans', system-ui, sans-serif;
+    font-size:     1.1rem;
+    font-weight:   600;
+    color:         var(--text-primary);
+    margin-top:    1.75em;
+    margin-bottom: 0.4em;
+  }
 
-.prose-article p {
-  margin-bottom: 1.25em;
-  color:         var(--text-secondary);
-}
+  .prose-article p {
+    margin-bottom: 1.25em;
+    color:         var(--text-secondary);
+  }
 
-.prose-article strong {
-  font-weight: 600;
-  color:       var(--text-primary);
-}
+  .prose-article strong {
+    font-weight: 600;
+    color:       var(--text-primary);
+  }
 
-.prose-article a {
-  color:           var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
+  .prose-article a {
+    color:                 var(--accent);
+    text-decoration:       underline;
+    text-underline-offset: 2px;
+  }
 
-.prose-article a:hover {
-  color: var(--accent-hover);
-}
+  .prose-article a:hover {
+    color: var(--accent-hover);
+  }
 
-.prose-article blockquote {
-  border-left:  3px solid var(--accent);
-  padding-left: 1.25em;
-  margin:       1.5em 0;
-  font-family:  'Lora', serif;
-  font-style:   italic;
-  font-size:    1.05em;
-  color:        var(--text-secondary);
-}
+  .prose-article blockquote {
+    border-left:  3px solid var(--accent);
+    padding-left: 1.25em;
+    margin:       1.5em 0;
+    font-family:  'Lora', Georgia, serif;
+    font-style:   italic;
+    font-size:    1.05em;
+    color:        var(--text-secondary);
+  }
 
-.prose-article ul,
-.prose-article ol {
-  padding-left:  1.5em;
-  margin-bottom: 1.25em;
-  color:         var(--text-secondary);
-}
+  .prose-article ul,
+  .prose-article ol {
+    padding-left:  1.5em;
+    margin-bottom: 1.25em;
+    color:         var(--text-secondary);
+  }
 
-.prose-article li {
-  margin-bottom: 0.4em;
-  line-height:   1.7;
-}
+  .prose-article li {
+    margin-bottom: 0.4em;
+    line-height:   1.7;
+  }
 
-.prose-article img {
-  border-radius: 8px;
-  margin:        1.5em auto;
-  max-width:     100%;
-}
+  .prose-article img {
+    border-radius: 8px;
+    margin:        1.5em auto;
+    max-width:     100%;
+  }
 
-.prose-article hr {
-  border:        none;
-  border-top:    1px solid var(--border);
-  margin:        2em 0;
-}
+  .prose-article hr {
+    border:     none;
+    border-top: 1px solid var(--border);
+    margin:     2em 0;
+  }
 }
 
 /* ================================================================
@@ -414,18 +400,17 @@
   }
 
   @keyframes tickerScroll {
-    from { transform: translateX(0);     }
-    to   { transform: translateX(-50%);  }
+    from { transform: translateX(0);    }
+    to   { transform: translateX(-50%); }
   }
 
-  .animate-fade-up   { animation: fadeUp  0.4s ease forwards; }
-  .animate-fade-in   { animation: fadeIn  0.3s ease forwards; }
-  .animate-ticker    { animation: tickerScroll 40s linear infinite; }
+  .animate-fade-up { animation: fadeUp  0.4s ease forwards; }
+  .animate-fade-in { animation: fadeIn  0.3s ease forwards; }
+  .animate-ticker  { animation: tickerScroll 40s linear infinite; }
 
-  /* Hide scrollbar everywhere it shouldn't show */
   .scrollbar-none {
-    -ms-overflow-style:  none;
-    scrollbar-width:     none;
+    -ms-overflow-style: none;
+    scrollbar-width:    none;
   }
 
   .scrollbar-none::-webkit-scrollbar {
