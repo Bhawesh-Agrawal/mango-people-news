@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 // ─────────────────────────────────────────────────────────────
 //  Constants — update SITE_URL once production domain is live
 // ─────────────────────────────────────────────────────────────
-const SITE_URL = "https://dev.gallitify.tech";
+const SITE_URL = "https://mangopeoplenews.com";
 const SITE_NAME = "Mango People News";
 const DEFAULT_DESCRIPTION =
   "India's financial and business news platform. Markets, economy, policy and more. News for Every Indian.";
