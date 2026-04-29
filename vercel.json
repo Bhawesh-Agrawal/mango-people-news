@@ -9,7 +9,7 @@
           "value": "(?i).*(bot|crawler|spider|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
         }
       ],
-      "destination": "https://api2.gallitify.tech/meta/article/:slug"
+      "destination": "https://api.mangopeoplenews.com/meta/article/:slug"
     },
     {
       "source": "/category/:slug",
@@ -20,7 +20,7 @@
           "value": "(?i).*(bot|crawler|spider|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
         }
       ],
-      "destination": "https://api2.gallitify.tech/meta/category/:slug"
+      "destination": "https://api.mangopeoplenews.com/meta/category/:slug"
     },
     {
       "source": "/(.*)",
