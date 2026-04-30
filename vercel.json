@@ -23,6 +23,10 @@
       "destination": "https://api.mangopeoplenews.com/meta/category/:slug"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
