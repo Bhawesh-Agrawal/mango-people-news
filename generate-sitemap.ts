@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const API_BASE_URL = process.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = process.env.VITE_API_URL || 'http://localhost:3000'
 const SITE_URL = 'https://mangopeoplenews.com'
 const PUBLIC_DIR = path.join(__dirname, 'public')
 
@@ -80,7 +80,7 @@ const staticPages: SitemapEntry[] = [
 async function fetchArticles(): Promise<SitemapEntry[]> {
   try {
     console.log('📰 Fetching articles from API...')
-    const response = await axios.get(`${API_BASE_URL}/articles`, {
+    const response = await axios.get(`${API_BASE_URL}/api/v1/articles`, {
       params: {
         limit: 1000, // Fetch large batch
         sort: '-published_at',
@@ -114,7 +114,7 @@ async function fetchArticles(): Promise<SitemapEntry[]> {
 async function fetchCategories(): Promise<SitemapEntry[]> {
   try {
     console.log('📂 Fetching categories from API...')
-    const response = await axios.get(`${API_BASE_URL}/categories`, {
+    const response = await axios.get(`${API_BASE_URL}/api/v1/categories`, {
       timeout: 10000,
     })
 
