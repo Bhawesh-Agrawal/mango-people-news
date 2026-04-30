@@ -24,6 +24,7 @@ export default function LoginPage() {
 
   const tsTokenRef = useRef('')
   const googleRef  = useRef<HTMLDivElement>(null!)
+  const submittingRef = useRef(false)
 
   useEffect(() => {
     if (!loading && isLoggedIn) navigate(from, { replace: true })
@@ -43,7 +44,9 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submittingRef.current) return
     setError('')
+    submittingRef.current = true
     setSubmitting(true)
     try {
       await login({
@@ -69,13 +72,16 @@ export default function LoginPage() {
         setError('Incorrect email or password.')
       }
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submittingRef.current) return
     setError('')
+    submittingRef.current = true
     setSubmitting(true)
     try {
       await requestMagicLink(email)
@@ -83,6 +89,7 @@ export default function LoginPage() {
     } catch {
       setError('Could not send magic link. Please try again.')
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
@@ -94,11 +101,16 @@ export default function LoginPage() {
     >
       {/* Wordmark — top of page, always visible */}
       <Link to="/" className="mb-8 block text-center">
+        <img
+          src="/logo.png"
+          alt="Mango People News"
+          className="mx-auto h-10 w-auto"
+        />
         <div
-          className="font-display font-bold tracking-tight"
+          className="font-display font-bold tracking-tight mt-3"
           style={{ fontSize: '26px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
         >
-          🌳 MANGO PEOPLE NEWS
+          Mango People News
         </div>
         <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
           News for Every Indian

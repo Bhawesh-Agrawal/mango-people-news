@@ -68,11 +68,16 @@ export default function VerifyEmailPage() {
     >
       {/* Wordmark */}
       <Link to="/" className="mb-8 block text-center">
+        <img
+          src="/logo.png"
+          alt="Mango People News"
+          className="mx-auto h-10 w-auto"
+        />
         <div
-          className="font-display font-bold tracking-tight"
+          className="font-display font-bold tracking-tight mt-3"
           style={{ fontSize: '26px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
         >
-          🌳 MANGO PEOPLE NEWS
+          Mango People News
         </div>
       </Link>
 

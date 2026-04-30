@@ -1,5 +1,5 @@
 # Mango People News — robots.txt
-# Update Sitemap URL once production domain is finalised
+# Sitemap is auto-generated during build
 
 User-agent: *
 Allow: /
@@ -17,4 +17,5 @@ Disallow: /magic
 # Block search result pages (thin content, not useful in Google index)
 Disallow: /search
 
-Sitemap: https://dev.gallitify.tech/sitemap.xml
+# Dynamic sitemap URL
+Sitemap: https://mangopeoplenews.com/sitemap.xml

@@ -69,6 +69,7 @@ export default function RegisterPage() {
 
   const tsTokenRef = useRef('')
   const googleRef  = useRef<HTMLDivElement>(null!)
+  const submittingRef = useRef(false)
 
   useEffect(() => {
     if (!loading && isLoggedIn) navigate(from, { replace: true })
@@ -103,6 +104,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submittingRef.current) return
     setError('')
     const pwErr = validatePassword()
     if (pwErr) { setError(pwErr); return }
@@ -112,6 +114,7 @@ export default function RegisterPage() {
       return
     }
 
+    submittingRef.current = true
     setSubmitting(true)
     try {
       await register({
@@ -130,6 +133,7 @@ export default function RegisterPage() {
       setError(msg)
       tsTokenRef.current = ''
     } finally {
+      submittingRef.current = false
       setSubmitting(false)
     }
   }
@@ -141,11 +145,16 @@ export default function RegisterPage() {
     >
       {/* Wordmark */}
       <Link to="/" className="mb-8 block text-center">
+        <img
+          src="/logo.png"
+          alt="Mango People News"
+          className="mx-auto h-10 w-auto"
+        />
         <div
-          className="font-display font-bold tracking-tight"
+          className="font-display font-bold tracking-tight mt-3"
           style={{ fontSize: '26px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
         >
-          🌳 MANGO PEOPLE NEWS
+          Mango People News
         </div>
         <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
           News for Every Indian

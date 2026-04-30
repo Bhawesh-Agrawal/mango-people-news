@@ -18,8 +18,8 @@ const LINKS = {
     { label: 'Contact',   href: '/contact'   },
   ],
   Legal: [
-    { label: 'Privacy Policy', href: '/privacy'    },
-    { label: 'Terms of Use',   href: '/terms'      },
+    { label: 'Privacy Policy', href: '/privacy-policy'    },
+    { label: 'Terms of Use',   href: '/terms-and-conditions'      },
     { label: 'Disclaimer',     href: '/disclaimer' },
   ],
 }
@@ -145,14 +145,12 @@ export default function Footer() {
 
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-3">
-              <Link to="/" className="flex items-center gap-2">
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center
-                             justify-center text-xl flex-shrink-0"
-                  style={{ background: 'var(--accent-light)' }}
-                >
-                  🌳
-                </div>
+              <Link to="/" className="flex items-center gap-3">
+                <img
+                  src="/logo.png"
+                  alt="Mango People News"
+                  className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
+                />
                 <div className="leading-none">
                   <div
                     className="font-display text-lg font-black

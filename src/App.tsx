@@ -18,6 +18,10 @@ import TrendingPage    from './pages/Trendingpage'
 import SavedPage       from './pages/Savedpage'
 import ArticlesPage    from './pages/Articlespage'
 import SearchPage      from './pages/Searchpage'
+import NewsletterPage  from './pages/Newsletterpage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsAndConditionsPage from './pages/TermsAndConditionsPage'
+import DisclaimerPage from './pages/DisclaimerPage'
 
 // Admin pages
 import AdminDashboard         from './pages/Admindashboard'
@@ -52,6 +56,10 @@ function App() {
                   <Route path="/category/:slug"      element={<CategoryPage />} />
                   <Route path="/search"              element={<SearchPage />} />
                   <Route path="/trending"            element={<TrendingPage />} />
+                  <Route path="/newsletter"          element={<NewsletterPage />} />
+                  <Route path="/privacy-policy"      element={<PrivacyPolicyPage />} />
+                  <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
+                  <Route path="/disclaimer"          element={<DisclaimerPage />} />
                   <Route path="/auth/verify-email"   element={<VerifyEmailPage />} />
                   <Route path="/auth/magic"          element={<MagicVerifyPage />} />
 
