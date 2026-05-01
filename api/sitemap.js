@@ -1,5 +1,14 @@
 const SITE_URL = process.env.SITE_URL || 'https://mangopeoplenews.com'
-const API_BASE_URL = (process.env.API_BASE_URL || process.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '') + '/api/v1'
+
+const rawApiBaseUrl = process.env.API_BASE_URL || process.env.VITE_API_URL || 'https://api.mangopeoplenews.com'
+const API_BASE_URL = normalizeApiBaseUrl(rawApiBaseUrl)
+
+function normalizeApiBaseUrl(baseUrl) {
+  let url = String(baseUrl).trim().replace(/\/+$|\s+/g, '')
+  if (url.endsWith('/api/v1')) return url
+  if (url.endsWith('/api')) url = url.slice(0, -4)
+  return `${url}/api/v1`
+}
 
 const staticPages = [
   { loc: `${SITE_URL}/`, changefreq: 'daily', priority: 1.0 },
@@ -12,6 +21,7 @@ const staticPages = [
 ]
 
 const fetchJson = async (url) => {
+  console.log(`🌐 Fetching sitemap data from: ${url}`)
   const response = await fetch(url, { cache: 'no-store' })
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url}: ${response.status}`)

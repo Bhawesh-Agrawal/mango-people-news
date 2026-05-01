@@ -16,9 +16,17 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const API_BASE_URL = process.env.VITE_API_URL || 'http://localhost:3000'
+const rawApiBaseUrl = process.env.VITE_API_URL || 'https://api.mangopeoplenews.com'
+const API_BASE_URL = normalizeApiBaseUrl(rawApiBaseUrl)
 const SITE_URL = 'https://mangopeoplenews.com'
 const PUBLIC_DIR = path.join(__dirname, 'public')
+
+function normalizeApiBaseUrl(baseUrl: string): string {
+  let url = baseUrl.trim().replace(/\/+$|\s+/g, '')
+  if (url.endsWith('/api/v1')) return url
+  if (url.endsWith('/api')) url = url.slice(0, -4)
+  return `${url}/api/v1`
+}
 
 // Ensure public directory exists
 if (!fs.existsSync(PUBLIC_DIR)) {
@@ -85,12 +93,9 @@ const staticPages: SitemapEntry[] = [
 
 async function fetchArticles(): Promise<SitemapEntry[]> {
   try {
-    console.log('📰 Fetching articles from API...')
-    const response = await axios.get(`${API_BASE_URL}/api/v1/articles`, {
-      params: {
-        limit: 1000, // Fetch large batch
-        sort: '-published_at',
-      },
+    const url = `${API_BASE_URL}/articles?limit=1000&sort=-published_at`
+    console.log('📰 Fetching articles from API:', url)
+    const response = await axios.get(url, {
       timeout: 10000,
     })
 
@@ -117,8 +122,9 @@ async function fetchArticles(): Promise<SitemapEntry[]> {
 
 async function fetchCategories(): Promise<SitemapEntry[]> {
   try {
-    console.log('📂 Fetching categories from API...')
-    const response = await axios.get(`${API_BASE_URL}/api/v1/categories`, {
+    const url = `${API_BASE_URL}/categories`
+    console.log('📂 Fetching categories from API:', url)
+    const response = await axios.get(url, {
       timeout: 10000,
     })
 
