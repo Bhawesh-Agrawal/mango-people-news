@@ -4,13 +4,13 @@
  * - Static pages (home, newsletter, etc.)
  * - Dynamic blog articles
  * - Category pages
- * 
- * Run with: node generate-sitemap.js
+ *
+ * Run with: node generate-sitemap.ts
  */
 
 import axios from 'axios'
-import fs from 'fs'
-import path from 'path'
+import * as fs from 'fs'
+import * as path from 'path'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -30,6 +30,12 @@ interface SitemapEntry {
   lastmod: string
   changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
   priority: number
+}
+
+function formatDate(value: string | Date | null | undefined): string {
+  if (!value) return new Date().toISOString().split('T')[0]
+  const date = new Date(value)
+  return isNaN(date.getTime()) ? new Date().toISOString().split('T')[0] : date.toISOString().split('T')[0]
 }
 
 const staticPages: SitemapEntry[] = [
@@ -99,9 +105,7 @@ async function fetchArticles(): Promise<SitemapEntry[]> {
 
     return articles.map((article: any) => ({
       loc: `${SITE_URL}/article/${article.slug}`,
-      lastmod: article.updated_at
-        ? new Date(article.updated_at).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0],
+      lastmod: formatDate(article.updated_at || article.published_at),
       changefreq: 'weekly' as const,
       priority: 0.8,
     }))
@@ -198,10 +202,10 @@ async function generateSitemap(): Promise<void> {
     console.log(`   - Static pages: ${staticPages.length}`)
     console.log(`   - Categories: ${categories.length}`)
     console.log(`   - Articles: ${articles.length}`)
-    console.log(`📁 File saved: ${sitemapPath}`)
-    console.log(`🌐 Access at: ${SITE_URL}/sitemap.xml\n`)
+    console.log(`📁 Saved to: ${sitemapPath}`)
+
   } catch (error) {
-    console.error('❌ Fatal error generating sitemap:', error)
+    console.error('❌ Error generating sitemap:', error instanceof Error ? error.message : error)
     process.exit(1)
   }
 }
