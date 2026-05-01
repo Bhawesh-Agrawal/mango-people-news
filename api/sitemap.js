@@ -1,5 +1,5 @@
 const SITE_URL = process.env.SITE_URL || 'https://mangopeoplenews.com'
-const API_BASE_URL = process.env.API_BASE_URL || process.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = (process.env.API_BASE_URL || process.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '') + '/api/v1'
 
 const staticPages = [
   { loc: `${SITE_URL}/`, changefreq: 'daily', priority: 1.0 },
