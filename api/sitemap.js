@@ -10,14 +10,16 @@ function normalizeApiBaseUrl(baseUrl) {
   return `${url}/api/v1`
 }
 
+const today = new Date().toISOString().split('T')[0]
+
 const staticPages = [
-  { loc: `${SITE_URL}/`, changefreq: 'daily', priority: 1.0 },
-  { loc: `${SITE_URL}/articles`, changefreq: 'daily', priority: 0.9 },
-  { loc: `${SITE_URL}/trending`, changefreq: 'daily', priority: 0.9 },
-  { loc: `${SITE_URL}/newsletter`, changefreq: 'weekly', priority: 0.8 },
-  { loc: `${SITE_URL}/privacy-policy`, changefreq: 'monthly', priority: 0.5 },
-  { loc: `${SITE_URL}/terms-and-conditions`, changefreq: 'monthly', priority: 0.5 },
-  { loc: `${SITE_URL}/disclaimer`, changefreq: 'monthly', priority: 0.5 },
+  { loc: `${SITE_URL}/`, lastmod: today, changefreq: 'daily', priority: 1.0 },
+  { loc: `${SITE_URL}/articles`, lastmod: today, changefreq: 'daily', priority: 0.9 },
+  { loc: `${SITE_URL}/trending`, lastmod: today, changefreq: 'daily', priority: 0.9 },
+  { loc: `${SITE_URL}/newsletter`, lastmod: today, changefreq: 'weekly', priority: 0.8 },
+  { loc: `${SITE_URL}/privacy-policy`, lastmod: today, changefreq: 'monthly', priority: 0.5 },
+  { loc: `${SITE_URL}/terms-and-conditions`, lastmod: today, changefreq: 'monthly', priority: 0.5 },
+  { loc: `${SITE_URL}/disclaimer`, lastmod: today, changefreq: 'monthly', priority: 0.5 },
 ]
 
 const fetchJson = async (url) => {
