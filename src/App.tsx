@@ -11,6 +11,8 @@ import LoginPage       from './pages/LoginPage'
 import RegisterPage    from './pages/RegisterPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 import MagicVerifyPage from './pages/MagicVerifyPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import ArticlePage     from './pages/ArticlePage'
 import CategoryPage    from './pages/CategoryPage'
 import AccountPage     from './pages/Accountpage'
@@ -27,6 +29,7 @@ import DisclaimerPage from './pages/DisclaimerPage'
 import AdminDashboard         from './pages/Admindashboard'
 import AdminArticles          from './pages/Adminarticles'
 import AdminArticleAnalytics  from './pages/Adminarticleanalytics'
+import AdminCategories        from './pages/Admincategories'
 import {
   AdminNewsletter,
   AdminSettings,
@@ -62,6 +65,8 @@ function App() {
                   <Route path="/disclaimer"          element={<DisclaimerPage />} />
                   <Route path="/auth/verify-email"   element={<VerifyEmailPage />} />
                   <Route path="/auth/magic"          element={<MagicVerifyPage />} />
+                  <Route path="/forgot-password"    element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password"     element={<ResetPasswordPage />} />
 
                   <Route path="/saved" element={
                     <ProtectedRoute><SavedPage /></ProtectedRoute>
@@ -114,6 +119,9 @@ function App() {
           } />
           <Route path="users" element={
             <ProtectedRoute requiredRole="editor"><AdminUsers /></ProtectedRoute>
+          } />
+          <Route path="categories" element={
+            <ProtectedRoute requiredRole="super_admin"><AdminCategories /></ProtectedRoute>
           } />
           <Route path="newsletter" element={
             <ProtectedRoute requiredRole="editor"><AdminNewsletter /></ProtectedRoute>

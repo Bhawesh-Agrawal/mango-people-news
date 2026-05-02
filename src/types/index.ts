@@ -33,6 +33,8 @@ export interface Category {
   slug:          string
   color:         string
   article_count: number
+  sort_order?:   number
+  is_active?:    boolean
 }
 
 export interface PaginatedResponse<T> {

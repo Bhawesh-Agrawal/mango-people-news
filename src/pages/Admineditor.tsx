@@ -8,6 +8,7 @@ import {
 import StarterKit           from '@tiptap/starter-kit'
 import ImageExtension       from '@tiptap/extension-image'
 import LinkExtension        from '@tiptap/extension-link'
+import ListItem             from '@tiptap/extension-list-item'
 import Placeholder          from '@tiptap/extension-placeholder'
 import CharacterCount       from '@tiptap/extension-character-count'
 import Underline            from '@tiptap/extension-underline'
@@ -248,6 +249,7 @@ export default function AdminEditor() {
   const editor = useEditor({
     extensions: [
       StarterKit,
+      ListItem,
       Underline,
       ImageExtension,
       LinkExtension.configure({ openOnClick: false }),
@@ -761,7 +763,9 @@ export default function AdminEditor() {
                 .ProseMirror h3 { font-size: 1.1rem; font-weight: 700; margin: 1.2em 0 0.4em; color: var(--text-primary); }
                 .ProseMirror blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 1.2em 0; color: var(--text-secondary); font-style: italic; }
                 .ProseMirror a { color: var(--accent); text-decoration: underline; }
-                .ProseMirror ul, .ProseMirror ol { padding-left: 1.5rem; margin: 0.8em 0; }
+                .ProseMirror ul { padding-left: 1.5rem; margin: 0.8em 0; list-style: disc; }
+                .ProseMirror ol { padding-left: 1.5rem; margin: 0.8em 0; list-style: decimal; }
+                .ProseMirror li { display: list-item; margin: 0.3em 0; color: var(--text-primary); }
                 .ProseMirror hr { border-color: var(--border); margin: 1.5em 0; }
                 .ProseMirror img { max-width: 100%; border-radius: 10px; margin: 1em 0; }
                 .ProseMirror code { background: var(--bg-subtle); padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.85em; }
