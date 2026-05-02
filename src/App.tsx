@@ -29,7 +29,7 @@ import DisclaimerPage from './pages/DisclaimerPage'
 import AdminDashboard         from './pages/Admindashboard'
 import AdminArticles          from './pages/Adminarticles'
 import AdminArticleAnalytics  from './pages/Adminarticleanalytics'
-import AdminCategories        from './pages/Admincategories'
+//import AdminCategories        from './pages/Admincategories'
 import {
   AdminNewsletter,
   AdminSettings,
@@ -119,9 +119,6 @@ function App() {
           } />
           <Route path="users" element={
             <ProtectedRoute requiredRole="editor"><AdminUsers /></ProtectedRoute>
-          } />
-          <Route path="categories" element={
-            <ProtectedRoute requiredRole="super_admin"><AdminCategories /></ProtectedRoute>
           } />
           <Route path="newsletter" element={
             <ProtectedRoute requiredRole="editor"><AdminNewsletter /></ProtectedRoute>
