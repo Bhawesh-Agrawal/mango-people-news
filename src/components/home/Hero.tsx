@@ -15,6 +15,58 @@ function cloudinaryUrl(url: string, width: number, height: number): string {
   )
 }
 
+// ── Article Row — thumbnail + title + meta ────────────────────────
+function ArticleRow({ article }: { article: Article }) {
+  return (
+    <Link
+      to={`/article/${article.slug}`}
+      className="flex gap-3 group py-2"
+    >
+      {/* Thumbnail */}
+      {article.cover_image && (
+        <div className="flex-shrink-0 w-[72px] h-16 rounded-lg overflow-hidden">
+          <img
+            src={cloudinaryUrl(article.cover_image, 144, 128)}
+            alt={article.title}
+            className="w-full h-full object-cover transition-transform
+                       duration-500 group-hover:scale-105"
+            loading="lazy"
+            width={144}
+            height={128}
+          />
+        </div>
+      )}
+
+      {/* Text */}
+      <div className="flex-1 min-w-0">
+        {article.category_name && (
+          <span
+            className="cat-label block mb-0.5"
+            style={{ color: article.category_color }}
+          >
+            {article.category_name}
+          </span>
+        )}
+        <p
+          className="text-sm font-bold leading-snug line-clamp-2
+                     transition-colors duration-150
+                     group-hover:text-[var(--accent)]"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {article.title}
+        </p>
+        <span
+          className="flex items-center gap-1 text-xs mt-1"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <Clock size={10} />
+          {timeAgo(article.published_at)}
+        </span>
+      </div>
+    </Link>
+  )
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────
 function HeroSkeleton() {
   return (
