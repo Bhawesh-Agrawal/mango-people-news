@@ -720,9 +720,9 @@ export default function ArticlePage() {
     getTrending(4)
       .then(res => {
         const others = (res.data ?? []).filter(a => a.slug !== slug).slice(0, 3)
-        setRelated(others.length > 0 ? others : SEED_ARTICLES.slice(0, 3))
+        setRelated(others)
       })
-      .catch(() => setRelated(SEED_ARTICLES.slice(0, 3)))
+      .catch(() => setRelated([]))
   }, [article, slug])
 
   const handleLike = async () => {
