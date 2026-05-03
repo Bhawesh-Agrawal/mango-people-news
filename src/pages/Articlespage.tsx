@@ -13,7 +13,6 @@ import { getArticles }            from '../api/articles'
 import { getCategories }          from '../api/categories'
 import type { Article, Category } from '../types'
 import { formatCount }            from '../lib/utils'
-import { SEED_ARTICLES }          from '../lib/seed'
 import SEO                        from '../seo/Seo'
 
 const LIMIT = 20
@@ -100,7 +99,7 @@ export default function ArticlesPage() {
       const incoming: Article[] = res.data ?? []
 
       if (incoming.length === 0 && pg === 1) {
-        setArticles(SEED_ARTICLES.slice(0, 10))
+        setArticles([])
         setHasMore(false)
       } else {
         setArticles(prev => append ? [...prev, ...incoming] : incoming)
@@ -108,7 +107,7 @@ export default function ArticlesPage() {
         setPage(pg)
       }
     } catch {
-      if (!append) setArticles(SEED_ARTICLES.slice(0, 10))
+      if (!append) setArticles([])
       setHasMore(false)
     } finally {
       setLoading(false)

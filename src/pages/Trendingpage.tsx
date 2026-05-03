@@ -15,7 +15,6 @@ import { TrendingUp, Eye, Heart, MessageCircle, Clock } from 'lucide-react'
 import { client }               from '../api/client'
 import type { Article }         from '../types'
 import { timeAgo, formatCount } from '../lib/utils'
-import { SEED_ARTICLES }        from '../lib/seed'
 
 type Period = 'today' | 'week' | 'month' | 'all'
 
@@ -42,10 +41,10 @@ export default function TrendingPage() {
       .then(res => {
         if (cancelled) return
         const data: Article[] = res.data?.data ?? []
-        setArticles(data.length > 0 ? data : SEED_ARTICLES.slice(0, 15))
+        setArticles(data)
       })
       .catch(() => {
-        if (!cancelled) setArticles(SEED_ARTICLES.slice(0, 15))
+        if (!cancelled) setArticles([])
       })
       .finally(() => { if (!cancelled) setLoading(false) })
 

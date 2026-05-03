@@ -85,7 +85,7 @@ export const useArticles = (options: ArticleParams = {}): UseArticlesReturn => {
       TTL.LIST,
     )
       .then(data => setArticles(data))
-      .catch(err => {
+      .catch(() => {
         setError('Unable to load articles. Please check your connection and try again.')
         setArticles([])
       })

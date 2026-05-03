@@ -15,7 +15,6 @@ import type { Comment } from '../api/articles'
 import { useAuth }        from '../context/AuthContext'
 import type { Article }   from '../types'
 import { timeAgo, formatCount, formatDate } from '../lib/utils'
-import { SEED_ARTICLES }  from '../lib/seed'
 import {
   toggleSaveArticle,
   getInitialSaveStatus,
@@ -686,9 +685,7 @@ export default function ArticlePage() {
       .then(res => {
         const a = res.data
         if (!a) {
-          const seed = SEED_ARTICLES.find(s => s.slug === slug)
-          if (seed) { setArticle(seed); setLikeCount(seed.like_count) }
-          else setNotFound(true)
+          setNotFound(true)
           return
         }
         setArticle(a)
@@ -696,9 +693,7 @@ export default function ArticlePage() {
         trackView(a.id)
       })
       .catch(() => {
-        const seed = SEED_ARTICLES.find(s => s.slug === slug)
-        if (seed) { setArticle(seed); setLikeCount(seed.like_count) }
-        else setNotFound(true)
+        setNotFound(true)
       })
       .finally(() => setLoading(false))
   }, [slug])

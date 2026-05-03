@@ -5,7 +5,6 @@ import { useCategories }  from '../hooks/useCategories'
 import { getArticles }    from '../api/articles'
 import type { Article, Category } from '../types'
 import { timeAgo, formatCount } from '../lib/utils'
-import { SEED_ARTICLES, SEED_CATEGORIES } from '../lib/seed'
 import MarketTicker from '../components/ui/MarketTicker'
 import SEO          from '../seo/Seo'
 
@@ -341,8 +340,7 @@ export default function CategoryPage() {
   const isMarkets = slug === 'markets'
 
   const category: Category | undefined =
-    categories.find(c => c.slug === slug) ??
-    SEED_CATEGORIES.find(c => c.slug === slug)
+    categories.find(c => c.slug === slug)
 
   useEffect(() => {
     if (!slug) return
@@ -358,8 +356,7 @@ export default function CategoryPage() {
         setHasMore(res.pagination?.hasNextPage ?? false)
       })
       .catch(() => {
-        const seed = SEED_ARTICLES.filter(a => a.category_slug === slug)
-        setAllArticles(seed)
+        setAllArticles([])
         setHasMore(false)
       })
       .finally(() => setLoading(false))

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Clock, Eye, Sparkles } from 'lucide-react'
+import { Eye, Sparkles } from 'lucide-react'
 import { useArticles } from '../../hooks/useArticles'
 import { timeAgo, formatCount } from '../../lib/utils'
 import type { Article } from '../../types'
@@ -11,7 +11,12 @@ function AISummaryItem({ article }: { article: Article }) {
   const yesterday = new Date(today)
   yesterday.setDate(today.getDate() - 1)
 
-  const isRecent = publishedDate >= yesterday.setHours(0, 0, 0, 0)
+  const todayStart = new Date(today)
+  todayStart.setHours(0, 0, 0, 0)
+  const yesterdayStart = new Date(yesterday)
+  yesterdayStart.setHours(0, 0, 0, 0)
+
+  const isRecent = publishedDate >= yesterdayStart
 
   if (!article.ai_summary || !isRecent) return null
 

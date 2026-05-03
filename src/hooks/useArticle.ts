@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { Article }   from '../types'
 import { getArticle }     from '../api/articles'
-import { SEED_ARTICLES }  from '../lib/seed'
 import { apiCache , TTL }  from '../lib/apiCache'
 
 
@@ -56,9 +55,7 @@ export const useArticle = (slug: string): UseArticleReturn => {
         setArticle(data)
       })
       .catch(() => {
-        const seed = SEED_ARTICLES.find(a => a.slug === slug) ?? null
-        setArticle(seed)
-        if (!seed) setError('Article not found')
+        setError('Article not found')
       })
       .finally(() => setLoading(false))
 
