@@ -1,6 +1,5 @@
 import BreakingBar       from '../components/home/BreakingBar'
 import Hero              from '../components/home/Hero'
-import DailyAISummary    from '../components/home/DailyAISummary'
 import CategorySections  from '../components/home/CategorySections'
 import SEO               from '../seo/Seo'
 
@@ -15,7 +14,6 @@ export default function HomePage() {
       />
       <BreakingBar />
       <Hero />
-      <DailyAISummary />
       <CategorySections />
     </>
   )

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { client }      from '../api/client'
 import { useAuth }     from '../context/AuthContext'
+import { useCategories } from '../hooks/useCategories'
 import { formatCount } from '../lib/utils'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -51,6 +52,7 @@ const PAGE_SIZE = 15
 
 export default function AdminEditorList() {
   const { user }        = useAuth()
+  const { categories }  = useCategories()
   const isEditorOrAbove = user?.role === 'editor' || user?.role === 'super_admin'
 
   const [articles,     setArticles]     = useState<ArticleRow[]>([])
@@ -60,6 +62,7 @@ export default function AdminEditorList() {
   const [error,        setError]        = useState('')
   const [search,       setSearch]       = useState('')
   const [status,       setStatus]       = useState('all')
+  const [category,     setCategory]     = useState('all')
 
   // Delete dialog
   const [deleteId,    setDeleteId]    = useState<string | null>(null)
@@ -74,7 +77,7 @@ export default function AdminEditorList() {
   // so the backend's role-aware defaults kick in (returns all statuses for
   // the authenticated user).
 
-  const fetchList = useCallback(async (pg: number, q: string, st: string) => {
+  const fetchList = useCallback(async (pg: number, q: string, st: string, cat: string) => {
     setLoading(true)
     setError('')
     try {
@@ -85,6 +88,7 @@ export default function AdminEditorList() {
       }
       if (q)          params.search = q
       if (st !== 'all') params.status = st
+      if (cat !== 'all') params.category = cat
       // When st === 'all', omit status entirely — backend defaults to
       // returning all statuses for authenticated staff (authors/editors).
 
@@ -102,18 +106,18 @@ export default function AdminEditorList() {
     }
   }, [])
 
-  // Re-fetch whenever page or status filter changes
+  // Re-fetch whenever page, status, or category filter changes
   useEffect(() => {
-    fetchList(page, search, status)
+    fetchList(page, search, status, category)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, status])
+  }, [page, status, category])
 
   const handleSearchChange = (val: string) => {
     setSearch(val)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => {
       setPage(1)
-      fetchList(1, val, status)
+      fetchList(1, val, status, category)
     }, 350)
   }
 
@@ -121,6 +125,12 @@ export default function AdminEditorList() {
     setStatus(val)
     setPage(1)
     // Effect will fire because status changed
+  }
+
+  const handleCategoryChange = (val: string) => {
+    setCategory(val)
+    setPage(1)
+    // Effect will fire because category changed
   }
 
   // ── Delete ────────────────────────────────────────────────
@@ -132,7 +142,7 @@ export default function AdminEditorList() {
     try {
       await client.delete(`/articles/${deleteId}`)
       setDeleteId(null)
-      fetchList(page, search, status)
+      fetchList(page, search, status, category)
     } catch (e: any) {
       setDeleteError(e?.response?.data?.message ?? 'Delete failed.')
     } finally {
@@ -200,6 +210,22 @@ export default function AdminEditorList() {
           <option value="draft">Draft</option>
           <option value="published">Published</option>
           <option value="archived">Archived</option>
+        </select>
+
+        <select
+          value={category}
+          onChange={e => handleCategoryChange(e.target.value)}
+          className="px-3 py-2.5 rounded-xl text-sm font-medium outline-none cursor-pointer"
+          style={{
+            background: 'var(--bg-surface)',
+            border:     '1px solid var(--border)',
+            color:      'var(--text-primary)',
+          }}
+        >
+          <option value="all">All categories</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.slug}>{cat.name}</option>
+          ))}
         </select>
       </div>
 

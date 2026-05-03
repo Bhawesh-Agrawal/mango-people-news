@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Clock, Eye, ArrowRight, BookOpen } from 'lucide-react'
+import { Clock, Eye, ArrowRight, BookOpen, Sparkles } from 'lucide-react'
 import { useArticles } from '../../hooks/useArticles'
 import { timeAgo, formatCount, truncate } from '../../lib/utils'
 import type { Article } from '../../types'
@@ -76,68 +76,54 @@ function HeroSkeleton() {
   )
 }
 
-// ── Article row — fixed height, consistent across all ─────────────
-function ArticleRow({ article }: { article: Article }) {
+// ── AI Summary row — integrated style ──────────────────────────
+function AISummaryRow({ article }: { article: Article }) {
+  // Only show if article has AI summary and is from today or yesterday
+  const publishedDate = new Date(article.published_at)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+
+  const todayStart = new Date(today)
+  todayStart.setHours(0, 0, 0, 0)
+  const yesterdayStart = new Date(yesterday)
+  yesterdayStart.setHours(0, 0, 0, 0)
+
+  const isRecent = publishedDate >= yesterdayStart
+
+  if (!article.ai_summary || !isRecent) return null
+
   return (
     <Link
       to={`/article/${article.slug}`}
-      className="flex gap-3 group py-3"
+      className="flex gap-3 group py-2"
     >
-      {/* Thumbnail — fixed dimensions, always same size */}
-      <div
-        className="flex-shrink-0 rounded-lg overflow-hidden"
-        style={{
-          width:      '72px',
-          height:     '64px',
-          minWidth:   '72px',
-          background: 'var(--bg-muted)',
-        }}
-      >
-        {article.cover_image && (
-          <img
-            src={cloudinaryUrl(article.cover_image, 144, 128)}
-            alt=""
-            className="w-full h-full object-cover transition-transform
-                       duration-300 group-hover:scale-105"
-            loading="lazy"
-            width={144}
-            height={128}
-          />
-        )}
+      {/* AI indicator */}
+      <div className="flex-shrink-0 mt-0.5">
+        <div
+          className="w-3 h-3 rounded-full flex items-center justify-center"
+          style={{ background: 'var(--accent)' }}
+        >
+          <Sparkles size={8} style={{ color: '#fff' }} />
+        </div>
       </div>
 
-      {/* Text — same min-height as thumbnail so rows don't shift */}
-      <div
-        className="flex-1 min-w-0 flex flex-col justify-between"
-        style={{ minHeight: '64px' }}
-      >
-        <div>
-          <span
-            className="cat-label text-[10px] block mb-1"
-            style={{ color: article.category_color }}
-          >
-            {article.category_name}
-          </span>
-          <p
-            className="text-sm font-bold leading-snug line-clamp-2
-                       transition-colors duration-150
-                       group-hover:text-[var(--accent)]"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            {article.title}
-          </p>
-        </div>
-        <div
-          className="flex items-center gap-2 text-[11px] mt-1.5"
-          style={{ color: 'var(--text-muted)' }}
+      {/* Text — compact layout */}
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-sm font-bold leading-snug line-clamp-2
+                     transition-colors duration-150
+                     group-hover:text-[var(--accent)]"
+          style={{ color: 'var(--text-primary)' }}
         >
-          <span className="flex items-center gap-1">
-            <Clock size={10} />
-            {timeAgo(article.published_at)}
-          </span>
-          <span>·</span>
-          <span>{article.reading_time} min read</span>
-        </div>
+          {article.title}
+        </p>
+        <p
+          className="text-xs leading-relaxed mt-1 line-clamp-2"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {truncate(article.ai_summary, 30)}
+        </p>
       </div>
     </Link>
   )
@@ -145,13 +131,32 @@ function ArticleRow({ article }: { article: Article }) {
 
 // ── Main ──────────────────────────────────────────────────────────
 export default function Hero() {
-  const { articles, loading } = useArticles({ limit: 7 })
+  const { articles, loading } = useArticles({ limit: 15 }) // Get more articles for AI summaries
 
   if (loading) return <HeroSkeleton />
   if (articles.length === 0) return null
 
   const main = articles[0]
   const list = articles.slice(1, 7)
+
+  // Filter AI summary articles from recent articles
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+
+  const todayStart = new Date(today)
+  todayStart.setHours(0, 0, 0, 0)
+  const yesterdayStart = new Date(yesterday)
+  yesterdayStart.setHours(0, 0, 0, 0)
+
+  const aiSummaryArticles = articles.filter(article => {
+    if (!article.ai_summary) return false
+    const publishedDate = new Date(article.published_at)
+    return publishedDate >= yesterdayStart
+  }).slice(0, 3) // Limit to 3 AI summaries
+
+  // Combine regular articles and AI summaries for highlights
+  const highlights = [...list.slice(0, 4), ...aiSummaryArticles].slice(0, 6)
 
   return (
     <section>
@@ -295,13 +300,13 @@ export default function Hero() {
           </div>
         </Link>
 
-        {/* Top stories list */}
+        {/* Today's highlights list */}
         <div
           className="px-4"
           style={{ background: 'var(--bg)' }}
         >
           <div className="flex items-center justify-between pt-4 pb-1">
-            <span className="section-label">Top Stories</span>
+            <span className="section-label">Today's Highlights</span>
             <Link
               to="/articles"
               className="flex items-center gap-1 text-[10px] font-bold
@@ -314,15 +319,19 @@ export default function Hero() {
           </div>
 
           <div>
-            {list.map((article, i) => (
+            {highlights.map((article, i) => (
               <div
                 key={article.id}
                 style={{
-                  borderBottom: i < list.length - 1
+                  borderBottom: i < highlights.length - 1
                     ? '1px solid var(--border-muted)' : 'none',
                 }}
               >
-                <ArticleRow article={article} />
+                {article.ai_summary ? (
+                  <AISummaryRow article={article} />
+                ) : (
+                  <ArticleRow article={article} />
+                )}
               </div>
             ))}
           </div>
@@ -477,7 +486,7 @@ export default function Hero() {
             </Link>
           </div>
 
-          {/* Right — top stories sidebar */}
+          {/* Right — today's highlights sidebar */}
           <div
             className="flex flex-col rounded-2xl overflow-hidden"
             style={{
@@ -490,7 +499,7 @@ export default function Hero() {
               className="flex items-center justify-between px-4 py-3 flex-shrink-0"
               style={{ borderBottom: '1px solid var(--border)' }}
             >
-              <span className="section-label">Top Stories</span>
+              <span className="section-label">Today's Highlights</span>
               <Link
                 to="/articles"
                 className="flex items-center gap-1 text-[10px] font-bold
@@ -504,15 +513,19 @@ export default function Hero() {
 
             {/* Articles */}
             <div className="flex-1 overflow-y-auto px-4">
-              {list.map((article, i) => (
+              {highlights.map((article, i) => (
                 <div
                   key={article.id}
                   style={{
-                    borderBottom: i < list.length - 1
+                    borderBottom: i < highlights.length - 1
                       ? '1px solid var(--border-muted)' : 'none',
                   }}
                 >
-                  <ArticleRow article={article} />
+                  {article.ai_summary ? (
+                    <AISummaryRow article={article} />
+                  ) : (
+                    <ArticleRow article={article} />
+                  )}
                 </div>
               ))}
             </div>
