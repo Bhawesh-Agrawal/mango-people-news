@@ -11,7 +11,6 @@ import { useAuth }   from '../../context/AuthContext'
 import { getCategories } from '../../api/categories'
 import { getArticles }   from '../../api/articles'
 import type { Category, Article, User } from '../../types'
-import { SEED_CATEGORIES, SEED_ARTICLES } from '../../lib/seed'
 import { timeAgo } from '../../lib/utils'
 import SearchOverlay from '../ui/Searchoverlay'
 
@@ -25,7 +24,7 @@ type NavSlot =
 
 const BOTTOM_NAV: NavSlot[] = [
   { kind: 'link',   to: '/',                 icon: Home,       label: 'Home'     },
-  { kind: 'link',   to: '/category/markets', icon: BarChart2,  label: 'Markets'  },
+  { kind: 'link',   to: '/category/market',  icon: BarChart2,  label: 'Market'   },
   { kind: 'search',                          icon: Search,     label: 'Search'   },
   { kind: 'link',   to: '/trending',         icon: TrendingUp, label: 'Trending' },
   { kind: 'link',   to: '/saved',            icon: Bookmark,   label: 'Saved'    },
@@ -163,8 +162,8 @@ export default function Navbar() {
   // ── Fetch categories ──────────────────────────────────────
   useEffect(() => {
     getCategories()
-      .then(res => setCategories(res.data?.length > 0 ? res.data : SEED_CATEGORIES))
-      .catch(() => setCategories(SEED_CATEGORIES))
+      .then(res => setCategories(res.data || []))
+      .catch(() => setCategories([]))
   }, [])
 
   // ── Scroll detection ──────────────────────────────────────
@@ -201,14 +200,12 @@ export default function Navbar() {
     if (menuArticles[slug]) return
     try {
       const res     = await getArticles({ category: slug, limit: 3 })
-      const articles = res.data?.length > 0
-        ? res.data
-        : SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3)
+      const articles = res.data || []
       setMenuArticles(prev => ({ ...prev, [slug]: articles }))
     } catch {
       setMenuArticles(prev => ({
         ...prev,
-        [slug]: SEED_ARTICLES.filter(a => a.category_slug === slug).slice(0, 3),
+        [slug]: [],
       }))
     }
   }

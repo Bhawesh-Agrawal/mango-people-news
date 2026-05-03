@@ -4,7 +4,7 @@ import { subscribeNewsletterFooter } from '../../api/newsletter'
 
 const LINKS = {
   Coverage: [
-    { label: 'Markets',         href: '/category/markets'  },
+    { label: 'Market',          href: '/category/market'   },
     { label: 'Business',        href: '/category/business' },
     { label: 'Economy',         href: '/category/economy'  },
     { label: 'Personal Finance',href: '/category/finance'  },

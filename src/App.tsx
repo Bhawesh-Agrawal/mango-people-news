@@ -29,7 +29,7 @@ import DisclaimerPage from './pages/DisclaimerPage'
 import AdminDashboard         from './pages/Admindashboard'
 import AdminArticles          from './pages/Adminarticles'
 import AdminArticleAnalytics  from './pages/Adminarticleanalytics'
-//import AdminCategories        from './pages/Admincategories'
+import AdminCategories        from './pages/Admincategories'
 import {
   AdminNewsletter,
   AdminSettings,
@@ -37,10 +37,12 @@ import {
 import AdminUsers             from './pages/Adminuser'
 import AdminEditorList        from './pages/Admineditorlist'
 import AdminEditor            from './pages/Admineditor'
+import ScrollToTop from './components/ui/ScrollToTop'
 
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
 
         {/* ── Public routes (with Navbar + Footer) ── */}
@@ -116,6 +118,9 @@ function App() {
           } />
           <Route path="analytics/:id" element={
             <ProtectedRoute requiredRole="editor"><AdminArticleAnalytics /></ProtectedRoute>
+          } />
+          <Route path="categories" element={
+            <ProtectedRoute requiredRole="editor"><AdminCategories /></ProtectedRoute>
           } />
           <Route path="users" element={
             <ProtectedRoute requiredRole="editor"><AdminUsers /></ProtectedRoute>

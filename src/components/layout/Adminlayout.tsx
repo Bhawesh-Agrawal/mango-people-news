@@ -4,6 +4,7 @@ import {
   LayoutDashboard, FileText, Users, Mail,
   Settings, ChevronLeft, ChevronRight,
   Menu, X, LogOut, Shield, PenSquare,
+  Tag,
 } from 'lucide-react'
 import { useAuth }    from '../../context/AuthContext'
 import { AdminProvider } from '../../context/AdminContext'
@@ -19,6 +20,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/admin/dashboard',  icon: LayoutDashboard, label: 'Dashboard',  minRole: 'editor'      },
   { to: '/admin/articles',   icon: FileText,        label: 'Articles',   minRole: 'editor'      },
+  { to: '/admin/categories', icon: Tag,             label: 'Categories', minRole: 'super_admin' },
   { to: '/admin/users',      icon: Users,           label: 'Users',      minRole: 'super_admin' },
   { to: '/admin/newsletter', icon: Mail,            label: 'Newsletter', minRole: 'super_admin' },
   { to: '/admin/settings',   icon: Settings,        label: 'Settings',   minRole: 'super_admin' },

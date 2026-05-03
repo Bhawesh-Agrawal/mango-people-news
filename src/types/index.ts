@@ -18,6 +18,7 @@ export interface Article {
   is_breaking:    boolean
   is_featured:    boolean
   body?:          string
+  ai_summary?:    string
   tags?:          Tag[]
 }
 

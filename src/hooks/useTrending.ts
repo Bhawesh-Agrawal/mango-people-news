@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Article }  from '../types'
 import { getTrending }   from '../api/articles'
-import { SEED_ARTICLES } from '../lib/seed'
 import { apiCache, TTL } from '../lib/apiCache'
 
 export const useTrending = (limit = 6) => {
@@ -30,11 +29,7 @@ export const useTrending = (limit = 6) => {
     )
       .then(data => setArticles(data))
       .catch(() => {
-        setArticles(
-          [...SEED_ARTICLES]
-            .sort((a, b) => b.view_count - a.view_count)
-            .slice(0, limit)
-        )
+        setArticles([])
       })
       .finally(() => setLoading(false))
   }, [limit, cacheKey])

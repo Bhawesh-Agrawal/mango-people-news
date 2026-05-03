@@ -486,7 +486,7 @@ function CategoryBlock({
   })
 
   const flip      = index % 2 !== 0
-  const isMarkets = category.slug === 'markets'
+  const isMarkets = category.slug === 'market'
   const count     = articles.length
 
   if (loading) return <BlockSkeleton />

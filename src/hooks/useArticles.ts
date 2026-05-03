@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { Article, PaginatedResponse } from '../types'
 import { getArticles }   from '../api/articles'
-import { SEED_ARTICLES } from '../lib/seed'
 import { apiCache, TTL } from '../lib/apiCache'
 
 export interface ArticleParams {
@@ -86,13 +85,9 @@ export const useArticles = (options: ArticleParams = {}): UseArticlesReturn => {
       TTL.LIST,
     )
       .then(data => setArticles(data))
-      .catch(() => {
-        const seed = category
-          ? SEED_ARTICLES.filter(a =>
-              a.category_slug === category || a.category_name?.toLowerCase() === category
-            )
-          : SEED_ARTICLES
-        setArticles(seed.slice(0, limit))
+      .catch(err => {
+        setError('Unable to load articles. Please check your connection and try again.')
+        setArticles([])
       })
       .finally(() => setLoading(false))
 
