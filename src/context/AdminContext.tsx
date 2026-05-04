@@ -137,7 +137,7 @@ interface AdminContextValue {
   usersTotal:   number
   usersLoading: boolean
   usersError:   string | null
-  fetchUsers:   (params?: { page?: number; search?: string; role?: string }) => Promise<void>
+  fetchUsers:   (params?: { page?: number; search?: string; role?: string; limit?: number}) => Promise<void>
   updateUserRole:   (userId: string, role: string)   => Promise<void>
   updateUserStatus: (userId: string, status: string) => Promise<void>
 

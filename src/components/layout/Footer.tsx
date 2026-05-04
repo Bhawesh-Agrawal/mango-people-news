@@ -1,16 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { subscribeNewsletterFooter } from '../../api/newsletter'
+import { useCategories } from '../../hooks/useCategories'
 
 const LINKS = {
-  Coverage: [
-    { label: 'Market',          href: '/category/market'   },
-    { label: 'Business',        href: '/category/business' },
-    { label: 'Economy',         href: '/category/economy'  },
-    { label: 'Personal Finance',href: '/category/finance'  },
-    { label: 'Technology',      href: '/category/tech'     },
-    { label: 'Investing',       href: '/category/investing'},
-  ],
   Company: [
     { label: 'About Us',  href: '/about'     },
     { label: 'Our Team',  href: '/team'      },
@@ -18,16 +11,18 @@ const LINKS = {
     { label: 'Contact',   href: '/contact'   },
   ],
   Legal: [
-    { label: 'Privacy Policy', href: '/privacy-policy'    },
-    { label: 'Terms of Use',   href: '/terms-and-conditions'      },
-    { label: 'Disclaimer',     href: '/disclaimer' },
+    { label: 'Privacy Policy', href: '/privacy-policy'       },
+    { label: 'Terms of Use',   href: '/terms-and-conditions' },
+    { label: 'Disclaimer',     href: '/disclaimer'           },
   ],
 }
 
 export default function Footer() {
-  const [email,     setEmail]     = useState('')
-  const [status,    setStatus]    = useState<'idle'|'loading'|'done'|'error'>('idle')
-  const [message,   setMessage]   = useState('')
+  const [email,   setEmail]   = useState('')
+  const [status,  setStatus]  = useState<'idle'|'loading'|'done'|'error'>('idle')
+  const [message, setMessage] = useState('')
+
+  const { categories, loading: categoriesLoading } = useCategories()
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,8 +42,8 @@ export default function Footer() {
   return (
     <footer
       style={{
-        background:  'var(--bg-surface)',
-        borderTop:   '1px solid var(--border)',
+        background: 'var(--bg-surface)',
+        borderTop:  '1px solid var(--border)',
       }}
       className="mt-16"
     >
@@ -90,36 +85,32 @@ export default function Footer() {
               <form
                 onSubmit={handleSubscribe}
                 className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto w-full px-4 sm:px-0"
-                >
+              >
                 <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="Your email address"
-                    required
-                    className="w-full px-4 h-11 rounded-xl text-sm outline-none
-                            transition-all duration-200"
-                    style={{
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="Your email address"
+                  required
+                  className="w-full px-4 h-11 rounded-xl text-sm outline-none
+                             transition-all duration-200"
+                  style={{
                     background: 'var(--bg)',
                     border:     '1px solid var(--border)',
                     color:      'var(--text-primary)',
-                    }}
-                    onFocus={e => {
-                    e.currentTarget.style.borderColor = 'var(--accent)'
-                    }}
-                    onBlur={e => {
-                    e.currentTarget.style.borderColor = 'var(--border)'
-                    }}
+                  }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+                  onBlur={e  => { e.currentTarget.style.borderColor = 'var(--border)' }}
                 />
                 <button
-                    type="submit"
-                    disabled={status === 'loading'}
-                    className="btn-accent w-full sm:w-auto h-11 px-6 text-sm
-                            flex-shrink-0 disabled:opacity-60"
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="btn-accent w-full sm:w-auto h-11 px-6 text-sm
+                             flex-shrink-0 disabled:opacity-60"
                 >
-                    {status === 'loading' ? 'Joining…' : 'Subscribe'}
+                  {status === 'loading' ? 'Joining…' : 'Subscribe'}
                 </button>
-                </form>
+              </form>
             )}
 
             {status === 'error' && (
@@ -128,10 +119,7 @@ export default function Footer() {
               </p>
             )}
 
-            <p
-              className="text-xs"
-              style={{ color: 'var(--text-faint)' }}
-            >
+            <p className="text-xs" style={{ color: 'var(--text-faint)' }}>
               No spam. Unsubscribe anytime.
             </p>
           </div>
@@ -177,7 +165,33 @@ export default function Footer() {
               </p>
             </div>
 
-            {/* Link columns */}
+            {/* Coverage — dynamic from backend */}
+            <div className="space-y-3">
+              <h3 className="section-label">Coverage</h3>
+              <ul className="space-y-2">
+                {categoriesLoading
+                  ? Array(5).fill(null).map((_, i) => (
+                      <li key={i}>
+                        <div className="skeleton h-3 w-24 rounded" />
+                      </li>
+                    ))
+                  : categories.map(cat => (
+                      <li key={cat.id}>
+                        <Link
+                          to={`/category/${cat.slug}`}
+                          className="text-xs transition-colors duration-150
+                                     hover:text-[var(--accent)]"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          {cat.name}
+                        </Link>
+                      </li>
+                    ))
+                }
+              </ul>
+            </div>
+
+            {/* Static link columns */}
             {Object.entries(LINKS).map(([title, links]) => (
               <div key={title} className="space-y-3">
                 <h3 className="section-label">{title}</h3>
@@ -205,10 +219,7 @@ export default function Footer() {
       <div style={{ borderTop: '1px solid var(--border)' }}>
         <div className="page-container">
           <div className="h-12 flex items-center justify-between">
-            <p
-              className="text-xs"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
               © {new Date().getFullYear()} Mango People News.
               All rights reserved.
             </p>

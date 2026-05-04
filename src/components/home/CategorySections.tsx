@@ -1,105 +1,10 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Clock, Eye, TrendingUp, TrendingDown } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight, Clock, Eye } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories'
 import { useArticles } from '../../hooks/useArticles'
 import { timeAgo, formatCount } from '../../lib/utils'
 import type { Article, Category } from '../../types'
-
-// ══════════════════════════════════════════════════════════════════
-// MARKET TICKER
-// ══════════════════════════════════════════════════════════════════
-interface MarketItem { symbol: string; value: string; pct: string; up: boolean }
-
-const INDIA: MarketItem[] = [
-  { symbol: 'SENSEX',     value: '82,450',  pct: '+0.94%', up: true  },
-  { symbol: 'NIFTY 50',   value: '24,820',  pct: '+0.87%', up: true  },
-  { symbol: 'BANK NIFTY', value: '51,240',  pct: '+1.12%', up: true  },
-  { symbol: 'MIDCAP',     value: '44,125',  pct: '-0.29%', up: false },
-  { symbol: 'USD/INR',    value: '83.42',   pct: '-0.14%', up: false },
-  { symbol: 'GOLD MCX',   value: '₹72,450', pct: '+0.31%', up: true  },
-  { symbol: 'CRUDE OIL',  value: '$84.20',  pct: '-0.45%', up: false },
-]
-const GLOBAL: MarketItem[] = [
-  { symbol: 'S&P 500',   value: '5,234',   pct: '+0.55%', up: true  },
-  { symbol: 'DOW JONES', value: '39,120',  pct: '+0.37%', up: true  },
-  { symbol: 'NASDAQ',    value: '16,340',  pct: '+0.60%', up: true  },
-  { symbol: 'FTSE 100',  value: '8,042',   pct: '-0.30%', up: false },
-  { symbol: 'NIKKEI',    value: '40,168',  pct: '+0.78%', up: true  },
-  { symbol: 'GOLD USD',  value: '$2,580',  pct: '+0.47%', up: true  },
-  { symbol: 'BITCOIN',   value: '$68,420', pct: '+2.15%', up: true  },
-]
-
-function MarketTicker() {
-  const [tab, setTab] = useState<'india' | 'global'>('india')
-  const data = tab === 'india' ? INDIA : GLOBAL
-  return (
-    <div className="rounded-lg overflow-hidden mb-6"
-      style={{ border: '1px solid var(--border)' }}>
-      <div className="flex items-center justify-between px-4 py-2.5"
-        style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold tracking-[0.06em] uppercase"
-            style={{ color: 'var(--text-primary)' }}>
-            Market Pulse
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full animate-pulse-dot"
-              style={{ background: '#22c55e' }} />
-            <span className="text-[9px] font-bold uppercase tracking-wide"
-              style={{ color: '#22c55e' }}>Live</span>
-          </span>
-        </div>
-        <div className="flex text-[10px] font-bold tracking-wide uppercase
-                        overflow-hidden rounded-md"
-          style={{ border: '1px solid var(--border)' }}>
-          {(['india', 'global'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className="px-3 py-1 transition-all duration-150"
-              style={{
-                background: tab === t ? 'var(--accent)' : 'var(--bg-subtle)',
-                color:      tab === t ? '#fff'          : 'var(--text-secondary)',
-              }}>
-              {t === 'india' ? '🇮🇳 India' : '🌐 Global'}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="overflow-x-auto scrollbar-none px-3 py-3"
-        style={{ background: 'var(--bg-subtle)' }}>
-        <div className="flex gap-2 min-w-max">
-          {data.map(item => (
-            <div key={item.symbol} className="flex-shrink-0 px-3 py-2 rounded-md"
-              style={{
-                background: 'var(--bg-surface)',
-                border:     '1px solid var(--border-muted)',
-                minWidth:   '100px',
-              }}>
-              <div className="text-[9px] font-semibold tracking-wide uppercase"
-                style={{ color: 'var(--text-muted)' }}>{item.symbol}</div>
-              <div className="text-sm font-bold font-display mt-0.5"
-                style={{ color: 'var(--text-primary)' }}>{item.value}</div>
-              <div className="flex items-center gap-0.5 mt-0.5"
-                style={{ color: item.up ? '#16a34a' : '#dc2626' }}>
-                {item.up
-                  ? <TrendingUp size={9} strokeWidth={2.5} />
-                  : <TrendingDown size={9} strokeWidth={2.5} />
-                }
-                <span className="text-[10px] font-bold">{item.pct}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="px-4 py-1.5 text-right"
-        style={{ borderTop: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-        <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>
-          Data indicative · Not investment advice
-        </span>
-      </div>
-    </div>
-  )
-}
+import MarketTicker from '../ui/MarketTicker'
 
 // ══════════════════════════════════════════════════════════════════
 // DIVIDERS

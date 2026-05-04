@@ -337,7 +337,7 @@ export default function CategoryPage() {
   const [loadingMore, setLoadingMore] = useState(false)
 
   const LIMIT    = 20
-  const isMarkets = slug === 'markets'
+  const isMarkets = slug === 'market'
 
   const category: Category | undefined =
     categories.find(c => c.slug === slug)

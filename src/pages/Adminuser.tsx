@@ -2,11 +2,10 @@
  * AdminUsers.tsx — /admin/users
  *
  * User management. Super admin only.
- * Search by name/email, filter by role.
- * Inline role change and account suspend/activate.
+ * Fetches ALL users once, filters/searches/paginates client-side.
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Search, X, CheckCircle2,
   XCircle, Clock, ChevronDown,
@@ -32,39 +31,48 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; la
 
 export default function AdminUsers() {
   const {
-    users, usersTotal, usersLoading, usersError,
+    users, usersLoading, usersError,
     fetchUsers, updateUserRole, updateUserStatus,
   } = useAdmin()
 
+  const [allUsers,    setAllUsers]    = useState<AdminUser[]>([])
   const [search,      setSearch]      = useState('')
   const [roleFilter,  setRoleFilter]  = useState('all')
   const [page,        setPage]        = useState(1)
   const [mutating,    setMutating]    = useState<string | null>(null)
   const [mutateError, setMutateError] = useState<string | null>(null)
 
-  const load = useCallback(() => {
-    fetchUsers({
-      page,
-      search: search || undefined,
-      role:   roleFilter === 'all' ? undefined : roleFilter,
-    })
-  }, [page, search, roleFilter, fetchUsers])
-
-  // Debounce search
+  // Fetch all users once on mount
   useEffect(() => {
-    const t = setTimeout(() => { setPage(1); load() }, 350)
-    return () => clearTimeout(t)
-  }, [search])
+    fetchUsers({ page: 1, limit: 999 })
+  }, [])
 
-  useEffect(() => { load() }, [roleFilter, page])
+  // Sync context users → local state
+  useEffect(() => {
+    if (users.length > 0) setAllUsers(users)
+  }, [users])
 
-  const totalPages = Math.ceil(usersTotal / LIMIT)
+  // Reset to page 1 whenever search or role filter changes
+  useEffect(() => { setPage(1) }, [search, roleFilter])
+
+  // Client-side filter
+  const filtered = allUsers.filter(u => {
+    const matchesRole   = roleFilter === 'all' || u.role === roleFilter
+    const matchesSearch = !search ||
+      u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      u.email?.toLowerCase().includes(search.toLowerCase())
+    return matchesRole && matchesSearch
+  })
+
+  const totalPages   = Math.ceil(filtered.length / LIMIT)
+  const visibleUsers = filtered.slice((page - 1) * LIMIT, page * LIMIT)
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setMutating(userId)
     setMutateError(null)
     try {
       await updateUserRole(userId, newRole)
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole as AdminUser['role'] } : u))
     } catch (err: any) {
       setMutateError(err?.message ?? 'Could not update role.')
     } finally {
@@ -78,6 +86,7 @@ export default function AdminUsers() {
     setMutateError(null)
     try {
       await updateUserStatus(user.id, newStatus)
+      setAllUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: newStatus } : u))
     } catch (err: any) {
       setMutateError(err?.message ?? 'Could not update status.')
     } finally {
@@ -95,7 +104,10 @@ export default function AdminUsers() {
             Users
           </h2>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {usersTotal} total users
+            {allUsers.length} total users
+            {filtered.length !== allUsers.length && (
+              <span> · {filtered.length} matching</span>
+            )}
           </p>
         </div>
 
@@ -123,7 +135,7 @@ export default function AdminUsers() {
           {ROLES.map(r => (
             <button
               key={r}
-              onClick={() => { setRoleFilter(r); setPage(1) }}
+              onClick={() => setRoleFilter(r)}
               className="px-2.5 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all"
               style={{
                 background: roleFilter === r ? 'var(--text-primary)' : 'transparent',
@@ -161,10 +173,12 @@ export default function AdminUsers() {
               </div>
             ))}
           </div>
-        ) : users.length === 0 ? (
+        ) : visibleUsers.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-4xl mb-3">👥</p>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No users found.</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {allUsers.length === 0 ? 'No users found.' : 'No users match your search.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -180,8 +194,8 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user, i) => {
-                  const sc     = STATUS_CONFIG[user.status] ?? STATUS_CONFIG.active
+                {visibleUsers.map((user, i) => {
+                  const sc         = STATUS_CONFIG[user.status] ?? STATUS_CONFIG.active
                   const StatusIcon = sc.icon
                   const isMutating = mutating === user.id
 
@@ -190,7 +204,7 @@ export default function AdminUsers() {
                       key={user.id}
                       className="transition-colors hover:bg-[var(--bg-subtle)]"
                       style={{
-                        borderBottom: i < users.length - 1 ? '1px solid var(--border)' : 'none',
+                        borderBottom: i < visibleUsers.length - 1 ? '1px solid var(--border)' : 'none',
                         opacity:      isMutating ? 0.5 : 1,
                       }}
                     >
@@ -281,7 +295,7 @@ export default function AdminUsers() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            Page {page} of {totalPages}
+            Page {page} of {totalPages} · {filtered.length} users
           </p>
           <div className="flex gap-2">
             <button

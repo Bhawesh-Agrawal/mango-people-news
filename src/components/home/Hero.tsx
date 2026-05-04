@@ -237,15 +237,20 @@ export default function Hero() {
           </div>
 
           {/* Headline */}
-          <h1
-            className="font-display font-black leading-tight tracking-tight"
-            style={{
-              fontSize: 'clamp(24px, 7vw, 32px)',
-              color:    'var(--text-primary)',
-            }}
+          <Link
+          to={`/article/${main.slug}`}
+          className="block w-full relative overflow-hidden group"
           >
-            {main.title}
-          </h1>
+            <h1
+              className="font-display font-black leading-tight tracking-tight"
+              style={{
+                fontSize: 'clamp(24px, 7vw, 32px)',
+                color:    'var(--text-primary)',
+              }}
+            >
+              {main.title}
+            </h1>
+          </Link>
 
           {/* Subtitle or excerpt */}
           {(main.subtitle || main.excerpt) && (
@@ -415,15 +420,20 @@ export default function Hero() {
               </div>
 
               {/* Headline */}
-              <h1
-                className="font-display font-black leading-tight tracking-tight"
-                style={{
-                  fontSize: 'clamp(28px, 3vw, 44px)',
-                  color:    'var(--text-primary)',
-                }}
+              <Link
+                to={`/article/${main.slug}`}
+                className="block w-full relative overflow-hidden group"
               >
-                {main.title}
-              </h1>
+                <h1
+                  className="font-display font-black leading-tight tracking-tight"
+                  style={{
+                    fontSize: 'clamp(28px, 3vw, 44px)',
+                    color:    'var(--text-primary)',
+                  }}
+                >
+                  {main.title}
+                </h1>
+              </Link>
 
               {/* Subtitle */}
               {(main.subtitle || main.excerpt) && (
