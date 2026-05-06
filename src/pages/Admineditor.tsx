@@ -20,6 +20,7 @@ import {
   ChevronDown, ChevronUp, Upload, X, Save,
   Globe, AlertTriangle, Loader2, Eye, Trash2,
   ArrowLeft, Zap, Star, RefreshCw, ShieldAlert, CheckCircle2,
+  Move,
 } from 'lucide-react'
 
 import { client }  from '../api/client'
@@ -37,6 +38,7 @@ interface ArticleForm {
   excerpt:          string
   category_id:      string
   cover_image:      string
+  cover_position:   string   // ← NEW: e.g. "50% 30%" for object-position
   status:           'draft' | 'published' | 'archived'
   is_featured:      boolean
   is_breaking:      boolean
@@ -70,8 +72,8 @@ function generateSlug(title: string): string {
 
 const INITIAL_FORM: ArticleForm = {
   title: '', subtitle: '', slug: '', body: '', excerpt: '',
-  category_id: '', cover_image: '', status: 'draft',
-  is_featured: false, is_breaking: false,
+  category_id: '', cover_image: '', cover_position: '50% 50%',
+  status: 'draft', is_featured: false, is_breaking: false,
   meta_title: '', meta_description: '', tag_ids: [],
 }
 
@@ -126,18 +128,24 @@ function ToolBtn({
 
 // ── Tiptap toolbar ─────────────────────────────────────────────
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({
+  editor,
+  onImageUpload,
+  imageUploading,
+}: {
+  editor:         Editor
+  onImageUpload:  (file: File) => Promise<void>
+  imageUploading: boolean
+}) {
+  // Hidden file input for toolbar image picker
+  const imgInputRef = useRef<HTMLInputElement>(null)
+
   const setLink = () => {
     const prev = editor.getAttributes('link').href ?? ''
     const url  = window.prompt('Enter URL', prev)
     if (url === null) return
     if (url === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
-  }
-
-  const addImage = () => {
-    const url = window.prompt('Image URL')
-    if (url) editor.chain().focus().setImage({ src: url }).run()
   }
 
   const sep = (
@@ -173,8 +181,216 @@ function Toolbar({ editor }: { editor: Editor }) {
       <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Ordered list"><ListOrdered size={14} /></ToolBtn>
       {sep}
       <ToolBtn onClick={setLink}  active={editor.isActive('link')} title="Link"><LinkIcon size={14} /></ToolBtn>
-      <ToolBtn onClick={addImage} title="Embed image URL"><ImageIcon size={14} /></ToolBtn>
+
+      {/* ── Inline image upload via Cloudinary ── */}
+      <ToolBtn
+        onClick={() => !imageUploading && imgInputRef.current?.click()}
+        disabled={imageUploading}
+        title={imageUploading ? 'Uploading image…' : 'Upload image to article'}
+      >
+        {imageUploading
+          ? <Loader2 size={14} className="animate-spin" />
+          : <ImageIcon size={14} />
+        }
+      </ToolBtn>
+
       <ToolBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal rule"><Minus size={14} /></ToolBtn>
+
+      {/* Hidden file input */}
+      <input
+        ref={imgInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={async e => {
+          const f = e.target.files?.[0]
+          if (f) await onImageUpload(f)
+          e.target.value = ''
+        }}
+      />
+    </div>
+  )
+}
+
+// ── Cover position presets ─────────────────────────────────────
+
+const POSITION_PRESETS = [
+  { label: 'Top Left',    value: '0% 0%',    title: '↖' },
+  { label: 'Top Center',  value: '50% 0%',   title: '↑' },
+  { label: 'Top Right',   value: '100% 0%',  title: '↗' },
+  { label: 'Center',      value: '50% 50%',  title: '⊕' },
+  { label: 'Bottom Left', value: '0% 100%',  title: '↙' },
+  { label: 'Bottom Ctr',  value: '50% 100%', title: '↓' },
+  { label: 'Bottom Right',value: '100% 100%',title: '↘' },
+] as const
+
+// ── Cover Position Picker ─────────────────────────────────────
+// Drag-to-reposition focal point picker + quick preset buttons.
+
+function CoverPositionPicker({
+  imageUrl,
+  position,
+  onChange,
+}: {
+  imageUrl: string
+  position: string
+  onChange: (pos: string) => void
+}) {
+  const padRef    = useRef<HTMLDivElement>(null)
+  const dragging  = useRef(false)
+
+  // Parse current position percentages
+  const [px, py] = position.split(' ').map(v => parseFloat(v))
+
+  const computePos = (clientX: number, clientY: number) => {
+    const rect = padRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width)  * 100))
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top)  / rect.height) * 100))
+    onChange(`${Math.round(x)}% ${Math.round(y)}%`)
+  }
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    dragging.current = true
+    computePos(e.clientX, e.clientY)
+    e.preventDefault()
+  }
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (dragging.current) computePos(e.clientX, e.clientY)
+  }
+  const onMouseUp = () => { dragging.current = false }
+
+  // Touch support
+  const onTouchStart = (e: React.TouchEvent) => {
+    dragging.current = true
+    computePos(e.touches[0].clientX, e.touches[0].clientY)
+  }
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (dragging.current) computePos(e.touches[0].clientX, e.touches[0].clientY)
+  }
+  const onTouchEnd = () => { dragging.current = false }
+
+  return (
+    <div className="mt-3 space-y-3">
+      {/* Label */}
+      <div className="flex items-center gap-1.5">
+        <Move size={11} style={{ color: 'var(--text-muted)' }} />
+        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+          Focal Point
+        </span>
+        <span className="text-[10px] ml-auto font-mono" style={{ color: 'var(--text-muted)' }}>
+          {position}
+        </span>
+      </div>
+
+      {/* Drag pad — shows a thumbnail of the image with a crosshair */}
+      <div
+        ref={padRef}
+        className="relative rounded-xl overflow-hidden cursor-crosshair select-none"
+        style={{ height: 120, border: '1px solid var(--border)' }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Full cover preview at chosen object-position */}
+        <img
+          src={imageUrl}
+          alt="Cover focal point"
+          draggable={false}
+          style={{
+            width:          '100%',
+            height:         '100%',
+            objectFit:      'cover',
+            objectPosition: position,
+            pointerEvents:  'none',
+            userSelect:     'none',
+          }}
+        />
+
+        {/* Dim overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'rgba(0,0,0,0.18)' }}
+        />
+
+        {/* Crosshair dot */}
+        <div
+          className="absolute w-5 h-5 rounded-full border-2 border-white shadow-lg"
+          style={{
+            left:       `${px}%`,
+            top:        `${py}%`,
+            transform:  'translate(-50%, -50%)',
+            background: 'rgba(255,255,255,0.25)',
+            pointerEvents: 'none',
+            transition: dragging.current ? 'none' : 'left 0.08s, top 0.08s',
+          }}
+        />
+
+        {/* Helper text */}
+        <div
+          className="absolute bottom-2 left-0 right-0 flex justify-center"
+          style={{ pointerEvents: 'none' }}
+        >
+          <span
+            className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+            style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}
+          >
+            Drag to set focal point
+          </span>
+        </div>
+      </div>
+
+      {/* Quick preset buttons — 4 cols */}
+      <div className="grid grid-cols-4 gap-1.5">
+        {POSITION_PRESETS.map(p => {
+          const active = position === p.value
+          return (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => onChange(p.value)}
+              title={p.label}
+              className="py-1.5 rounded-lg text-sm font-bold transition-all"
+              style={{
+                background: active ? 'var(--accent)' : 'var(--bg)',
+                color:      active ? '#fff'           : 'var(--text-muted)',
+                border:     `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`,
+              }}
+            >
+              {p.title}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Live frontend preview strip */}
+      <div>
+        <p className="text-[10px] mb-1.5 font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+          Frontend Preview
+        </p>
+        <div
+          className="rounded-xl overflow-hidden"
+          style={{ height: 80, border: '1px solid var(--border)' }}
+        >
+          <img
+            src={imageUrl}
+            alt="Frontend preview"
+            style={{
+              width:          '100%',
+              height:         '100%',
+              objectFit:      'cover',
+              objectPosition: position,
+            }}
+          />
+        </div>
+        <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>
+          This is exactly how the cover will appear cropped on article cards.
+        </p>
+      </div>
     </div>
   )
 }
@@ -188,12 +404,8 @@ export default function AdminEditor() {
 
   const isNew = !id || id === 'new'
 
-  // Role checks — authors can create/edit their own; editors can do everything
   const isEditorPlus = user?.role === 'editor' || user?.role === 'super_admin'
-  // Authors can delete their own articles; editors can delete any
-  // We determine canDelete after loading the article (owner check done server-side on the API call)
-  // For UI: show delete to all authenticated users — server enforces the actual permission
-  const canDelete = !isNew
+  const canDelete    = !isNew
 
   const [state, dispatch] = useReducer(reducer, { form: INITIAL_FORM, dirty: false })
   const { form, dirty }   = state
@@ -208,6 +420,10 @@ export default function AdminEditor() {
   const [coverUploading, setCoverUploading] = useState(false)
   const [coverError,     setCoverError]     = useState('')
 
+  // ── NEW: inline image upload state ──────────────────────────
+  const [imageUploading, setImageUploading] = useState(false)
+  const [imageError,     setImageError]     = useState('')
+
   const [slugLocked,  setSlugLocked]  = useState(!isNew)
   const [seoOpen,     setSeoOpen]     = useState(false)
   const [dangerOpen,  setDangerOpen]  = useState(false)
@@ -215,10 +431,11 @@ export default function AdminEditor() {
   const [deleteError, setDeleteError] = useState('')
   const [dragOver,    setDragOver]    = useState(false)
 
+  // ── NEW: editor body drag-over state ────────────────────────
+  const [editorDragOver, setEditorDragOver] = useState(false)
+
   const coverInputRef = useRef<HTMLInputElement>(null)
 
-  // Use a ref for the article ID so the auto-save interval always has the
-  // latest value without the interval needing to be recreated on every render.
   const articleId    = useRef<string | null>(isNew ? null : (id ?? null))
   const saveInFlight = useRef(false)
   const formRef      = useRef<ArticleForm>(form)
@@ -271,9 +488,6 @@ export default function AdminEditor() {
   }, [])
 
   // ── Load existing article ─────────────────────────────────
-  // Uses /articles/admin/:id — requires isAuthor middleware.
-  // Authors can only load their own articles (403 otherwise).
-  // Editors can load any article regardless of status.
 
   useEffect(() => {
     if (isNew) return
@@ -292,6 +506,7 @@ export default function AdminEditor() {
             excerpt:          a.excerpt          ?? '',
             category_id:      a.category_id      ?? '',
             cover_image:      a.cover_image      ?? '',
+            cover_position:   a.cover_position   ?? '50% 50%',  // ← NEW
             status:           a.status           ?? 'draft',
             is_featured:      a.is_featured      ?? false,
             is_breaking:      a.is_breaking      ?? false,
@@ -311,11 +526,10 @@ export default function AdminEditor() {
         )
       })
       .finally(() => setLoadingArticle(false))
-  // editor deliberately omitted — initialises async after this runs
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isNew])
 
-  // Sync body to editor once on initial load when editor mounts after data arrives
+  // Sync body to editor once on initial load
   const bodyInitialised = useRef(false)
   useEffect(() => {
     if (bodyInitialised.current) return
@@ -364,34 +578,28 @@ export default function AdminEditor() {
   }, [lsKey])
 
   // ── Auto-save (every 15 s) ────────────────────────────────
-  // Interval created ONCE. Reads all state via refs to avoid stale closures.
-  // Only POSTs to server when we have an ID (never creates duplicates).
 
   useEffect(() => {
     const timer = setInterval(async () => {
       if (!dirtyRef.current)    return
       if (saveInFlight.current) return
 
-      // Always persist to localStorage as a safety net
       try { localStorage.setItem(lsKey, JSON.stringify(formRef.current)) } catch {}
 
-      // Server save only if we already have an article ID
       if (!articleId.current) return
 
       saveInFlight.current = true
       try {
         await client.put(`/articles/${articleId.current}`, {
           ...formRef.current,
-          status: formRef.current.status === 'published'
-            ? 'published'   // don't downgrade published articles on auto-save
-            : 'draft',
+          status: formRef.current.status === 'published' ? 'published' : 'draft',
         })
         dispatch({ type: 'RESET_DIRTY' })
         clearLocalDraft()
         setSaveStatus('saved')
         setTimeout(() => setSaveStatus('idle'), 3000)
       } catch {
-        // Silent auto-save failure — don't surface to user
+        // Silent auto-save failure
       } finally {
         saveInFlight.current = false
       }
@@ -399,7 +607,7 @@ export default function AdminEditor() {
 
     return () => clearInterval(timer)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // intentionally empty — reads via refs
+  }, [])
 
   // ── Title → slug ──────────────────────────────────────────
 
@@ -421,14 +629,10 @@ export default function AdminEditor() {
     setSaveStatus('saving')
     setSaveError('')
 
-    const payload = {
-      ...form,
-      status: statusOverride ?? form.status,
-    }
+    const payload = { ...form, status: statusOverride ?? form.status }
 
     try {
       if (isNew && !articleId.current) {
-        // CREATE — only fires once; subsequent saves use PUT
         const res   = await client.post('/articles', payload)
         const newId = res.data?.data?.id ?? res.data?.id
         if (newId) {
@@ -436,11 +640,9 @@ export default function AdminEditor() {
           dispatch({ type: 'RESET_DIRTY' })
           clearLocalDraft()
           setSaveStatus('saved')
-          // Navigate to the edit URL so page now behaves as "update"
           navigate(`/admin/editor/${newId}`, { replace: true })
         }
       } else {
-        // UPDATE
         await client.put(`/articles/${articleId.current}`, payload)
         dispatch({ type: 'RESET_DIRTY' })
         clearLocalDraft()
@@ -500,18 +702,54 @@ export default function AdminEditor() {
       fd.append('cover_image', file)
 
       const res = await client.post('/uploads/cover', fd, {
-        headers: { 'Content-Type': undefined },  // ← let browser set multipart + boundary
+        headers: { 'Content-Type': undefined },
       })
 
       const coverUrl: string = res.data?.data?.url ?? ''
       if (!coverUrl) throw new Error('Upload succeeded but no URL was returned.')
-      dispatch({ type: 'SET_FIELD', field: 'cover_image', value: coverUrl })
+      dispatch({ type: 'SET_FIELD', field: 'cover_image',    value: coverUrl })
+      dispatch({ type: 'SET_FIELD', field: 'cover_position', value: '50% 50%' })
     } catch (e: any) {
       setCoverError(e?.response?.data?.message ?? e?.message ?? 'Upload failed. Please try again.')
     } finally {
       setCoverUploading(false)
     }
   }, [])
+
+  // ── NEW: Inline image upload (editor body) ────────────────
+  // Uploads to /uploads/image, inserts the returned URL into Tiptap.
+
+  const uploadInlineImage = useCallback(async (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      setImageError('Inline image must be under 10 MB.')
+      return
+    }
+    if (!editor) return
+
+    setImageUploading(true)
+    setImageError('')
+
+    try {
+      const fd = new FormData()
+      fd.append('cover_image', file)
+
+      const res = await client.post('/uploads/cover', fd, {
+        headers: { 'Content-Type': undefined },
+      })
+
+      const imageUrl: string = res.data?.data?.url ?? ''
+      if (!imageUrl) throw new Error('Upload succeeded but no URL was returned.')
+
+      // Insert into Tiptap at current cursor
+      editor.chain().focus().setImage({ src: imageUrl }).run()
+    } catch (e: any) {
+      setImageError(
+        e?.response?.data?.message ?? e?.message ?? 'Image upload failed. Please try again.'
+      )
+    } finally {
+      setImageUploading(false)
+    }
+  }, [editor])
 
   // ── Delete ────────────────────────────────────────────────
 
@@ -745,12 +983,84 @@ export default function AdminEditor() {
             </div>
           </div>
 
-          {/* Rich text editor */}
+          {/* Rich text editor with drag-and-drop image upload */}
           <div
             className="rounded-2xl p-4 sm:p-5"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+            style={{
+              background: 'var(--bg-surface)',
+              border:     `1px solid ${editorDragOver ? 'var(--accent)' : 'var(--border)'}`,
+              transition: 'border-color 0.15s',
+            }}
+            onDragOver={e => {
+              // Only intercept if payload has files
+              if (e.dataTransfer.types.includes('Files')) {
+                e.preventDefault()
+                setEditorDragOver(true)
+              }
+            }}
+            onDragLeave={e => {
+              // Only clear if we're leaving the container entirely (not a child)
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setEditorDragOver(false)
+              }
+            }}
+            onDrop={async e => {
+              const file = e.dataTransfer.files?.[0]
+              if (file && file.type.startsWith('image/')) {
+                e.preventDefault()
+                setEditorDragOver(false)
+                await uploadInlineImage(file)
+              } else {
+                // Not an image — let Tiptap handle it (e.g. text drops)
+                setEditorDragOver(false)
+              }
+            }}
           >
-            {editor && <Toolbar editor={editor} />}
+            {editor && (
+              <Toolbar
+                editor={editor}
+                onImageUpload={uploadInlineImage}
+                imageUploading={imageUploading}
+              />
+            )}
+
+            {/* Inline image error */}
+            {imageError && (
+              <div
+                className="flex items-center gap-2 p-2.5 rounded-xl mb-3 text-xs"
+                style={{
+                  background: 'rgba(185,28,28,0.07)',
+                  color: 'var(--breaking)',
+                  border: '1px solid rgba(185,28,28,0.12)',
+                }}
+              >
+                <AlertTriangle size={12} /> {imageError}
+                <button
+                  type="button"
+                  className="ml-auto"
+                  onClick={() => setImageError('')}
+                  style={{ color: 'var(--breaking)' }}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+
+            {/* Drag-over overlay hint */}
+            {editorDragOver && (
+              <div
+                className="flex flex-col items-center justify-center gap-2 rounded-xl py-6 mb-3"
+                style={{
+                  background: 'var(--accent-light)',
+                  border:     '2px dashed var(--accent)',
+                }}
+              >
+                <Upload size={20} style={{ color: 'var(--accent)' }} />
+                <p className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+                  Drop image to upload & insert
+                </p>
+              </div>
+            )}
 
             <div
               className="prose prose-sm max-w-none min-h-[400px] outline-none"
@@ -853,7 +1163,6 @@ export default function AdminEditor() {
               </select>
             </label>
 
-            {/* Featured/Breaking — editors only */}
             {isEditorPlus && (
               <div className="space-y-2.5 mb-4">
                 <Toggle
@@ -891,12 +1200,7 @@ export default function AdminEditor() {
                   color: '#fff',
                 }}
               >
-                {saving
-                  ? '…'
-                  : isAlreadyPublished
-                    ? 'Update Live'
-                    : 'Publish'
-                }
+                {saving ? '…' : isAlreadyPublished ? 'Update Live' : 'Publish'}
               </button>
             </div>
           </div>
@@ -931,7 +1235,7 @@ export default function AdminEditor() {
             </select>
           </div>
 
-          {/* Cover image */}
+          {/* ── Cover image (+ position picker) ── */}
           <div
             className="rounded-2xl p-4"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
@@ -946,24 +1250,41 @@ export default function AdminEditor() {
             )}
 
             {form.cover_image ? (
-              <div className="relative">
-                <img
-                  src={form.cover_image}
-                  alt="Cover preview"
-                  className="w-full rounded-xl object-cover"
-                  style={{ maxHeight: '160px' }}
-                />
-                <button
-                  onClick={() => dispatch({
-                    type: 'SET_FIELD', field: 'cover_image', value: '',
-                  })}
-                  className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center
-                             justify-center transition-opacity hover:opacity-80"
-                  style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}
-                  title="Remove cover"
-                >
-                  <X size={12} />
-                </button>
+              <div>
+                {/* Preview with current object-position applied */}
+                <div className="relative">
+                  <div
+                    className="w-full rounded-xl overflow-hidden"
+                    style={{ height: 140 }}
+                  >
+                    <img
+                      src={form.cover_image}
+                      alt="Cover preview"
+                      style={{
+                        width:          '100%',
+                        height:         '100%',
+                        objectFit:      'cover',
+                        objectPosition: form.cover_position,
+                      }}
+                    />
+                  </div>
+
+                  {/* Remove button */}
+                  <button
+                    onClick={() => {
+                      dispatch({ type: 'SET_FIELD', field: 'cover_image',    value: '' })
+                      dispatch({ type: 'SET_FIELD', field: 'cover_position', value: '50% 50%' })
+                    }}
+                    className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center
+                               justify-center transition-opacity hover:opacity-80"
+                    style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}
+                    title="Remove cover"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+
+                {/* Replace button */}
                 <button
                   onClick={() => coverInputRef.current?.click()}
                   className="mt-2 w-full py-1.5 rounded-xl text-xs font-medium
@@ -972,6 +1293,15 @@ export default function AdminEditor() {
                 >
                   Replace image
                 </button>
+
+                {/* ── Position picker (NEW) ── */}
+                <CoverPositionPicker
+                  imageUrl={form.cover_image}
+                  position={form.cover_position}
+                  onChange={pos => dispatch({
+                    type: 'SET_FIELD', field: 'cover_position', value: pos,
+                  })}
+                />
               </div>
             ) : (
               <div
@@ -1092,8 +1422,7 @@ export default function AdminEditor() {
             )}
           </div>
 
-          {/* Danger zone — show to all authenticated users for their own articles.
-              Server enforces the actual ownership check on DELETE. */}
+          {/* Danger zone */}
           {canDelete && (
             <div
               className="rounded-2xl overflow-hidden"
