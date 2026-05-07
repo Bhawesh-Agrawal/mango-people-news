@@ -2,6 +2,7 @@ import BreakingBar       from '../components/home/BreakingBar'
 import Hero              from '../components/home/Hero'
 import CategorySections  from '../components/home/CategorySections'
 import SEO               from '../seo/Seo'
+import AISummaryStrip from './Aisummarystrip'
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       />
       <BreakingBar />
       <Hero />
+      <AISummaryStrip />
       <CategorySections />
     </>
   )

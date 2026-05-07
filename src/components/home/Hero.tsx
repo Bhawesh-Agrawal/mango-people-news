@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom'
-import { Clock, Eye, ArrowRight, BookOpen, Sparkles } from 'lucide-react'
+import { Clock, Eye, ArrowRight, BookOpen } from 'lucide-react'
 import { useArticles } from '../../hooks/useArticles'
 import { timeAgo, formatCount, truncate } from '../../lib/utils'
 import type { Article } from '../../types'
 
 // ── Cloudinary URL optimizer ───────────────────────────────────────
-// Injects w, h, f_auto, q_auto transforms into Cloudinary URLs.
-// Safe to call on any URL — returns original if not Cloudinary.
 function cloudinaryUrl(url: string, width: number, height: number): string {
   if (!url || !url.includes('res.cloudinary.com')) return url
   return url.replace(
@@ -128,87 +126,15 @@ function HeroSkeleton() {
   )
 }
 
-// ── AI Summary row — integrated style ──────────────────────────
-function AISummaryRow({ article }: { article: Article }) {
-  // Only show if article has AI summary and is from today or yesterday
-  const publishedDate = new Date(article.published_at)
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
-
-  const todayStart = new Date(today)
-  todayStart.setHours(0, 0, 0, 0)
-  const yesterdayStart = new Date(yesterday)
-  yesterdayStart.setHours(0, 0, 0, 0)
-
-  const isRecent = publishedDate >= yesterdayStart
-
-  if (!article.ai_summary || !isRecent) return null
-
-  return (
-    <Link
-      to={`/article/${article.slug}`}
-      className="flex gap-3 group py-2"
-    >
-      {/* AI indicator */}
-      <div className="flex-shrink-0 mt-0.5">
-        <div
-          className="w-3 h-3 rounded-full flex items-center justify-center"
-          style={{ background: 'var(--accent)' }}
-        >
-          <Sparkles size={8} style={{ color: '#fff' }} />
-        </div>
-      </div>
-
-      {/* Text — compact layout */}
-      <div className="flex-1 min-w-0">
-        <p
-          className="text-sm font-bold leading-snug line-clamp-2
-                     transition-colors duration-150
-                     group-hover:text-[var(--accent)]"
-          style={{ color: 'var(--text-primary)' }}
-        >
-          {article.title}
-        </p>
-        <p
-          className="text-xs leading-relaxed mt-1 line-clamp-2"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {truncate(article.ai_summary, 30)}
-        </p>
-      </div>
-    </Link>
-  )
-}
-
 // ── Main ──────────────────────────────────────────────────────────
 export default function Hero() {
-  const { articles, loading } = useArticles({ limit: 15 }) // Get more articles for AI summaries
+  const { articles, loading } = useArticles({ limit: 9 })
 
   if (loading) return <HeroSkeleton />
   if (articles.length === 0) return null
 
-  const main = articles[0]
-  const list = articles.slice(1, 7)
-
-  // Filter AI summary articles from recent articles
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(today.getDate() - 1)
-
-  const todayStart = new Date(today)
-  todayStart.setHours(0, 0, 0, 0)
-  const yesterdayStart = new Date(yesterday)
-  yesterdayStart.setHours(0, 0, 0, 0)
-
-  const aiSummaryArticles = articles.filter(article => {
-    if (!article.ai_summary) return false
-    const publishedDate = new Date(article.published_at)
-    return publishedDate >= yesterdayStart
-  }).slice(0, 3) // Limit to 3 AI summaries
-
-  // Combine regular articles and AI summaries for highlights
-  const highlights = [...list.slice(0, 4), ...aiSummaryArticles].slice(0, 6)
+  const main       = articles[0]
+  const highlights = articles.slice(1, 7)
 
   return (
     <section>
@@ -237,10 +163,7 @@ export default function Hero() {
           </div>
 
           {/* Headline */}
-          <Link
-          to={`/article/${main.slug}`}
-          className="block w-full relative overflow-hidden group"
-          >
+          <Link to={`/article/${main.slug}`} className="block w-full group">
             <h1
               className="font-display font-black leading-tight tracking-tight"
               style={{
@@ -287,8 +210,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Cover image — full bleed, button inside */}
-        {/* LCP image: eager + high priority, no lazy */}
+        {/* Cover image — full bleed */}
         <Link
           to={`/article/${main.slug}`}
           className="block w-full relative overflow-hidden group"
@@ -330,7 +252,7 @@ export default function Hero() {
             </span>
           </div>
 
-          {/* Gradient + button inside image */}
+          {/* Gradient + button */}
           <div
             className="absolute bottom-0 left-0 right-0 p-4"
             style={{
@@ -350,25 +272,20 @@ export default function Hero() {
               Read Full Article
               <ArrowRight
                 size={12}
-                className="transition-transform duration-200
-                           group-hover:translate-x-1"
+                className="transition-transform duration-200 group-hover:translate-x-1"
               />
             </span>
           </div>
         </Link>
 
-        {/* Today's highlights list */}
-        <div
-          className="px-4"
-          style={{ background: 'var(--bg)' }}
-        >
+        {/* Top stories list */}
+        <div className="px-4" style={{ background: 'var(--bg)' }}>
           <div className="flex items-center justify-between pt-4 pb-1">
-            <span className="section-label">Today's Highlights</span>
+            <span className="section-label">Top Stories</span>
             <Link
               to="/articles"
               className="flex items-center gap-1 text-[10px] font-bold
-                         tracking-wide uppercase hover:opacity-70
-                         transition-opacity"
+                         tracking-wide uppercase hover:opacity-70 transition-opacity"
               style={{ color: 'var(--accent)' }}
             >
               All News <ArrowRight size={11} />
@@ -384,11 +301,7 @@ export default function Hero() {
                     ? '1px solid var(--border-muted)' : 'none',
                 }}
               >
-                {article.ai_summary ? (
-                  <AISummaryRow article={article} />
-                ) : (
-                  <ArticleRow article={article} />
-                )}
+                <ArticleRow article={article} />
               </div>
             ))}
           </div>
@@ -401,29 +314,19 @@ export default function Hero() {
       <div className="hidden md:block page-container py-6">
         <div className="grid grid-cols-3 gap-6 items-stretch">
 
-          {/* Left — editorial hero, stretch to match sidebar height */}
+          {/* Left — editorial hero */}
           <div className="col-span-2 flex flex-col gap-4 h-full">
-
-            {/* Text above image */}
             <div className="space-y-3">
-              {/* Badges */}
               <div className="flex items-center gap-2">
                 {main.is_breaking && (
                   <span className="breaking-strip">● Breaking</span>
                 )}
-                <span
-                  className="cat-label"
-                  style={{ color: main.category_color }}
-                >
+                <span className="cat-label" style={{ color: main.category_color }}>
                   {main.category_name}
                 </span>
               </div>
 
-              {/* Headline */}
-              <Link
-                to={`/article/${main.slug}`}
-                className="block w-full relative overflow-hidden group"
-              >
+              <Link to={`/article/${main.slug}`} className="block w-full group">
                 <h1
                   className="font-display font-black leading-tight tracking-tight"
                   style={{
@@ -435,7 +338,6 @@ export default function Hero() {
                 </h1>
               </Link>
 
-              {/* Subtitle */}
               {(main.subtitle || main.excerpt) && (
                 <p
                   className="text-base leading-relaxed max-w-2xl line-clamp-2"
@@ -445,7 +347,6 @@ export default function Hero() {
                 </p>
               )}
 
-              {/* Extra excerpt on desktop */}
               {main.subtitle && main.excerpt && (
                 <p
                   className="text-sm leading-relaxed max-w-xl line-clamp-2"
@@ -455,15 +356,11 @@ export default function Hero() {
                 </p>
               )}
 
-              {/* Meta */}
               <div
                 className="flex items-center gap-4 text-sm"
                 style={{ color: 'var(--text-muted)' }}
               >
-                <span
-                  className="font-semibold"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
+                <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
                   {main.author_name}
                 </span>
                 <span className="flex items-center gap-1.5">
@@ -478,7 +375,6 @@ export default function Hero() {
               </div>
             </div>
 
-            {/* Cover image — LCP image: eager + high priority, no lazy */}
             <Link
               to={`/article/${main.slug}`}
               className="block relative rounded-2xl overflow-hidden group flex-1"
@@ -495,20 +391,15 @@ export default function Hero() {
                     width={1330}
                     height={680}
                   />
-                : <div
-                    className="w-full h-full"
-                    style={{ background: 'var(--bg-muted)' }}
-                  />
+                : <div className="w-full h-full" style={{ background: 'var(--bg-muted)' }} />
               }
 
-              {/* Watermark */}
               <div
                 className="absolute inset-0 flex items-center justify-center
                            pointer-events-none overflow-hidden"
               >
                 <span
-                  className="font-display font-bold uppercase
-                             select-none whitespace-nowrap"
+                  className="font-display font-bold uppercase select-none whitespace-nowrap"
                   style={{
                     fontSize:      'clamp(80px, 12vw, 140px)',
                     letterSpacing: '-0.04em',
@@ -520,7 +411,6 @@ export default function Hero() {
                 </span>
               </div>
 
-              {/* Gradient + button inside image */}
               <div
                 className="absolute bottom-0 left-0 right-0 p-5"
                 style={{
@@ -531,17 +421,13 @@ export default function Hero() {
                   className="inline-flex items-center gap-2 text-sm font-bold
                              tracking-wide uppercase px-5 py-2.5 rounded-xl
                              transition-all duration-200 group-hover:gap-3"
-                  style={{
-                    background: 'var(--accent)',
-                    color:      '#fff',
-                  }}
+                  style={{ background: 'var(--accent)', color: '#fff' }}
                 >
                   <BookOpen size={14} />
                   Read Full Article
                   <ArrowRight
                     size={13}
-                    className="transition-transform duration-200
-                               group-hover:translate-x-1"
+                    className="transition-transform duration-200 group-hover:translate-x-1"
                   />
                 </span>
               </div>
@@ -556,38 +442,31 @@ export default function Hero() {
               border:     '1px solid var(--border)',
             }}
           >
-            {/* Header */}
             <div
               className="flex items-center justify-between px-4 py-3 flex-shrink-0"
               style={{ borderBottom: '1px solid var(--border)' }}
             >
-              <span className="section-label">Today's Highlights</span>
+              <span className="section-label">Top Stories</span>
               <Link
                 to="/articles"
                 className="flex items-center gap-1 text-[10px] font-bold
-                           tracking-wide uppercase hover:opacity-70
-                           transition-opacity"
+                           tracking-wide uppercase hover:opacity-70 transition-opacity"
                 style={{ color: 'var(--accent)' }}
               >
                 All <ArrowRight size={10} />
               </Link>
             </div>
 
-            {/* Articles */}
             <div className="flex-1 overflow-y-auto px-4">
               {highlights.map((article, i) => (
                 <div
                   key={article.id}
                   style={{
-                    borderBottom: i < highlights.length - 1
+                    borderBottom: i < highlights.length -1
                       ? '1px solid var(--border-muted)' : 'none',
                   }}
                 >
-                  {article.ai_summary ? (
-                    <AISummaryRow article={article} />
-                  ) : (
-                    <ArticleRow article={article} />
-                  )}
+                  <ArticleRow article={article} />
                 </div>
               ))}
             </div>

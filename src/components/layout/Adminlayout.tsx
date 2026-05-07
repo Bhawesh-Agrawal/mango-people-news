@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FileText, Users, Mail,
   Settings, ChevronLeft, ChevronRight,
   Menu, X, LogOut, Shield, PenSquare,
-  Tag,
+  Tag, ExternalLink,
 } from 'lucide-react'
 import { useAuth }    from '../../context/AuthContext'
 import { AdminProvider } from '../../context/AdminContext'
@@ -48,10 +48,8 @@ export default function AdminLayout() {
   )
 
   const isActive = (to: string) =>
-    // Dashboard: exact match only
     to === '/admin/dashboard'
       ? location.pathname === to
-      // Editor list: match /admin/editor but not /admin/editor/anything (those belong to editor item too though)
       : location.pathname.startsWith(to)
 
   return (
@@ -86,21 +84,18 @@ export default function AdminLayout() {
             className="flex items-center gap-3 px-3 h-16 flex-shrink-0"
             style={{ borderBottom: '1px solid var(--border)' }}
           >
-            {/* Use logo.png — falls back gracefully if missing */}
             <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
               <img
                 src="/logo.png"
                 alt="Logo"
                 className="w-8 h-8 object-contain rounded-lg"
                 onError={e => {
-                  // Fallback: hide broken image and show initials
                   const el = e.currentTarget as HTMLImageElement
                   el.style.display = 'none'
                   const next = el.nextElementSibling as HTMLElement | null
                   if (next) next.style.display = 'flex'
                 }}
               />
-              {/* Hidden fallback shown via onError above */}
               <div
                 className="w-8 h-8 rounded-lg items-center justify-center text-sm font-bold"
                 style={{
@@ -166,7 +161,6 @@ export default function AdminLayout() {
                     <Shield size={10} className="ml-auto flex-shrink-0 opacity-30" />
                   )}
 
-                  {/* Tooltip when collapsed */}
                   {collapsed && (
                     <span
                       className="absolute left-full ml-2 px-2.5 py-1.5 rounded-xl text-xs
@@ -190,7 +184,6 @@ export default function AdminLayout() {
             className="flex-shrink-0 p-3 space-y-2"
             style={{ borderTop: '1px solid var(--border)' }}
           >
-            {/* User info card */}
             {!collapsed && (
               <div
                 className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl"
@@ -228,7 +221,6 @@ export default function AdminLayout() {
               </div>
             )}
 
-            {/* Sign out */}
             {!collapsed ? (
               <button
                 onClick={logout}
@@ -255,7 +247,6 @@ export default function AdminLayout() {
               </button>
             )}
 
-            {/* Collapse toggle — desktop only */}
             <button
               onClick={() => setCollapsed(v => !v)}
               className="hidden md:flex w-full items-center justify-center gap-2 py-1.5
@@ -293,7 +284,7 @@ export default function AdminLayout() {
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
 
-            {/* Page title — inferred from active nav item */}
+            {/* Page title */}
             <h1
               className="text-sm font-bold tracking-tight"
               style={{ color: 'var(--text-primary)' }}
@@ -303,6 +294,7 @@ export default function AdminLayout() {
 
             {/* Right actions */}
             <div className="flex items-center gap-2">
+              {/* Desktop: labelled */}
               <Link
                 to="/"
                 target="_blank"
@@ -311,6 +303,18 @@ export default function AdminLayout() {
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
               >
                 View site →
+              </Link>
+
+              {/* Mobile: icon only */}
+              <Link
+                to="/"
+                target="_blank"
+                className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl
+                           transition-colors hover:bg-[var(--bg-subtle)]"
+                style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                aria-label="View site"
+              >
+                <ExternalLink size={15} />
               </Link>
             </div>
           </header>
