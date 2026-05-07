@@ -20,6 +20,7 @@ import {
   getInitialSaveStatus,
 } from './Savedpage'
 import SEO from '../seo/Seo'
+import AISummaryBlock from './Aisummaryblock'
 
 // ── Reading progress bar ──────────────────────────────────────
 
@@ -900,6 +901,10 @@ export default function ArticlePage() {
                     onSave={handleSave}
                   />
                 </div>
+              )}
+
+              {article.ai_summary && (
+                <AISummaryBlock summary={article.ai_summary} />
               )}
 
               {article.cover_image && (
