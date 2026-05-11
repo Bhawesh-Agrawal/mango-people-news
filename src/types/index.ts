@@ -69,12 +69,22 @@ export interface User {
   bio?:        string
 }
 
-export interface ArticleParams {
-  page?:     number
-  limit?:    number
-  category?: string
-  featured?: boolean
-  breaking?: boolean
-  search?:   string
-  stagger?:  number   // ← add this
+export interface ReviewArticle {
+  id:             string
+  slug:           string
+  title:          string
+  subtitle:       string | null
+  excerpt:        string | null
+  body:           string
+  cover_image:    string | null
+  reading_time:   number
+  author_name:    string
+  author_avatar:  string | null
+  author_bio:     string | null
+  category_name:  string
+  category_color: string
+  tags:           { id: string; name: string; slug: string }[]
+  is_breaking:    boolean
+  is_featured:    boolean
+  created_at:     string
 }

@@ -5,10 +5,10 @@ import {
   Edit2, Trash2, ChevronLeft, ChevronRight,
   BarChart2, AlertTriangle, MessageSquare,
 } from 'lucide-react'
-import { client }      from '../api/client'
-import { useAuth }     from '../context/AuthContext'
+import { client }        from '../api/client'
+import { useAuth }       from '../context/AuthContext'
 import { useCategories } from '../hooks/useCategories'
-import { formatCount } from '../lib/utils'
+import { formatCount }   from '../lib/utils'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ interface ArticleRow {
   id:             string
   slug:           string
   title:          string
-  status:         'draft' | 'published' | 'archived'
+  status:         'draft' | 'review' | 'published' | 'archived'
   author_name:    string
   category_name:  string
   category_color: string
@@ -31,10 +31,11 @@ interface ArticleRow {
 
 // ── Helpers ───────────────────────────────────────────────────
 
-const STATUS_CONFIG = {
-  draft:     { label: 'Draft',     color: 'var(--text-secondary)', bg: 'var(--bg-subtle)'     },
-  published: { label: 'Published', color: '#16a34a',               bg: 'rgba(22,163,74,0.10)' },
-  archived:  { label: 'Archived',  color: 'var(--breaking)',       bg: 'rgba(185,28,28,0.07)' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  draft:     { label: 'Draft',     color: 'var(--text-secondary)', bg: 'var(--bg-subtle)'        },
+  review:    { label: 'In Review', color: '#d97706',               bg: 'rgba(217,119,6,0.10)'    },
+  published: { label: 'Published', color: '#16a34a',               bg: 'rgba(22,163,74,0.10)'    },
+  archived:  { label: 'Archived',  color: 'var(--breaking)',       bg: 'rgba(185,28,28,0.07)'    },
 }
 
 function timeAgo(iso: string): string {
@@ -54,6 +55,7 @@ export default function AdminEditorList() {
   const { user }        = useAuth()
   const { categories }  = useCategories()
   const isEditorOrAbove = user?.role === 'editor' || user?.role === 'super_admin'
+  const isAuthor        = user?.role === 'author'
 
   const [articles,     setArticles]     = useState<ArticleRow[]>([])
   const [hasNextPage,  setHasNextPage]  = useState(false)
@@ -69,13 +71,12 @@ export default function AdminEditorList() {
   const [deleting,    setDeleting]    = useState(false)
   const [deleteError, setDeleteError] = useState('')
 
+  // Review submitted toast
+  const [reviewToast, setReviewToast] = useState(false)
+
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // ── Fetch ─────────────────────────────────────────────────
-  // Backend scopes results to the author's own articles when JWT role is
-  // 'author'. Editors see everything. We omit `status` entirely when 'all'
-  // so the backend's role-aware defaults kick in (returns all statuses for
-  // the authenticated user).
+  // ── Fetch ──────────────────────────────────────────────────
 
   const fetchList = useCallback(async (pg: number, q: string, st: string, cat: string) => {
     setLoading(true)
@@ -84,20 +85,17 @@ export default function AdminEditorList() {
       const params: Record<string, any> = {
         page:  pg,
         limit: PAGE_SIZE,
-        mine : true,
+        mine:  isAuthor,
       }
-      if (q)          params.search = q
-      if (st !== 'all') params.status = st
+      if (q)           params.search   = q
+      if (st !== 'all') params.status  = st
       if (cat !== 'all') params.category = cat
-      // When st === 'all', omit status entirely — backend defaults to
-      // returning all statuses for authenticated staff (authors/editors).
 
       const res        = await client.get('/articles', { params })
-      const data       = res.data?.data ?? []
+      const data       = res.data?.data       ?? []
       const pagination = res.data?.pagination ?? {}
 
       setArticles(data)
-      // Use the backend's hasNextPage directly — avoids off-by-one errors
       setHasNextPage(pagination.hasNextPage ?? false)
     } catch (e: any) {
       setError(e?.response?.data?.message ?? 'Failed to load articles.')
@@ -106,11 +104,22 @@ export default function AdminEditorList() {
     }
   }, [])
 
-  // Re-fetch whenever page, status, or category filter changes
   useEffect(() => {
     fetchList(page, search, status, category)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, status, category])
+
+  // Show toast if redirected back after submitting for review
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('submitted') === 'review') {
+      setReviewToast(true)
+      // Clean the query param from the URL without a navigation
+      window.history.replaceState({}, '', window.location.pathname)
+      const t = setTimeout(() => setReviewToast(false), 5000)
+      return () => clearTimeout(t)
+    }
+  }, [])
 
   const handleSearchChange = (val: string) => {
     setSearch(val)
@@ -124,13 +133,11 @@ export default function AdminEditorList() {
   const handleStatusChange = (val: string) => {
     setStatus(val)
     setPage(1)
-    // Effect will fire because status changed
   }
 
   const handleCategoryChange = (val: string) => {
     setCategory(val)
     setPage(1)
-    // Effect will fire because category changed
   }
 
   // ── Delete ────────────────────────────────────────────────
@@ -157,6 +164,29 @@ export default function AdminEditorList() {
   return (
     <div style={{ color: 'var(--text-primary)' }}>
 
+      {/* ── Review submitted toast ── */}
+      {reviewToast && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 rounded-xl mb-5 text-sm font-medium"
+          style={{
+            background: 'rgba(217,119,6,0.10)',
+            border:     '1px solid rgba(217,119,6,0.25)',
+            color:      '#d97706',
+          }}
+        >
+          <span className="text-base">📋</span>
+          <span>
+            Your article has been submitted for review. An editor will approve it shortly.
+          </span>
+          <button
+            onClick={() => setReviewToast(false)}
+            className="ml-auto text-lg leading-none opacity-60 hover:opacity-100 transition-opacity"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
@@ -165,8 +195,8 @@ export default function AdminEditorList() {
           </h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {isEditorOrAbove
-              ? 'Manage articles from all authors'
-              : 'Your drafts and published articles'}
+              ? 'Manage and publish articles from all authors'
+              : 'Your drafts and articles submitted for review'}
           </p>
         </div>
         <Link
@@ -178,6 +208,25 @@ export default function AdminEditorList() {
           <Plus size={15} /> New Article
         </Link>
       </div>
+
+      {/* ── Author info banner — shown once until dismissed ── */}
+      {isAuthor && (
+        <div
+          className="flex items-start gap-3 px-4 py-3 rounded-xl mb-5 text-sm"
+          style={{
+            background: 'rgba(217,119,6,0.07)',
+            border:     '1px solid rgba(217,119,6,0.18)',
+            color:      '#92400e',
+          }}
+        >
+          <span className="mt-0.5 text-base">ℹ️</span>
+          <p className="leading-relaxed">
+            When you publish an article it is sent to an editor for review.
+            It will go live once approved. You can track its status in the{' '}
+            <strong>In Review</strong> filter below.
+          </p>
+        </div>
+      )}
 
       {/* ── Filters ── */}
       <div className="flex flex-wrap gap-3 mb-5">
@@ -208,7 +257,9 @@ export default function AdminEditorList() {
         >
           <option value="all">All statuses</option>
           <option value="draft">Draft</option>
-          <option value="published">Published</option>
+          <option value="review">In Review</option>
+          {/* Authors can never reach published — hide to avoid confusion */}
+          {isEditorOrAbove && <option value="published">Published</option>}
           <option value="archived">Archived</option>
         </select>
 
@@ -277,7 +328,7 @@ export default function AdminEditorList() {
               {search
                 ? `No articles matching "${search}"`
                 : status !== 'all'
-                  ? `No ${status} articles`
+                  ? `No ${STATUS_CONFIG[status]?.label.toLowerCase() ?? status} articles`
                   : 'No articles yet'}
             </p>
             <Link
@@ -336,6 +387,12 @@ export default function AdminEditorList() {
                     {isEditorOrAbove && (
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                         by {article.author_name}
+                      </p>
+                    )}
+                    {/* Inline hint for authors on review articles */}
+                    {isAuthor && article.status === 'review' && (
+                      <p className="text-[11px] mt-1 font-medium" style={{ color: '#d97706' }}>
+                        Awaiting editor approval
                       </p>
                     )}
                   </div>
@@ -400,15 +457,18 @@ export default function AdminEditorList() {
 
                   {/* Actions */}
                   <div className="flex items-center justify-start md:justify-end gap-1">
-                    <Link
-                      to={`/admin/editor/${article.id}`}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
-                                 font-semibold transition-colors hover:bg-[var(--accent-light)]"
-                      style={{ color: 'var(--accent)' }}
-                      title="Edit article"
-                    >
-                      <Edit2 size={12} /> Edit
-                    </Link>
+                    {/* Authors cannot edit articles that are under review */}
+                    {(!isAuthor || article.status !== 'review') && (
+                      <Link
+                        to={`/admin/editor/${article.id}`}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs
+                                   font-semibold transition-colors hover:bg-[var(--accent-light)]"
+                        style={{ color: 'var(--accent)' }}
+                        title="Edit article"
+                      >
+                        <Edit2 size={12} /> Edit
+                      </Link>
+                    )}
                     {isEditorOrAbove && (
                       <Link
                         to={`/admin/analytics/${article.id}`}

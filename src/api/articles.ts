@@ -1,5 +1,5 @@
 import { client } from './client'
-import type { Article, PaginatedResponse, ApiResponse } from '../types'
+import type { Article, PaginatedResponse, ApiResponse, ReviewArticle } from '../types'
 
 // ── Browser fingerprint ───────────────────────────────────────────────────────
 // A lightweight, stable, anonymous identifier for tracking likes from
@@ -144,4 +144,19 @@ export const postComment = async (
 
 export const deleteComment = async (commentId: string): Promise<void> => {
   await client.delete(`/comments/${commentId}`)
+}
+
+// ── Admin ─────────────────────────────────────────────────────────────────────
+
+export const getReviewQueue = async (): Promise<ApiResponse<ReviewArticle[]>> => {
+  const { data } = await client.get('/articles/review')
+  return data
+}
+
+export const reviewAction = async (
+  articleId: string,
+  action: 'approve' | 'request_changes' | 'reject'
+): Promise<ApiResponse<{ id: string; slug: string; title: string; status: string }>> => {
+  const { data } = await client.patch(`/articles/${articleId}/review-action`, { action })
+  return data
 }

@@ -38,6 +38,7 @@ import AdminUsers             from './pages/Adminuser'
 import AdminEditorList        from './pages/Admineditorlist'
 import AdminEditor            from './pages/Admineditor'
 import ScrollToTop from './components/ui/ScrollToTop'
+import ReviewQueue from './pages/ReviewQueue'
 
 function App() {
   return (
@@ -130,6 +131,11 @@ function App() {
           } />
           <Route path="settings" element={
             <ProtectedRoute requiredRole="editor"><AdminSettings /></ProtectedRoute>
+          } />
+          <Route path="/admin/review" element={
+            <ProtectedRoute requiredRole="super_admin">
+              <ReviewQueue />
+            </ProtectedRoute>
           } />
 
           {/* Author + editor pages */}

@@ -4,10 +4,11 @@ import {
   LayoutDashboard, FileText, Users, Mail,
   Settings, ChevronLeft, ChevronRight,
   Menu, X, LogOut, Shield, PenSquare,
-  Tag, ExternalLink,
+  Tag, ExternalLink, ClipboardList,
 } from 'lucide-react'
-import { useAuth }    from '../../context/AuthContext'
+import { useAuth }       from '../../context/AuthContext'
 import { AdminProvider } from '../../context/AdminContext'
+import { getReviewQueue } from '../../api/articles'
 
 interface NavItem {
   to:      string
@@ -18,13 +19,14 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/admin/dashboard',  icon: LayoutDashboard, label: 'Dashboard',  minRole: 'editor'      },
-  { to: '/admin/articles',   icon: FileText,        label: 'Articles',   minRole: 'editor'      },
-  { to: '/admin/categories', icon: Tag,             label: 'Categories', minRole: 'super_admin' },
-  { to: '/admin/users',      icon: Users,           label: 'Users',      minRole: 'super_admin' },
-  { to: '/admin/newsletter', icon: Mail,            label: 'Newsletter', minRole: 'super_admin' },
-  { to: '/admin/settings',   icon: Settings,        label: 'Settings',   minRole: 'super_admin' },
-  { to: '/admin/editor',     icon: PenSquare,       label: 'My Articles', minRole: 'author'     },
+  { to: '/admin/dashboard',  icon: LayoutDashboard, label: 'Dashboard',     minRole: 'editor'      },
+  { to: '/admin/articles',   icon: FileText,        label: 'Articles',      minRole: 'editor'      },
+  { to: '/admin/review',     icon: ClipboardList,   label: 'Review Queue',  minRole: 'super_admin' },
+  { to: '/admin/categories', icon: Tag,             label: 'Categories',    minRole: 'super_admin' },
+  { to: '/admin/users',      icon: Users,           label: 'Users',         minRole: 'super_admin' },
+  { to: '/admin/newsletter', icon: Mail,            label: 'Newsletter',    minRole: 'super_admin' },
+  { to: '/admin/settings',   icon: Settings,        label: 'Settings',      minRole: 'super_admin' },
+  { to: '/admin/editor',     icon: PenSquare,       label: 'My Articles',   minRole: 'author'      },
 ]
 
 const ROLE_WEIGHT: Record<string, number> = {
@@ -35,11 +37,24 @@ export default function AdminLayout() {
   const { user, logout } = useAuth()
   const location         = useLocation()
 
-  const [collapsed,  setCollapsed]  = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [collapsed,       setCollapsed]       = useState(false)
+  const [mobileOpen,      setMobileOpen]       = useState(false)
+  const [reviewCount,     setReviewCount]      = useState(0)
 
   // Close mobile sidebar on navigation
   useEffect(() => { setMobileOpen(false) }, [location.pathname])
+
+  // Poll review queue count for super_admin so the badge stays fresh
+  useEffect(() => {
+    if (user?.role !== 'super_admin') return
+    const fetch = () =>
+      getReviewQueue()
+        .then(r => setReviewCount((r.data ?? []).length))
+        .catch(() => {})
+    fetch()
+    const t = setInterval(fetch, 60_000) // refresh every 60s
+    return () => clearInterval(t)
+  }, [user?.role])
 
   const userWeight = ROLE_WEIGHT[user?.role ?? 'reader']
 
@@ -56,7 +71,7 @@ export default function AdminLayout() {
     <AdminProvider>
       <div className="flex min-h-screen" style={{ background: 'var(--bg)' }}>
 
-        {/* ── Mobile backdrop ──────────────────────────────── */}
+        {/* ── Mobile backdrop ── */}
         {mobileOpen && (
           <div
             className="fixed inset-0 z-40 md:hidden"
@@ -65,7 +80,7 @@ export default function AdminLayout() {
           />
         )}
 
-        {/* ── Sidebar ──────────────────────────────────────── */}
+        {/* ── Sidebar ── */}
         <aside
           className={`
             fixed inset-y-0 left-0 z-50 flex flex-col
@@ -74,10 +89,7 @@ export default function AdminLayout() {
             ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${collapsed  ? 'w-16'          : 'w-60'}
           `}
-          style={{
-            background:  'var(--bg-surface)',
-            borderRight: '1px solid var(--border)',
-          }}
+          style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}
         >
           {/* Logo / brand */}
           <div
@@ -90,7 +102,7 @@ export default function AdminLayout() {
                 alt="Logo"
                 className="w-8 h-8 object-contain rounded-lg"
                 onError={e => {
-                  const el = e.currentTarget as HTMLImageElement
+                  const el   = e.currentTarget as HTMLImageElement
                   el.style.display = 'none'
                   const next = el.nextElementSibling as HTMLElement | null
                   if (next) next.style.display = 'flex'
@@ -98,33 +110,16 @@ export default function AdminLayout() {
               />
               <div
                 className="w-8 h-8 rounded-lg items-center justify-center text-sm font-bold"
-                style={{
-                  display:    'none',
-                  background: 'var(--accent-light)',
-                  color:      'var(--accent)',
-                }}
-              >
-                M
-              </div>
+                style={{ display: 'none', background: 'var(--accent-light)', color: 'var(--accent)' }}
+              >M</div>
             </div>
-
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p
-                  className="text-sm font-bold truncate leading-tight"
-                  style={{ color: 'var(--text-primary)' }}
-                >
+                <p className="text-sm font-bold truncate leading-tight" style={{ color: 'var(--text-primary)' }}>
                   MPN Admin
                 </p>
-                <p
-                  className="text-[10px] font-semibold uppercase tracking-wider"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  {user?.role === 'super_admin'
-                    ? 'Super Admin'
-                    : user?.role === 'editor'
-                      ? 'Editor'
-                      : 'Author'}
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
+                  {user?.role === 'super_admin' ? 'Super Admin' : user?.role === 'editor' ? 'Editor' : 'Author'}
                 </p>
               </div>
             )}
@@ -135,6 +130,8 @@ export default function AdminLayout() {
             {visibleItems.map(({ to, icon: Icon, label, minRole }) => {
               const active      = isActive(to)
               const isSuperOnly = minRole === 'super_admin'
+              // Show badge on Review Queue when there are pending articles
+              const showBadge   = to === '/admin/review' && reviewCount > 0
 
               return (
                 <Link
@@ -157,21 +154,38 @@ export default function AdminLayout() {
                     <span className="text-sm font-medium truncate flex-1">{label}</span>
                   )}
 
-                  {!collapsed && isSuperOnly && (
+                  {/* Review queue count badge */}
+                  {!collapsed && showBadge && (
+                    <span
+                      className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: 'var(--breaking)', color: '#fff' }}
+                    >
+                      {reviewCount}
+                    </span>
+                  )}
+
+                  {/* Collapsed badge dot */}
+                  {collapsed && showBadge && (
+                    <span
+                      className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
+                      style={{ background: 'var(--breaking)' }}
+                    />
+                  )}
+
+                  {!collapsed && isSuperOnly && !showBadge && (
                     <Shield size={10} className="ml-auto flex-shrink-0 opacity-30" />
                   )}
 
+                  {/* Collapsed tooltip */}
                   {collapsed && (
                     <span
                       className="absolute left-full ml-2 px-2.5 py-1.5 rounded-xl text-xs
                                  font-semibold whitespace-nowrap opacity-0 pointer-events-none
                                  group-hover:opacity-100 transition-opacity z-50 shadow-lg"
-                      style={{
-                        background: 'var(--text-primary)',
-                        color:      'var(--bg)',
-                      }}
+                      style={{ background: 'var(--text-primary)', color: 'var(--bg)' }}
                     >
                       {label}
+                      {showBadge && ` (${reviewCount})`}
                     </span>
                   )}
                 </Link>
@@ -180,41 +194,26 @@ export default function AdminLayout() {
           </nav>
 
           {/* User info + collapse control */}
-          <div
-            className="flex-shrink-0 p-3 space-y-2"
-            style={{ borderTop: '1px solid var(--border)' }}
-          >
+          <div className="flex-shrink-0 p-3 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
             {!collapsed && (
               <div
                 className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl"
                 style={{ background: 'var(--bg-subtle)' }}
               >
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs
-                             font-bold flex-shrink-0 overflow-hidden"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 overflow-hidden"
                   style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
                 >
-                  {user?.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    user?.full_name?.charAt(0)?.toUpperCase()
-                  )}
+                  {user?.avatar_url
+                    ? <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                    : user?.full_name?.charAt(0)?.toUpperCase()
+                  }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p
-                    className="text-xs font-semibold truncate leading-tight"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
+                  <p className="text-xs font-semibold truncate leading-tight" style={{ color: 'var(--text-primary)' }}>
                     {user?.full_name}
                   </p>
-                  <p
-                    className="text-[10px] truncate leading-tight mt-0.5"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
+                  <p className="text-[10px] truncate leading-tight mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     {user?.email}
                   </p>
                 </div>
@@ -224,22 +223,15 @@ export default function AdminLayout() {
             {!collapsed ? (
               <button
                 onClick={logout}
-                className="flex items-center gap-2 w-full px-2.5 py-2 rounded-xl
-                           text-xs font-semibold transition-opacity hover:opacity-80"
-                style={{
-                  background: 'rgba(185,28,28,0.06)',
-                  color:      'var(--breaking)',
-                  border:     '1px solid rgba(185,28,28,0.12)',
-                }}
+                className="flex items-center gap-2 w-full px-2.5 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
+                style={{ background: 'rgba(185,28,28,0.06)', color: 'var(--breaking)', border: '1px solid rgba(185,28,28,0.12)' }}
               >
-                <LogOut size={13} />
-                Sign out
+                <LogOut size={13} /> Sign out
               </button>
             ) : (
               <button
                 onClick={logout}
-                className="flex items-center justify-center w-full py-2 rounded-xl
-                           transition-opacity hover:opacity-80"
+                className="flex items-center justify-center w-full py-2 rounded-xl transition-opacity hover:opacity-80"
                 style={{ color: 'var(--breaking)' }}
                 title="Sign out"
               >
@@ -249,32 +241,20 @@ export default function AdminLayout() {
 
             <button
               onClick={() => setCollapsed(v => !v)}
-              className="hidden md:flex w-full items-center justify-center gap-2 py-1.5
-                         rounded-xl text-xs font-medium transition-colors
-                         hover:bg-[var(--bg-subtle)]"
+              className="hidden md:flex w-full items-center justify-center gap-2 py-1.5 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--bg-subtle)]"
               style={{ color: 'var(--text-muted)' }}
             >
-              {collapsed
-                ? <ChevronRight size={15} />
-                : <><ChevronLeft size={15} /><span>Collapse</span></>
-              }
+              {collapsed ? <ChevronRight size={15} /> : <><ChevronLeft size={15} /><span>Collapse</span></>}
             </button>
           </div>
         </aside>
 
-        {/* ── Main content area ─────────────────────────────── */}
+        {/* ── Main content area ── */}
         <div className="flex-1 flex flex-col min-w-0">
-
-          {/* Topbar */}
           <header
-            className="sticky top-0 z-30 flex items-center justify-between
-                       px-4 sm:px-6 h-16 flex-shrink-0"
-            style={{
-              background:   'var(--bg-surface)',
-              borderBottom: '1px solid var(--border)',
-            }}
+            className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 h-16 flex-shrink-0"
+            style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
           >
-            {/* Mobile menu toggle */}
             <button
               className="md:hidden p-2 rounded-xl transition-colors hover:bg-[var(--bg-subtle)]"
               style={{ color: 'var(--text-secondary)' }}
@@ -284,33 +264,23 @@ export default function AdminLayout() {
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
 
-            {/* Page title */}
-            <h1
-              className="text-sm font-bold tracking-tight"
-              style={{ color: 'var(--text-primary)' }}
-            >
+            <h1 className="text-sm font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
               {visibleItems.find(i => isActive(i.to))?.label ?? 'Admin'}
             </h1>
 
-            {/* Right actions */}
             <div className="flex items-center gap-2">
-              {/* Desktop: labelled */}
               <Link
                 to="/"
                 target="_blank"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl
-                           text-xs font-medium transition-colors hover:bg-[var(--bg-subtle)]"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--bg-subtle)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
               >
                 View site →
               </Link>
-
-              {/* Mobile: icon only */}
               <Link
                 to="/"
                 target="_blank"
-                className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl
-                           transition-colors hover:bg-[var(--bg-subtle)]"
+                className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl transition-colors hover:bg-[var(--bg-subtle)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
                 aria-label="View site"
               >
@@ -319,7 +289,6 @@ export default function AdminLayout() {
             </div>
           </header>
 
-          {/* Page content */}
           <main className="flex-1 overflow-auto p-4 sm:p-6">
             <Outlet />
           </main>
