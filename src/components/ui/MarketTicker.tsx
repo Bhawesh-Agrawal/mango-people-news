@@ -4,6 +4,7 @@ import type { Quote } from '../../hooks/useMarketData'
 
 function QuoteChip({ q }: { q: Quote }) {
   const color = q.isUp ? '#15803D' : '#B91C1C'
+  const label = q.isUp ? '#14532D' : '#991B1B'
   const bg    = q.isUp ? '#F0FDF4' : '#FEF2F2'
 
   return (
@@ -12,7 +13,7 @@ function QuoteChip({ q }: { q: Quote }) {
       style={{ background: bg, border: `1px solid ${q.isUp ? '#BBF7D0' : '#FECACA'}` }}
     >
       <div>
-        <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>
+        <p className="text-xs font-semibold" style={{ color: label }}>
           {q.name}
         </p>
         <p className="text-sm font-bold tabular-nums" style={{ color }}>
@@ -58,7 +59,15 @@ export default function MarketTicker() {
 
   return (
     <div>
-      <div className="flex gap-3 overflow-x-auto scrollbar-none py-3">
+      <div
+        className="flex gap-3 overflow-x-auto scrollbar-none py-3"
+        style={{
+          background: 'var(--bg-surface)',
+          border:     '1px solid var(--border)',
+          borderRadius: '1rem',
+          padding: '0.25rem',
+        }}
+      >
         {quotes.map(q => (
           <QuoteChip key={q.symbol} q={q} />
         ))}
@@ -66,7 +75,7 @@ export default function MarketTicker() {
       {lastUpdated && (
         <p
           className="flex items-center gap-1 text-[11px] pb-1"
-          style={{ color: 'var(--text-faint)' }}
+          style={{ color: 'var(--text-muted)' }}
         >
           <RefreshCw size={10} />
           Updated {lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
