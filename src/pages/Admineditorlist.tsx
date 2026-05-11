@@ -65,6 +65,7 @@ export default function AdminEditorList() {
   const [search,       setSearch]       = useState('')
   const [status,       setStatus]       = useState('all')
   const [category,     setCategory]     = useState('all')
+  const [dateRange,    setDateRange]    = useState('all')
 
   // Delete dialog
   const [deleteId,    setDeleteId]    = useState<string | null>(null)
@@ -78,7 +79,7 @@ export default function AdminEditorList() {
 
   // ── Fetch ──────────────────────────────────────────────────
 
-  const fetchList = useCallback(async (pg: number, q: string, st: string, cat: string) => {
+  const fetchList = useCallback(async (pg: number, q: string, st: string, cat: string, dr: string) => {
     setLoading(true)
     setError('')
     try {
@@ -87,9 +88,10 @@ export default function AdminEditorList() {
         limit: PAGE_SIZE,
         mine:  isAuthor,
       }
-      if (q)           params.search   = q
-      if (st !== 'all') params.status  = st
-      if (cat !== 'all') params.category = cat
+      if (q)           params.search     = q
+      if (st !== 'all') params.status    = st
+      if (cat !== 'all') params.category  = cat
+      if (dr !== 'all') params.date_range = dr
 
       const res        = await client.get('/articles', { params })
       const data       = res.data?.data       ?? []
@@ -105,9 +107,9 @@ export default function AdminEditorList() {
   }, [])
 
   useEffect(() => {
-    fetchList(page, search, status, category)
+    fetchList(page, search, status, category, dateRange)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, status, category])
+  }, [page, status, category, dateRange])
 
   // Show toast if redirected back after submitting for review
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function AdminEditorList() {
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => {
       setPage(1)
-      fetchList(1, val, status, category)
+      fetchList(1, val, status, category, dateRange)
     }, 350)
   }
 
@@ -140,6 +142,11 @@ export default function AdminEditorList() {
     setPage(1)
   }
 
+  const handleDateRangeChange = (val: string) => {
+    setDateRange(val)
+    setPage(1)
+  }
+
   // ── Delete ────────────────────────────────────────────────
 
   const confirmDelete = async () => {
@@ -149,7 +156,7 @@ export default function AdminEditorList() {
     try {
       await client.delete(`/articles/${deleteId}`)
       setDeleteId(null)
-      fetchList(page, search, status, category)
+      fetchList(page, search, status, category, dateRange)
     } catch (e: any) {
       setDeleteError(e?.response?.data?.message ?? 'Delete failed.')
     } finally {
@@ -258,9 +265,24 @@ export default function AdminEditorList() {
           <option value="all">All statuses</option>
           <option value="draft">Draft</option>
           <option value="review">In Review</option>
-          {/* Authors can never reach published — hide to avoid confusion */}
-          {isEditorOrAbove && <option value="published">Published</option>}
+          <option value="published">Published</option>
           <option value="archived">Archived</option>
+        </select>
+
+        <select
+          value={dateRange}
+          onChange={e => handleDateRangeChange(e.target.value)}
+          className="px-3 py-2.5 rounded-xl text-sm font-medium outline-none cursor-pointer"
+          style={{
+            background: 'var(--bg-surface)',
+            border:     '1px solid var(--border)',
+            color:      'var(--text-primary)',
+          }}
+        >
+          <option value="all">All dates</option>
+          <option value="today">Today</option>
+          <option value="week">This week</option>
+          <option value="month">This month</option>
         </select>
 
         <select

@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename)
 
 const rawApiBaseUrl = process.env.VITE_API_URL || 'https://api.mangopeoplenews.com'
 const API_BASE_URL = normalizeApiBaseUrl(rawApiBaseUrl)
-const SITE_URL = 'https://mangopeoplenews.com'
+const SITE_URL = 'https://www.mangopeoplenews.com'
 const PUBLIC_DIR = path.join(__dirname, 'public')
 
 function normalizeApiBaseUrl(baseUrl: string): string {
