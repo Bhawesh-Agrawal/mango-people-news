@@ -144,15 +144,11 @@ export default function ArticlesPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      {/*
-        noIndex — filtered/paginated archive pages should not be
-        indexed. Google finds articles via their individual URLs.
-      */}
       <SEO
         title="All News"
         description="Browse every published article on Mango People News — India's financial and business news platform."
         path="/articles"
-        noIndex={true}
+        noIndex={false}
       />
 
       <div className="page-container py-8">
@@ -444,7 +440,7 @@ function ArticleRow({ article }: { article: Article }) {
         >
           <img
             src={article.cover_image}
-            alt=""
+            alt={article.title}
             className="w-full h-full object-cover transition-transform
                        duration-300 group-hover:scale-105"
           />
