@@ -802,12 +802,6 @@ export default function ArticlePage() {
 
   return (
     <>
-      {/*
-        SEO — uses real article data once loaded.
-        cover_image from Cloudinary is already an absolute URL so
-        SEO.tsx passes it straight through to og:image.
-        Falls back to /og-default.png if no cover image.
-      */}
       <SEO
         title={article.title}
         description={article.excerpt ?? undefined}
@@ -983,7 +977,7 @@ export default function ArticlePage() {
                         {a.cover_image && (
                           <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
                             style={{ width: '72px', height: '56px' }}>
-                            <img src={a.cover_image} alt=""
+                            <img src={a.cover_image} alt= {a.title}
                               className="w-full h-full object-cover" />
                           </div>
                         )}
@@ -1040,7 +1034,7 @@ export default function ArticlePage() {
                     {a.cover_image && (
                       <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom sm:w-full"
                         style={{ width: '80px', height: '64px' }}>
-                        <img src={a.cover_image} alt=""
+                        <img src={a.cover_image} alt={a.title}
                           className="w-full h-full object-cover" />
                       </div>
                     )}
