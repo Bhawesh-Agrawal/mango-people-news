@@ -39,6 +39,8 @@ import AdminEditorList        from './pages/Admineditorlist'
 import AdminEditor            from './pages/Admineditor'
 import ScrollToTop from './components/ui/ScrollToTop'
 import ReviewQueue from './pages/ReviewQueue'
+import AboutPage from './pages/Aboutus'
+import ContactPage from './pages/Contactus'
 
 function App() {
   return (
@@ -70,6 +72,8 @@ function App() {
                   <Route path="/auth/magic"          element={<MagicVerifyPage />} />
                   <Route path="/forgot-password"    element={<ForgotPasswordPage />} />
                   <Route path="/reset-password"     element={<ResetPasswordPage />} />
+                  <Route path = "/about"              element={<AboutPage />} />
+                  <Route path = "/contact"          element={<ContactPage />} />
 
                   <Route path="/saved" element={
                     <ProtectedRoute><SavedPage /></ProtectedRoute>
