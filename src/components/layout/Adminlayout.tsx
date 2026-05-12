@@ -271,7 +271,6 @@ export default function AdminLayout() {
             <div className="flex items-center gap-2">
               <Link
                 to="/"
-                target="_blank"
                 className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--bg-subtle)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
               >
@@ -279,7 +278,6 @@ export default function AdminLayout() {
               </Link>
               <Link
                 to="/"
-                target="_blank"
                 className="sm:hidden flex items-center justify-center w-8 h-8 rounded-xl transition-colors hover:bg-[var(--bg-subtle)]"
                 style={{ color: 'var(--text-muted)', border: '1px solid var(--border)' }}
                 aria-label="View site"
