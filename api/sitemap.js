@@ -1,4 +1,4 @@
-const SITE_URL = process.env.SITE_URL || 'https://www.mangopeoplenews.com'
+const SITE_URL = 'https://www.mangopeoplenews.com'
 
 const rawApiBaseUrl = process.env.API_BASE_URL || process.env.VITE_API_URL || 'https://api.mangopeoplenews.com'
 const API_BASE_URL = normalizeApiBaseUrl(rawApiBaseUrl)
