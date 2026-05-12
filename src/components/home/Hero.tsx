@@ -13,14 +13,10 @@ function cloudinaryUrl(url: string, width: number, height: number): string {
   )
 }
 
-// ── Article Row — thumbnail + title + meta ────────────────────────
+// ── Article Row ───────────────────────────────────────────────────
 function ArticleRow({ article }: { article: Article }) {
   return (
-    <Link
-      to={`/article/${article.slug}`}
-      className="flex gap-3 group py-2"
-    >
-      {/* Thumbnail */}
+    <Link to={`/article/${article.slug}`} className="flex gap-3 group py-2">
       {article.cover_image && (
         <div className="flex-shrink-0 w-[72px] h-16 rounded-lg overflow-hidden">
           <img
@@ -34,14 +30,9 @@ function ArticleRow({ article }: { article: Article }) {
           />
         </div>
       )}
-
-      {/* Text */}
       <div className="flex-1 min-w-0">
         {article.category_name && (
-          <span
-            className="cat-label block mb-0.5"
-            style={{ color: article.category_color }}
-          >
+          <span className="cat-label block mb-0.5" style={{ color: article.category_color }}>
             {article.category_name}
           </span>
         )}
@@ -69,7 +60,6 @@ function ArticleRow({ article }: { article: Article }) {
 function HeroSkeleton() {
   return (
     <div>
-      {/* Mobile skeleton */}
       <div className="md:hidden">
         <div className="px-4 pt-4 space-y-3">
           <div className="skeleton h-3 w-24 rounded" />
@@ -80,7 +70,7 @@ function HeroSkeleton() {
         </div>
         <div className="skeleton h-56 w-full mt-4" />
         <div className="px-4 pt-4 space-y-3">
-          {[1,2,3,4,5].map(n => (
+          {[1, 2, 3, 4, 5].map(n => (
             <div key={n} className="flex gap-3 py-2">
               <div className="skeleton w-[72px] h-16 rounded-lg flex-shrink-0" />
               <div className="flex-1 space-y-2">
@@ -94,7 +84,6 @@ function HeroSkeleton() {
         </div>
       </div>
 
-      {/* Desktop skeleton */}
       <div className="hidden md:block page-container py-6">
         <div className="grid grid-cols-3 gap-5">
           <div className="col-span-2 space-y-4">
@@ -107,10 +96,9 @@ function HeroSkeleton() {
           </div>
           <div className="space-y-0">
             <div className="skeleton h-10 w-full rounded-t-2xl" />
-            {[1,2,3,4,5].map(n => (
+            {[1, 2, 3, 4, 5].map(n => (
               <div key={n} className="flex gap-3 py-3 px-4 border-b"
-                style={{ borderColor: 'var(--border-muted)' }}
-              >
+                style={{ borderColor: 'var(--border-muted)' }}>
                 <div className="skeleton w-[72px] h-16 rounded-lg flex-shrink-0" />
                 <div className="flex-1 space-y-2 pt-1">
                   <div className="skeleton h-2.5 w-16 rounded" />
@@ -154,28 +142,36 @@ export default function Hero() {
             {main.is_breaking && (
               <span className="breaking-strip">● Breaking</span>
             )}
-            <span
-              className="cat-label"
-              style={{ color: main.category_color }}
-            >
+            <span className="cat-label" style={{ color: main.category_color }}>
               {main.category_name}
             </span>
           </div>
 
-          {/* Headline */}
+          {/*
+            THE SINGLE <h1> lives here — inside the mobile branch.
+
+            On desktop this entire div is display:none, so this H1 is
+            visually hidden. But crawlers and screen readers DO see it
+            because we use aria-hidden="true" on the desktop's purely
+            presentational heading (a <p> styled to look like H1).
+
+            Googlebot renders the full page as a single document and
+            finds exactly one <h1> in the DOM — this one.
+          */}
           <Link to={`/article/${main.slug}`} className="block w-full group">
             <h1
-              className="font-display font-black leading-tight tracking-tight"
+              className="font-display font-black leading-tight tracking-tight
+                         transition-colors duration-150
+                         group-hover:text-[var(--accent)]"
               style={{
                 fontSize: 'clamp(24px, 7vw, 32px)',
-                color:    'var(--text-primary)',
+                color: 'var(--text-primary)',
               }}
             >
               {main.title}
             </h1>
           </Link>
 
-          {/* Subtitle or excerpt */}
           {(main.subtitle || main.excerpt) && (
             <p
               className="text-sm leading-relaxed line-clamp-3"
@@ -185,15 +181,11 @@ export default function Hero() {
             </p>
           )}
 
-          {/* Meta */}
           <div
             className="flex items-center gap-3 text-xs pt-0.5"
             style={{ color: 'var(--text-muted)' }}
           >
-            <span
-              className="font-semibold"
-              style={{ color: 'var(--text-secondary)' }}
-            >
+            <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
               {main.author_name}
             </span>
             <span className="flex items-center gap-1">
@@ -227,32 +219,28 @@ export default function Hero() {
                 width={800}
                 height={440}
               />
-            : <div
-                className="w-full h-full"
-                style={{ background: 'var(--bg-muted)' }}
-              />
+            : <div className="w-full h-full" style={{ background: 'var(--bg-muted)' }} />
           }
 
-          {/* Watermark */}
           <div
             className="absolute inset-0 flex items-center justify-center
                        pointer-events-none overflow-hidden"
+            aria-hidden="true"
           >
             <span
               className="font-display font-bold uppercase
                          select-none whitespace-nowrap"
               style={{
-                fontSize:      '100px',
+                fontSize: '100px',
                 letterSpacing: '-0.04em',
-                color:         'rgba(255,255,255,0.06)',
-                lineHeight:    '1',
+                color: 'rgba(255,255,255,0.06)',
+                lineHeight: '1',
               }}
             >
               {main.category_name}
             </span>
           </div>
 
-          {/* Gradient + button */}
           <div
             className="absolute bottom-0 left-0 right-0 p-4"
             style={{
@@ -263,10 +251,7 @@ export default function Hero() {
               className="inline-flex items-center gap-2 text-xs font-bold
                          tracking-wide uppercase px-4 py-2 rounded-lg
                          transition-all duration-200 group-hover:gap-3"
-              style={{
-                background: 'var(--accent)',
-                color:      '#fff',
-              }}
+              style={{ background: 'var(--accent)', color: '#fff' }}
             >
               <BookOpen size={12} />
               Read Full Article
@@ -278,7 +263,7 @@ export default function Hero() {
           </div>
         </Link>
 
-        {/* Top stories list */}
+        {/* Top stories */}
         <div className="px-4" style={{ background: 'var(--bg)' }}>
           <div className="flex items-center justify-between pt-4 pb-1">
             <span className="section-label">Top Stories</span>
@@ -291,7 +276,6 @@ export default function Hero() {
               All News <ArrowRight size={11} />
             </Link>
           </div>
-
           <div>
             {highlights.map((article, i) => (
               <div
@@ -326,16 +310,32 @@ export default function Hero() {
                 </span>
               </div>
 
-              <Link to={`/article/${main.slug}`} className="block w-full group">
-                <h1
-                  className="font-display font-black leading-tight tracking-tight"
+              {/*
+                Desktop headline: visually identical to an H1 but rendered as
+                a <p> with aria-hidden="true" so the document has exactly ONE
+                <h1> (the one in the mobile branch above).
+
+                aria-hidden removes this from the accessibility tree entirely,
+                so screen readers announce only the real H1.
+                Googlebot sees one H1 in the serialised DOM — correct for SEO.
+              */}
+              <Link
+                to={`/article/${main.slug}`}
+                className="block w-full group"
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <p
+                  className="font-display font-black leading-tight tracking-tight
+                             transition-colors duration-150
+                             group-hover:text-[var(--accent)]"
                   style={{
                     fontSize: 'clamp(28px, 3vw, 44px)',
-                    color:    'var(--text-primary)',
+                    color: 'var(--text-primary)',
                   }}
                 >
                   {main.title}
-                </h1>
+                </p>
               </Link>
 
               {(main.subtitle || main.excerpt) && (
@@ -375,6 +375,7 @@ export default function Hero() {
               </div>
             </div>
 
+            {/* Cover image */}
             <Link
               to={`/article/${main.slug}`}
               className="block relative rounded-2xl overflow-hidden group flex-1"
@@ -397,14 +398,15 @@ export default function Hero() {
               <div
                 className="absolute inset-0 flex items-center justify-center
                            pointer-events-none overflow-hidden"
+                aria-hidden="true"
               >
                 <span
                   className="font-display font-bold uppercase select-none whitespace-nowrap"
                   style={{
-                    fontSize:      'clamp(80px, 12vw, 140px)',
+                    fontSize: 'clamp(80px, 12vw, 140px)',
                     letterSpacing: '-0.04em',
-                    color:         'rgba(255,255,255,0.05)',
-                    lineHeight:    '1',
+                    color: 'rgba(255,255,255,0.05)',
+                    lineHeight: '1',
                   }}
                 >
                   {main.category_name}
@@ -434,12 +436,12 @@ export default function Hero() {
             </Link>
           </div>
 
-          {/* Right — today's highlights sidebar */}
+          {/* Right — highlights sidebar */}
           <div
             className="flex flex-col rounded-2xl overflow-hidden"
             style={{
               background: 'var(--bg-surface)',
-              border:     '1px solid var(--border)',
+              border: '1px solid var(--border)',
             }}
           >
             <div
@@ -462,7 +464,7 @@ export default function Hero() {
                 <div
                   key={article.id}
                   style={{
-                    borderBottom: i < highlights.length -1
+                    borderBottom: i < highlights.length - 1
                       ? '1px solid var(--border-muted)' : 'none',
                   }}
                 >
