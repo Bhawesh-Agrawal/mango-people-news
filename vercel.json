@@ -6,7 +6,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(bot|crawler|spider|googlebot|googlebot-news|googlebot-image|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
+          "value": "(?i).*(bot|crawler|spider|googlebot|googlebot-news|googlebot-image|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
         }
       ],
       "destination": "https://api.mangopeoplenews.com/meta/article/:slug"
@@ -17,19 +17,20 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(bot|crawler|spider|googlebot|googlebot-news|googlebot-image|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|googlebot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
+          "value": "(?i).*(bot|crawler|spider|googlebot|googlebot-news|googlebot-image|facebookexternalhit|twitterbot|whatsapp|telegram|linkedinbot|slackbot|discordbot|bingbot|applebot|ia_archiver|rogerbot|embedly|quora|outbrain|pinterest|vkshare|w3c_validator|showyoubot|flipboard|nuzzel|viber|skype|Line|MSNBot|DuckDuckBot|Baiduspider|YandexBot|Sogou|Exabot|facebot).*"
         }
       ],
       "destination": "https://api.mangopeoplenews.com/meta/category/:slug"
     },
+
+    { "source": "/sitemap.xml",          "destination": "/api/sitemap-index"    },
+    { "source": "/sitemap-static.xml",   "destination": "/api/sitemap-static"   },
     {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "source": "/sitemap-:slug.xml",
+      "destination": "/api/sitemap-category?slug=:slug"
     },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {

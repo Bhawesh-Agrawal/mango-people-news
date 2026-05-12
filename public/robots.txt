@@ -1,5 +1,4 @@
 # Mango People News — robots.txt
-# Sitemap is auto-generated during build
 
 User-agent: *
 Allow: /
@@ -14,8 +13,87 @@ Disallow: /auth/
 Disallow: /verify-email
 Disallow: /magic
 
-# Block search result pages (thin content, not useful in Google index)
+# Block search result pages (thin content)
 Disallow: /search
 
-# Dynamic sitemap URL
-Sitemap: https://mangopeoplenews.com/sitemap.xml
+# ── Sitemap index (links to all sub-sitemaps) ─────────────────────
+Sitemap: https://www.mangopeoplenews.com/sitemap.xml
+
+# ── Block AI training crawlers ────────────────────────────────────
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Perplexity-User
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: TurnitinBot
+Disallow: /
+
+User-agent: magpie-crawler
+Disallow: /
+
+User-agent: omgili
+Disallow: /
+
+User-agent: omgilibot
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Google-CloudVertexBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
+User-agent: YouBot
+Disallow: /
+
+User-agent: TavilyBot
+Disallow: /
+
+User-agent: FirecrawlAgent
+Disallow: /
+
+User-agent: Scrapy
+Disallow: /
