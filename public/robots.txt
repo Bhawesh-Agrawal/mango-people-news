@@ -18,6 +18,14 @@ Disallow: /search
 
 # ── Sitemap index (links to all sub-sitemaps) ─────────────────────
 Sitemap: https://www.mangopeoplenews.com/sitemap.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-static.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-economy.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-business.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-market.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-personal-finance.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-technology.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-health-well-being.xml
+
 
 # ── Block AI training crawlers ────────────────────────────────────
 User-agent: GPTBot
