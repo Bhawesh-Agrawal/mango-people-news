@@ -3,6 +3,7 @@ import { Clock, Eye, ArrowRight, BookOpen } from 'lucide-react'
 import { useArticles } from '../../hooks/useArticles'
 import { timeAgo, formatCount, truncate } from '../../lib/utils'
 import type { Article } from '../../types'
+import { applyCropStyle } from '../../pages/Coverimageeditor'
 
 // ── Cloudinary URL optimizer ───────────────────────────────────────
 function cloudinaryUrl(url: string, width: number, height: number): string {
@@ -13,20 +14,71 @@ function cloudinaryUrl(url: string, width: number, height: number): string {
   )
 }
 
+// ── Consistent cover renderer ─────────────────────────────────────
+/**
+ * Renders a cover image at a guaranteed 16:9 aspect ratio,
+ * applying the author's crop settings uniformly.
+ */
+function CoverImage({
+  article,
+  cloudW,
+  cloudH,
+  className = '',
+  eager = false,
+}: {
+  article:   Article
+  cloudW:    number
+  cloudH:    number
+  className?: string
+  eager?:    boolean
+}) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
+  return (
+    <div
+      className={`w-full overflow-hidden ${className}`}
+      style={{ ...styles.container, aspectRatio: '16 / 9' }}
+    >
+      {article.cover_image ? (
+        <img
+          src={cloudinaryUrl(article.cover_image, cloudW, cloudH)}
+          alt={article.title}
+          className="transition-transform duration-700 group-hover:scale-105"
+          loading={eager ? 'eager' : 'lazy'}
+          fetchPriority={eager ? 'high' : undefined}
+          width={cloudW}
+          height={cloudH}
+          style={styles.img}
+          draggable={false}
+        />
+      ) : (
+        <div className="w-full h-full" style={{ background: 'var(--bg-muted)' }} />
+      )}
+    </div>
+  )
+}
+
 // ── Article Row ───────────────────────────────────────────────────
 function ArticleRow({ article }: { article: Article }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
   return (
     <Link to={`/article/${article.slug}`} className="flex gap-3 group py-2">
       {article.cover_image && (
-        <div className="flex-shrink-0 w-[72px] h-16 rounded-lg overflow-hidden">
+        <div
+          className="flex-shrink-0 rounded-lg overflow-hidden"
+          style={{ ...styles.container, width: '72px', height: '54px' }}
+        >
           <img
-            src={cloudinaryUrl(article.cover_image, 144, 128)}
+            src={cloudinaryUrl(article.cover_image, 144, 108)}
             alt={article.title}
-            className="w-full h-full object-cover transition-transform
-                       duration-500 group-hover:scale-105"
+            className="transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             width={144}
-            height={128}
+            height={108}
+            style={styles.img}
           />
         </div>
       )}
@@ -68,11 +120,12 @@ function HeroSkeleton() {
           <div className="skeleton h-4 w-full rounded" />
           <div className="skeleton h-4 w-3/4 rounded" />
         </div>
-        <div className="skeleton h-56 w-full mt-4" />
+        {/* 16:9 aspect ratio skeleton */}
+        <div className="skeleton w-full mt-4" style={{ aspectRatio: '16/9' }} />
         <div className="px-4 pt-4 space-y-3">
           {[1, 2, 3, 4, 5].map(n => (
             <div key={n} className="flex gap-3 py-2">
-              <div className="skeleton w-[72px] h-16 rounded-lg flex-shrink-0" />
+              <div className="skeleton w-[72px] h-[54px] rounded-lg flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="skeleton h-2.5 w-16 rounded" />
                 <div className="skeleton h-4 w-full rounded" />
@@ -92,14 +145,15 @@ function HeroSkeleton() {
             <div className="skeleton h-10 w-3/4 rounded" />
             <div className="skeleton h-4 w-full rounded" />
             <div className="skeleton h-4 w-5/6 rounded" />
-            <div className="skeleton h-[340px] w-full rounded-2xl" />
+            {/* 16:9 skeleton */}
+            <div className="skeleton w-full rounded-2xl" style={{ aspectRatio: '16/9' }} />
           </div>
           <div className="space-y-0">
             <div className="skeleton h-10 w-full rounded-t-2xl" />
             {[1, 2, 3, 4, 5].map(n => (
               <div key={n} className="flex gap-3 py-3 px-4 border-b"
                 style={{ borderColor: 'var(--border-muted)' }}>
-                <div className="skeleton w-[72px] h-16 rounded-lg flex-shrink-0" />
+                <div className="skeleton w-[72px] h-[54px] rounded-lg flex-shrink-0" />
                 <div className="flex-1 space-y-2 pt-1">
                   <div className="skeleton h-2.5 w-16 rounded" />
                   <div className="skeleton h-4 w-full rounded" />
@@ -137,7 +191,6 @@ export default function Hero() {
           className="px-4 pt-5 pb-4 space-y-3"
           style={{ background: 'var(--bg-surface)' }}
         >
-          {/* Badges */}
           <div className="flex items-center gap-2">
             {main.is_breaking && (
               <span className="breaking-strip">● Breaking</span>
@@ -147,17 +200,6 @@ export default function Hero() {
             </span>
           </div>
 
-          {/*
-            THE SINGLE <h1> lives here — inside the mobile branch.
-
-            On desktop this entire div is display:none, so this H1 is
-            visually hidden. But crawlers and screen readers DO see it
-            because we use aria-hidden="true" on the desktop's purely
-            presentational heading (a <p> styled to look like H1).
-
-            Googlebot renders the full page as a single document and
-            finds exactly one <h1> in the DOM — this one.
-          */}
           <Link to={`/article/${main.slug}`} className="block w-full group">
             <h1
               className="font-display font-black leading-tight tracking-tight
@@ -202,25 +244,12 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Cover image — full bleed */}
+        {/* Cover image — full bleed, 16:9 enforced */}
         <Link
           to={`/article/${main.slug}`}
           className="block w-full relative overflow-hidden group"
-          style={{ height: '220px' }}
         >
-          {main.cover_image
-            ? <img
-                src={cloudinaryUrl(main.cover_image, 800, 440)}
-                alt={main.title}
-                className="w-full h-full object-cover transition-transform
-                           duration-700 group-hover:scale-105"
-                loading="eager"
-                fetchPriority="high"
-                width={800}
-                height={440}
-              />
-            : <div className="w-full h-full" style={{ background: 'var(--bg-muted)' }} />
-          }
+          <CoverImage article={main} cloudW={800} cloudH={450} eager />
 
           <div
             className="absolute inset-0 flex items-center justify-center
@@ -310,15 +339,6 @@ export default function Hero() {
                 </span>
               </div>
 
-              {/*
-                Desktop headline: visually identical to an H1 but rendered as
-                a <p> with aria-hidden="true" so the document has exactly ONE
-                <h1> (the one in the mobile branch above).
-
-                aria-hidden removes this from the accessibility tree entirely,
-                so screen readers announce only the real H1.
-                Googlebot sees one H1 in the serialised DOM — correct for SEO.
-              */}
               <Link
                 to={`/article/${main.slug}`}
                 className="block w-full group"
@@ -375,25 +395,18 @@ export default function Hero() {
               </div>
             </div>
 
-            {/* Cover image */}
+            {/* Cover image — 16:9 enforced */}
             <Link
               to={`/article/${main.slug}`}
               className="block relative rounded-2xl overflow-hidden group flex-1"
-              style={{ minHeight: '240px' }}
             >
-              {main.cover_image
-                ? <img
-                    src={cloudinaryUrl(main.cover_image, 1330, 680)}
-                    alt={main.title}
-                    className="w-full h-full object-cover transition-transform
-                               duration-700 group-hover:scale-105"
-                    loading="eager"
-                    fetchPriority="high"
-                    width={1330}
-                    height={680}
-                  />
-                : <div className="w-full h-full" style={{ background: 'var(--bg-muted)' }} />
-              }
+              <CoverImage
+                article={main}
+                cloudW={1330}
+                cloudH={748}
+                className="rounded-2xl"
+                eager
+              />
 
               <div
                 className="absolute inset-0 flex items-center justify-center

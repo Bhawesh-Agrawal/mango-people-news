@@ -5,6 +5,7 @@ export interface Article {
   subtitle?:      string
   excerpt:        string
   cover_image?:   string
+  cover_crop?: CoverCrop | null
   reading_time:   number
   view_count:     number
   like_count:     number
@@ -20,12 +21,19 @@ export interface Article {
   body?:          string
   ai_summary?:    string
   tags?:          Tag[]
+
 }
 
 export interface Tag {
   id:   string
   name: string
   slug: string
+}
+
+export interface CoverCrop {
+  x:    number 
+  y:    number   
+  zoom: number   
 }
 
 export interface Category {

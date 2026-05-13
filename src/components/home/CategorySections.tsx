@@ -5,18 +5,48 @@ import { useArticles } from '../../hooks/useArticles'
 import { timeAgo, formatCount } from '../../lib/utils'
 import type { Article, Category } from '../../types'
 import MarketTicker from '../ui/MarketTicker'
+import { applyCropStyle } from '../../pages/Coverimageeditor'
+
+// ── Consistent cover image ────────────────────────────────────────
+/**
+ * All article thumbnails across CategorySections use this component.
+ * It enforces 16:9 and applies the author's crop settings.
+ */
+function ArticleCover({
+  article,
+  className = '',
+}: {
+  article:    Article
+  className?: string
+}) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
+  return (
+    <div
+      className={`w-full rounded-lg overflow-hidden ${className}`}
+      style={{ ...styles.container, aspectRatio: '16 / 9' }}
+    >
+      <img
+        src={article.cover_image!}
+        alt={article.title}
+        className="transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+        style={styles.img}
+      />
+    </div>
+  )
+}
 
 // ══════════════════════════════════════════════════════════════════
 // DIVIDERS
 // ══════════════════════════════════════════════════════════════════
 const ColDivider = () => (
   <>
-    {/* Vertical line — desktop only */}
     <div
       className="hidden md:block w-px self-stretch flex-shrink-0"
       style={{ background: 'var(--border-muted)' }}
     />
-    {/* Horizontal line — mobile only, between stacked articles */}
     <div
       className="block md:hidden w-full h-px my-6"
       style={{ background: 'var(--border-muted)' }}
@@ -61,8 +91,6 @@ function Meta({ article }: { article: Article }) {
 
 // ══════════════════════════════════════════════════════════════════
 // ARTICLE CELL
-// reserveBadge — reserves space even if not breaking
-// so headlines align in multi-col rows
 // ══════════════════════════════════════════════════════════════════
 function ArticleCell({
   article,
@@ -79,15 +107,13 @@ function ArticleCell({
                    'clamp(14px, 1.8vw, 17px)'
 
   const excerptLines = size === 'lg' ? 4 : size === 'md' ? 3 : 2
-  const imgHeight    = size === 'lg' ? 240 : size === 'md' ? 180 : 140
 
   return (
     <Link
       to={`/article/${article.slug}`}
       className="group flex flex-col h-full"
     >
-      {/* Badge row — always reserves height in multi-col layouts
-          so headlines start at the same level across columns     */}
+      {/* Badge row */}
       {(article.is_breaking || reserveBadge) && (
         <div className="mb-2.5" style={{ minHeight: '22px' }}>
           {article.is_breaking && (
@@ -133,21 +159,11 @@ function ArticleCell({
       {/* Meta */}
       <Meta article={article} />
 
-      {/* Image OR newspaper-style content — no special background */}
+      {/* Image — always 16:9 via ArticleCover */}
       <div className="mt-4 flex-1">
         {article.cover_image ? (
-          <div className="w-full rounded-lg overflow-hidden"
-            style={{ height: `${imgHeight}px` }}>
-            <img
-              src={article.cover_image}
-              alt={article.title}
-              className="w-full h-full object-cover transition-transform
-                         duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
-          </div>
+          <ArticleCover article={article} />
         ) : (
-          // No image — extend content naturally, no box, no bg
           <div>
             {article.body && (
               <p
@@ -197,32 +213,53 @@ function ArticleCell({
 
 // Small stacked card — for 4+ layout right column
 function SmallStackCard({ article }: { article: Article }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
   return (
     <Link
       to={`/article/${article.slug}`}
-      className="group py-3 flex flex-col"
+      className="group py-3 flex gap-3"
       style={{ borderBottom: '1px solid var(--border-muted)' }}
     >
-      <h4
-        className="font-display font-bold leading-tight tracking-tight
-                   line-clamp-2 transition-colors duration-150
-                   group-hover:text-[var(--accent)]"
-        style={{ fontSize: '15px', color: 'var(--text-primary)' }}
-      >
-        {article.title}
-      </h4>
-      {article.excerpt && (
-        <p className="text-xs leading-relaxed mt-1 line-clamp-2"
-          style={{ color: 'var(--text-secondary)' }}>
-          {article.excerpt}
-        </p>
+      {/* Thumbnail — 16:9, small */}
+      {article.cover_image && (
+        <div
+          className="flex-shrink-0 rounded-lg overflow-hidden"
+          style={{ ...styles.container, width: '72px', height: '40px' }}
+        >
+          <img
+            src={article.cover_image}
+            alt={article.title}
+            loading="lazy"
+            className="transition-transform duration-300 group-hover:scale-105"
+            style={styles.img}
+          />
+        </div>
       )}
-      <div className="flex items-center gap-1.5 text-[11px] mt-1.5"
-        style={{ color: 'var(--text-muted)' }}>
-        <Clock size={10} />
-        {timeAgo(article.published_at)}
-        <span>·</span>
-        {article.reading_time} min
+
+      <div className="flex-1 min-w-0">
+        <h4
+          className="font-display font-bold leading-tight tracking-tight
+                     line-clamp-2 transition-colors duration-150
+                     group-hover:text-[var(--accent)]"
+          style={{ fontSize: '15px', color: 'var(--text-primary)' }}
+        >
+          {article.title}
+        </h4>
+        {article.excerpt && (
+          <p className="text-xs leading-relaxed mt-1 line-clamp-2"
+            style={{ color: 'var(--text-secondary)' }}>
+            {article.excerpt}
+          </p>
+        )}
+        <div className="flex items-center gap-1.5 text-[11px] mt-1.5"
+          style={{ color: 'var(--text-muted)' }}>
+          <Clock size={10} />
+          {timeAgo(article.published_at)}
+          <span>·</span>
+          {article.reading_time} min
+        </div>
       </div>
     </Link>
   )
@@ -232,75 +269,45 @@ function SmallStackCard({ article }: { article: Article }) {
 // LAYOUTS
 // ══════════════════════════════════════════════════════════════════
 
-// 1 article — 100% full width
 function Layout1({ articles }: { articles: Article[] }) {
   return <ArticleCell article={articles[0]} size="lg" />
 }
 
-// 2 articles — 50% | 50%
 function Layout2({ articles }: { articles: Article[] }) {
   const anyBreaking = articles.slice(0, 2).some(a => a.is_breaking)
   return (
     <div className="flex flex-col md:flex-row gap-0 md:gap-8 items-stretch">
       <div className="flex-1">
-        <ArticleCell
-          article={articles[0]}
-          size="md"
-          reserveBadge={anyBreaking}
-        />
+        <ArticleCell article={articles[0]} size="md" reserveBadge={anyBreaking} />
       </div>
       <ColDivider />
       <div className="flex-1">
-        <ArticleCell
-          article={articles[1]}
-          size="md"
-          reserveBadge={anyBreaking}
-        />
+        <ArticleCell article={articles[1]} size="md" reserveBadge={anyBreaking} />
       </div>
     </div>
   )
 }
 
-// 3 articles — full width top + two halves bottom
 function Layout3({ articles }: { articles: Article[] }) {
   const anyBreakingBottom = [articles[1], articles[2]].some(a => a.is_breaking)
   return (
     <div>
-      {/* Top — full width */}
       <ArticleCell article={articles[0]} size="lg" />
-
       <RowDivider />
-
-      {/* Bottom — two halves */}
       <div className="flex flex-col md:flex-row gap-0 md:gap-8 items-stretch">
         <div className="flex-1">
-          <ArticleCell
-            article={articles[1]}
-            size="md"
-            reserveBadge={anyBreakingBottom}
-          />
+          <ArticleCell article={articles[1]} size="md" reserveBadge={anyBreakingBottom} />
         </div>
         <ColDivider />
         <div className="flex-1">
-          <ArticleCell
-            article={articles[2]}
-            size="md"
-            reserveBadge={anyBreakingBottom}
-          />
+          <ArticleCell article={articles[2]} size="md" reserveBadge={anyBreakingBottom} />
         </div>
       </div>
     </div>
   )
 }
 
-// 4+ articles — full width top + left article | right article + stacked smalls
-function Layout4Plus({
-  articles,
-  flip,
-}: {
-  articles: Article[]
-  flip:     boolean
-}) {
+function Layout4Plus({ articles, flip }: { articles: Article[]; flip: boolean }) {
   const bottomLeft      = flip ? articles[2] : articles[1]
   const bottomRight     = flip ? articles[1] : articles[2]
   const stacked         = articles.slice(3)
@@ -308,32 +315,15 @@ function Layout4Plus({
 
   return (
     <div>
-      {/* Top — full width */}
       <ArticleCell article={articles[0]} size="lg" />
-
       <RowDivider />
-
-      {/* Bottom — two halves */}
       <div className="flex flex-col md:flex-row gap-0 md:gap-8 items-start">
-
-        {/* Left half */}
         <div className="flex-1">
-          <ArticleCell
-            article={bottomLeft}
-            size="md"
-            reserveBadge={anyBreakingBot}
-          />
+          <ArticleCell article={bottomLeft} size="md" reserveBadge={anyBreakingBot} />
         </div>
-
         <ColDivider />
-
-        {/* Right half — article + stacked smalls */}
         <div className="flex-1 flex flex-col">
-          <ArticleCell
-            article={bottomRight}
-            size="md"
-            reserveBadge={anyBreakingBot}
-          />
+          <ArticleCell article={bottomRight} size="md" reserveBadge={anyBreakingBot} />
           {stacked.length > 0 && (
             <div
               className="mt-5 pt-5"
@@ -369,7 +359,8 @@ function BlockSkeleton() {
         <div className="skeleton h-4 w-full rounded" />
         <div className="skeleton h-4 w-3/4 rounded" />
         <div className="skeleton h-3 w-32 rounded" />
-        <div className="skeleton rounded-lg w-full" style={{ height: '220px' }} />
+        {/* 16:9 skeleton */}
+        <div className="skeleton rounded-lg w-full" style={{ aspectRatio: '16/9' }} />
       </div>
     </div>
   )
@@ -378,13 +369,7 @@ function BlockSkeleton() {
 // ══════════════════════════════════════════════════════════════════
 // CATEGORY BLOCK
 // ══════════════════════════════════════════════════════════════════
-function CategoryBlock({
-  category,
-  index,
-}: {
-  category: Category
-  index:    number
-}) {
+function CategoryBlock({ category, index }: { category: Category; index: number }) {
   const { articles, loading } = useArticles({
     category: category.slug,
     limit:    6,
@@ -445,10 +430,8 @@ function CategoryBlock({
         </Link>
       </div>
 
-      {/* Markets: ticker first */}
       {isMarkets && <MarketTicker />}
 
-      {/* Layout by article count */}
       {count === 1 && <Layout1 articles={articles} />}
       {count === 2 && <Layout2 articles={articles} />}
       {count === 3 && <Layout3 articles={articles} />}

@@ -1,5 +1,5 @@
 import {
-  useReducer, useEffect, useRef, useCallback, useState,
+  useState, useEffect, useRef, useCallback, useReducer,
 } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
@@ -20,12 +20,13 @@ import {
   ChevronDown, ChevronUp, Upload, X, Save,
   Globe, AlertTriangle, Loader2, Eye, Trash2,
   ArrowLeft, Zap, Star, RefreshCw, ShieldAlert, CheckCircle2,
-  Move, Clock,
+  Clock,
 } from 'lucide-react'
 
 import { client }  from '../api/client'
 import { useAuth } from '../context/AuthContext'
-import { Link } from 'react-router-dom'
+import { Link }    from 'react-router-dom'
+import CoverImageEditor, { DEFAULT_CROP, type CoverCrop } from '../pages/Coverimageeditor'
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ interface ArticleForm {
   excerpt:          string
   category_id:      string
   cover_image:      string
-  cover_position:   string
+  cover_crop:       CoverCrop
   status:           'draft' | 'published' | 'archived' | 'review'
   is_featured:      boolean
   is_breaking:      boolean
@@ -73,7 +74,8 @@ function generateSlug(title: string): string {
 
 const INITIAL_FORM: ArticleForm = {
   title: '', subtitle: '', slug: '', body: '', excerpt: '',
-  category_id: '', cover_image: '', cover_position: '50% 50%',
+  category_id: '', cover_image: '',
+  cover_crop: { ...DEFAULT_CROP },
   status: 'draft', is_featured: false, is_breaking: false,
   meta_title: '', meta_description: '', tag_ids: [],
 }
@@ -162,8 +164,8 @@ function Toolbar({
         background: 'var(--bg-subtle)',
         border:     '1px solid var(--border)',
         position:   'sticky',
-        top: 0,
-        zIndex: 10,
+        top:        0,
+        zIndex:     10,
       }}
     >
       <ToolBtn onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo"><Undo size={14} /></ToolBtn>
@@ -180,7 +182,7 @@ function Toolbar({
       <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()}  active={editor.isActive('bulletList')}  title="Bullet list"><List size={14} /></ToolBtn>
       <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Ordered list"><ListOrdered size={14} /></ToolBtn>
       {sep}
-      <ToolBtn onClick={setLink}  active={editor.isActive('link')} title="Link"><LinkIcon size={14} /></ToolBtn>
+      <ToolBtn onClick={setLink} active={editor.isActive('link')} title="Link"><LinkIcon size={14} /></ToolBtn>
       <ToolBtn
         onClick={() => !imageUploading && imgInputRef.current?.click()}
         disabled={imageUploading}
@@ -207,113 +209,6 @@ function Toolbar({
   )
 }
 
-// ── Cover position presets ─────────────────────────────────────
-
-const POSITION_PRESETS = [
-  { label: 'Top Left',    value: '0% 0%',    title: '↖' },
-  { label: 'Top Center',  value: '50% 0%',   title: '↑' },
-  { label: 'Top Right',   value: '100% 0%',  title: '↗' },
-  { label: 'Center',      value: '50% 50%',  title: '⊕' },
-  { label: 'Bottom Left', value: '0% 100%',  title: '↙' },
-  { label: 'Bottom Ctr',  value: '50% 100%', title: '↓' },
-  { label: 'Bottom Right',value: '100% 100%',title: '↘' },
-] as const
-
-// ── Cover Position Picker ─────────────────────────────────────
-
-function CoverPositionPicker({
-  imageUrl,
-  position,
-  onChange,
-}: {
-  imageUrl: string
-  position: string
-  onChange: (pos: string) => void
-}) {
-  const padRef   = useRef<HTMLDivElement>(null)
-  const dragging = useRef(false)
-
-  const [px, py] = position.split(' ').map(v => parseFloat(v))
-
-  const computePos = (clientX: number, clientY: number) => {
-    const rect = padRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width)  * 100))
-    const y = Math.max(0, Math.min(100, ((clientY - rect.top)  / rect.height) * 100))
-    onChange(`${Math.round(x)}% ${Math.round(y)}%`)
-  }
-
-  const onMouseDown = (e: React.MouseEvent) => { dragging.current = true; computePos(e.clientX, e.clientY); e.preventDefault() }
-  const onMouseMove = (e: React.MouseEvent) => { if (dragging.current) computePos(e.clientX, e.clientY) }
-  const onMouseUp   = () => { dragging.current = false }
-
-  const onTouchStart = (e: React.TouchEvent) => { dragging.current = true; computePos(e.touches[0].clientX, e.touches[0].clientY) }
-  const onTouchMove  = (e: React.TouchEvent) => { if (dragging.current) computePos(e.touches[0].clientX, e.touches[0].clientY) }
-  const onTouchEnd   = () => { dragging.current = false }
-
-  return (
-    <div className="mt-3 space-y-3">
-      <div className="flex items-center gap-1.5">
-        <Move size={11} style={{ color: 'var(--text-muted)' }} />
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          Focal Point
-        </span>
-        <span className="text-[10px] ml-auto font-mono" style={{ color: 'var(--text-muted)' }}>
-          {position}
-        </span>
-      </div>
-      <div
-        ref={padRef}
-        className="relative rounded-xl overflow-hidden cursor-crosshair select-none"
-        style={{ height: 120, border: '1px solid var(--border)' }}
-        onMouseDown={onMouseDown} onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}    onMouseLeave={onMouseUp}
-        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-      >
-        <img
-          src={imageUrl} alt="Cover focal point" draggable={false}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position, pointerEvents: 'none', userSelect: 'none' }}
-        />
-        <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.18)' }} />
-        <div
-          className="absolute w-5 h-5 rounded-full border-2 border-white shadow-lg"
-          style={{ left: `${px}%`, top: `${py}%`, transform: 'translate(-50%, -50%)', background: 'rgba(255,255,255,0.25)', pointerEvents: 'none', transition: dragging.current ? 'none' : 'left 0.08s, top 0.08s' }}
-        />
-        <div className="absolute bottom-2 left-0 right-0 flex justify-center" style={{ pointerEvents: 'none' }}>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}>
-            Drag to set focal point
-          </span>
-        </div>
-      </div>
-      <div className="grid grid-cols-4 gap-1.5">
-        {POSITION_PRESETS.map(p => {
-          const active = position === p.value
-          return (
-            <button
-              key={p.value} type="button" onClick={() => onChange(p.value)} title={p.label}
-              className="py-1.5 rounded-lg text-sm font-bold transition-all"
-              style={{ background: active ? 'var(--accent)' : 'var(--bg)', color: active ? '#fff' : 'var(--text-muted)', border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}` }}
-            >
-              {p.title}
-            </button>
-          )
-        })}
-      </div>
-      <div>
-        <p className="text-[10px] mb-1.5 font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-          Frontend Preview
-        </p>
-        <div className="rounded-xl overflow-hidden" style={{ height: 80, border: '1px solid var(--border)' }}>
-          <img src={imageUrl} alt="Frontend preview" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: position }} />
-        </div>
-        <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>
-          This is exactly how the cover will appear cropped on article cards.
-        </p>
-      </div>
-    </div>
-  )
-}
-
 // ── Read-only preview (authors viewing a review article) ──────
 
 function ReviewReadOnlyView({
@@ -325,7 +220,6 @@ function ReviewReadOnlyView({
 }) {
   return (
     <div style={{ color: 'var(--text-primary)' }}>
-      {/* Back button */}
       <button
         onClick={onBack}
         className="flex items-center gap-2 mb-5 text-sm font-medium
@@ -335,7 +229,6 @@ function ReviewReadOnlyView({
         <ArrowLeft size={15} /> Back to articles
       </button>
 
-      {/* Review banner */}
       <div
         className="flex items-start gap-3 px-4 py-3.5 rounded-xl mb-6 text-sm"
         style={{
@@ -357,12 +250,10 @@ function ReviewReadOnlyView({
         </div>
       </div>
 
-      {/* Article preview */}
       <div
         className="rounded-2xl p-6 sm:p-8 max-w-3xl"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
       >
-        {/* Category badge */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           {form.is_breaking && (
             <span
@@ -384,22 +275,26 @@ function ReviewReadOnlyView({
           </span>
         </div>
 
-        {/* Cover image */}
         {form.cover_image && (
-          <div className="rounded-xl overflow-hidden mb-6" style={{ height: 240 }}>
+          <div
+            className="rounded-xl overflow-hidden mb-6"
+            style={{ aspectRatio: '16/9' }}
+          >
             <img
               src={form.cover_image}
               alt="Cover"
               style={{
-                width: '100%', height: '100%',
-                objectFit: 'cover',
-                objectPosition: form.cover_position,
+                width:           '100%',
+                height:          '100%',
+                objectFit:       'cover',
+                objectPosition:  `${form.cover_crop.x}% ${form.cover_crop.y}%`,
+                transform:       `scale(${form.cover_crop.zoom})`,
+                transformOrigin: `${form.cover_crop.x}% ${form.cover_crop.y}%`,
               }}
             />
           </div>
         )}
 
-        {/* Title */}
         <h1
           className="text-2xl sm:text-3xl font-black leading-tight mb-2"
           style={{ color: 'var(--text-primary)' }}
@@ -407,14 +302,12 @@ function ReviewReadOnlyView({
           {form.title || <span style={{ opacity: 0.3 }}>Untitled</span>}
         </h1>
 
-        {/* Subtitle */}
         {form.subtitle && (
           <p className="text-base mb-5" style={{ color: 'var(--text-secondary)' }}>
             {form.subtitle}
           </p>
         )}
 
-        {/* Excerpt */}
         {form.excerpt && (
           <p
             className="text-sm leading-relaxed mb-6 px-4 py-3 rounded-xl italic"
@@ -428,11 +321,7 @@ function ReviewReadOnlyView({
           </p>
         )}
 
-        {/* Body */}
-        <div
-          className="prose prose-sm max-w-none"
-          style={{ color: 'var(--text-primary)' }}
-        >
+        <div className="prose prose-sm max-w-none" style={{ color: 'var(--text-primary)' }}>
           <style>{`
             .prose h2 { font-size: 1.4rem; font-weight: 800; margin: 1.5em 0 0.5em; color: var(--text-primary); }
             .prose h3 { font-size: 1.1rem; font-weight: 700; margin: 1.2em 0 0.4em; color: var(--text-primary); }
@@ -466,8 +355,7 @@ export default function AdminEditor() {
   const isAuthor     = user?.role === 'author'
   const canDelete    = !isNew
 
-  const [state, dispatch] = useReducer(reducer, { form: INITIAL_FORM, dirty: false })
-  const { form, dirty }   = state
+  const [{ form, dirty }, dispatch] = useReducer(reducer, { form: INITIAL_FORM, dirty: false })
 
   const [loadingArticle, setLoadingArticle] = useState(!isNew)
   const [loadError,      setLoadError]      = useState('')
@@ -556,7 +444,7 @@ export default function AdminEditor() {
             excerpt:          a.excerpt          ?? '',
             category_id:      a.category_id      ?? '',
             cover_image:      a.cover_image      ?? '',
-            cover_position:   a.cover_position   ?? '50% 50%',
+            cover_crop:       a.cover_crop       ?? { ...DEFAULT_CROP },
             status:           a.status           ?? 'draft',
             is_featured:      a.is_featured      ?? false,
             is_breaking:      a.is_breaking      ?? false,
@@ -628,7 +516,6 @@ export default function AdminEditor() {
     const timer = setInterval(async () => {
       if (!dirtyRef.current)    return
       if (saveInFlight.current) return
-      // Never auto-save a review article — it's locked
       if (formRef.current.status === 'review') return
 
       try { localStorage.setItem(lsKey, JSON.stringify(formRef.current)) } catch {}
@@ -685,7 +572,6 @@ export default function AdminEditor() {
           dispatch({ type: 'RESET_DIRTY' })
           clearLocalDraft()
           setSaveStatus('saved')
-          // If the backend redirected to review, go back to list with toast
           if (res.data?.data?.status === 'review') {
             navigate('/admin/editor?submitted=review', { replace: true })
             return
@@ -697,7 +583,6 @@ export default function AdminEditor() {
         dispatch({ type: 'RESET_DIRTY' })
         clearLocalDraft()
         setSaveStatus('saved')
-        // If backend sent it to review, redirect to list with toast
         if (res.data?.data?.status === 'review') {
           navigate('/admin/editor?submitted=review', { replace: true })
           return
@@ -719,9 +604,9 @@ export default function AdminEditor() {
 
   // ── Publish / submit confirmation ─────────────────────────
 
-  const [serverStatus,     setServerStatus]     = useState<string>('')
+  const [serverStatus,     setServerStatus]    = useState<string>('')
   const [showPublishModal, setShowPublishModal] = useState(false)
-  const [publishIntent,    setPublishIntent]    = useState<'publish' | 'update' | 'submit'>('publish')
+  const [publishIntent,    setPublishIntent]   = useState<'publish' | 'update' | 'submit'>('publish')
 
   const serverStatusSet = useRef(false)
   useEffect(() => {
@@ -744,7 +629,7 @@ export default function AdminEditor() {
 
   const confirmPublish = () => {
     setShowPublishModal(false)
-    doSave('published') // backend converts to 'review' for authors
+    doSave('published')
   }
 
   // ── Cover image upload ────────────────────────────────────
@@ -759,8 +644,9 @@ export default function AdminEditor() {
       const res = await client.post('/uploads/cover', fd, { headers: { 'Content-Type': undefined } })
       const coverUrl: string = res.data?.data?.url ?? ''
       if (!coverUrl) throw new Error('Upload succeeded but no URL was returned.')
-      dispatch({ type: 'SET_FIELD', field: 'cover_image',    value: coverUrl })
-      dispatch({ type: 'SET_FIELD', field: 'cover_position', value: '50% 50%' })
+      dispatch({ type: 'SET_FIELD', field: 'cover_image', value: coverUrl })
+      // Reset crop to center/1× whenever a new image is uploaded
+      dispatch({ type: 'SET_FIELD', field: 'cover_crop',  value: { ...DEFAULT_CROP } })
     } catch (e: any) {
       setCoverError(e?.response?.data?.message ?? e?.message ?? 'Upload failed.')
     } finally {
@@ -1156,7 +1042,6 @@ export default function AdminEditor() {
               {isAuthor ? 'Submission' : 'Publish'}
             </p>
 
-            {/* Status dropdown — authors only see draft/archived, never published */}
             {!isAuthor && (
               <label className="block mb-3">
                 <span className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>Status</span>
@@ -1173,7 +1058,6 @@ export default function AdminEditor() {
               </label>
             )}
 
-            {/* Author: show current status as a read-only badge */}
             {isAuthor && (
               <div className="mb-3 px-3 py-2 rounded-xl flex items-center gap-2"
                 style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}
@@ -1245,7 +1129,7 @@ export default function AdminEditor() {
             </select>
           </div>
 
-          {/* Cover image */}
+          {/* ── Cover image panel ── */}
           <div
             className="rounded-2xl p-4"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
@@ -1253,61 +1137,111 @@ export default function AdminEditor() {
             <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
               Cover Image
             </p>
-            {coverError && <p className="text-xs mb-2" style={{ color: 'var(--breaking)' }}>{coverError}</p>}
+
+            {coverError && (
+              <p className="text-xs mb-2" style={{ color: 'var(--breaking)' }}>{coverError}</p>
+            )}
 
             {form.cover_image ? (
               <div>
+                {/* Thumbnail header with replace / remove */}
                 <div className="relative">
-                  <div className="w-full rounded-xl overflow-hidden" style={{ height: 140 }}>
+                  <div
+                    className="w-full rounded-xl overflow-hidden"
+                    style={{ aspectRatio: '16 / 9' }}
+                  >
                     <img
-                      src={form.cover_image} alt="Cover preview"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: form.cover_position }}
+                      src={form.cover_image}
+                      alt="Cover preview"
+                      style={{
+                        width:           '100%',
+                        height:          '100%',
+                        objectFit:       'cover',
+                        objectPosition:  `${form.cover_crop.x}% ${form.cover_crop.y}%`,
+                        transform:       `scale(${form.cover_crop.zoom})`,
+                        transformOrigin: `${form.cover_crop.x}% ${form.cover_crop.y}%`,
+                      }}
                     />
                   </div>
                   <button
                     onClick={() => {
-                      dispatch({ type: 'SET_FIELD', field: 'cover_image',    value: '' })
-                      dispatch({ type: 'SET_FIELD', field: 'cover_position', value: '50% 50%' })
+                      dispatch({ type: 'SET_FIELD', field: 'cover_image', value: '' })
+                      dispatch({ type: 'SET_FIELD', field: 'cover_crop',  value: { ...DEFAULT_CROP } })
                     }}
-                    className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center justify-center transition-opacity hover:opacity-80"
+                    className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center
+                               justify-center transition-opacity hover:opacity-80"
                     style={{ background: 'rgba(0,0,0,0.55)', color: '#fff' }}
                     title="Remove cover"
                   >
                     <X size={12} />
                   </button>
                 </div>
+
                 <button
                   onClick={() => coverInputRef.current?.click()}
-                  className="mt-2 w-full py-1.5 rounded-xl text-xs font-medium transition-colors hover:bg-[var(--bg-subtle)]"
+                  className="mt-2 w-full py-1.5 rounded-xl text-xs font-medium
+                             transition-colors hover:bg-[var(--bg-subtle)]"
                   style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
                 >
                   Replace image
                 </button>
-                <CoverPositionPicker
+
+                {/* ── Crop + zoom editor ── */}
+                <CoverImageEditor
                   imageUrl={form.cover_image}
-                  position={form.cover_position}
-                  onChange={pos => dispatch({ type: 'SET_FIELD', field: 'cover_position', value: pos })}
+                  crop={form.cover_crop}
+                  onChange={newCrop =>
+                    dispatch({ type: 'SET_FIELD', field: 'cover_crop', value: newCrop })
+                  }
                 />
               </div>
             ) : (
               <div
                 onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
-                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) uploadCover(f) }}
+                onDrop={e => {
+                  e.preventDefault()
+                  setDragOver(false)
+                  const f = e.dataTransfer.files[0]
+                  if (f) uploadCover(f)
+                }}
                 onClick={() => !coverUploading && coverInputRef.current?.click()}
-                className="flex flex-col items-center justify-center gap-2 rounded-xl py-8 cursor-pointer transition-all"
-                style={{ border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`, background: dragOver ? 'var(--accent-light)' : 'var(--bg)' }}
+                className="flex flex-col items-center justify-center gap-2 rounded-xl
+                           py-8 cursor-pointer transition-all"
+                style={{
+                  border:     `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
+                  background: dragOver ? 'var(--accent-light)' : 'var(--bg)',
+                }}
               >
                 {coverUploading ? (
-                  <><Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} /><p className="text-xs" style={{ color: 'var(--text-muted)' }}>Uploading…</p></>
+                  <>
+                    <Loader2 size={20} className="animate-spin" style={{ color: 'var(--accent)' }} />
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Uploading…</p>
+                  </>
                 ) : (
-                  <><Upload size={20} style={{ color: 'var(--text-muted)' }} /><p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>Drag & drop or click to upload</p><p className="text-[11px]" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>JPEG, PNG, WebP · Max 5 MB</p></>
+                  <>
+                    <Upload size={20} style={{ color: 'var(--text-muted)' }} />
+                    <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                      Drag & drop or click to upload
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+                      JPEG, PNG, WebP · Max 5 MB
+                    </p>
+                  </>
                 )}
               </div>
             )}
+
             <input
-              ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) uploadCover(f); e.target.value = '' }}
+              ref={coverInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0]
+                if (f) uploadCover(f)
+                e.target.value = ''
+              }}
             />
           </div>
 
@@ -1322,7 +1256,10 @@ export default function AdminEditor() {
               className="w-full flex items-center justify-between px-4 py-3 transition-colors hover:bg-[var(--bg-subtle)]"
             >
               <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>SEO</p>
-              {seoOpen ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} /> : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />}
+              {seoOpen
+                ? <ChevronUp   size={14} style={{ color: 'var(--text-muted)' }} />
+                : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+              }
             </button>
             {seoOpen && (
               <div className="px-4 pb-4 space-y-3">
@@ -1339,7 +1276,10 @@ export default function AdminEditor() {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Meta description</label>
-                    <span className="text-[11px]" style={{ color: form.meta_description.length > 160 ? 'var(--breaking)' : 'var(--text-muted)' }}>
+                    <span
+                      className="text-[11px]"
+                      style={{ color: form.meta_description.length > 160 ? 'var(--breaking)' : 'var(--text-muted)' }}
+                    >
                       {form.meta_description.length}/160
                     </span>
                   </div>
@@ -1347,7 +1287,8 @@ export default function AdminEditor() {
                     value={form.meta_description}
                     onChange={e => dispatch({ type: 'SET_FIELD', field: 'meta_description', value: e.target.value })}
                     placeholder="Meta description for search engines…"
-                    rows={3} maxLength={160}
+                    rows={3}
+                    maxLength={160}
                     className="w-full px-3 py-2 rounded-xl text-sm bg-transparent outline-none resize-none"
                     style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                   />
@@ -1367,16 +1308,24 @@ export default function AdminEditor() {
                 onClick={() => setDangerOpen(v => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 transition-opacity hover:opacity-70"
               >
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--breaking)' }}>Danger zone</p>
-                {dangerOpen ? <ChevronUp size={14} style={{ color: 'var(--breaking)' }} /> : <ChevronDown size={14} style={{ color: 'var(--breaking)' }} />}
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--breaking)' }}>
+                  Danger zone
+                </p>
+                {dangerOpen
+                  ? <ChevronUp   size={14} style={{ color: 'var(--breaking)' }} />
+                  : <ChevronDown size={14} style={{ color: 'var(--breaking)' }} />
+                }
               </button>
               {dangerOpen && (
                 <div className="px-4 pb-4">
-                  {deleteError && <p className="text-xs mb-3" style={{ color: 'var(--breaking)' }}>{deleteError}</p>}
+                  {deleteError && (
+                    <p className="text-xs mb-3" style={{ color: 'var(--breaking)' }}>{deleteError}</p>
+                  )}
                   <button
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-80"
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
+                               text-sm font-semibold disabled:opacity-50 transition-opacity hover:opacity-80"
                     style={{ background: 'var(--breaking)', color: '#fff' }}
                   >
                     {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
@@ -1478,8 +1427,8 @@ export default function AdminEditor() {
                 By {publishIntent === 'submit' ? 'submitting' : publishIntent === 'update' ? 'updating' : 'publishing'} this article,{' '}
                 <strong>{user?.full_name ?? 'you'}</strong>{' '}
                 {publishIntent === 'submit'
-                  ? 'confirm that the content is ready for editorial review and meets this publication\'s standards.'
-                  : 'confirm that the content is accurate, fair, and meets this publication\'s editorial standards.'
+                  ? "confirm that the content is ready for editorial review and meets this publication's standards."
+                  : "confirm that the content is accurate, fair, and meets this publication's editorial standards."
                 }
               </div>
             </div>
@@ -1496,7 +1445,8 @@ export default function AdminEditor() {
               <button
                 onClick={confirmPublish}
                 disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 transition-opacity hover:opacity-85"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl
+                           text-sm font-bold disabled:opacity-50 transition-opacity hover:opacity-85"
                 style={{
                   background: publishIntent === 'submit'
                     ? '#d97706'
@@ -1525,20 +1475,37 @@ export default function AdminEditor() {
 
 // ── Toggle helper ──────────────────────────────────────────────
 
-function Toggle({ label, icon, checked, onChange }: { label: string; icon: React.ReactNode; checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  label, icon, checked, onChange,
+}: {
+  label:    string
+  icon:     React.ReactNode
+  checked:  boolean
+  onChange: (v: boolean) => void
+}) {
   return (
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className="flex items-center justify-between w-full px-3 py-2 rounded-xl transition-colors hover:bg-[var(--bg-subtle)]"
+      className="flex items-center justify-between w-full px-3 py-2 rounded-xl
+                 transition-colors hover:bg-[var(--bg-subtle)]"
       style={{ border: '1px solid var(--border)' }}
     >
       <div className="flex items-center gap-2">
         <span style={{ color: checked ? 'var(--accent)' : 'var(--text-muted)' }}>{icon}</span>
         <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{label}</span>
       </div>
-      <div className="w-9 h-5 rounded-full relative transition-colors flex-shrink-0" style={{ background: checked ? 'var(--accent)' : 'var(--bg-subtle)' }}>
-        <div className="absolute top-0.5 w-4 h-4 rounded-full transition-all" style={{ left: checked ? 'calc(100% - 1.1rem)' : '0.125rem', background: checked ? '#fff' : 'var(--text-muted)' }} />
+      <div
+        className="w-9 h-5 rounded-full relative transition-colors flex-shrink-0"
+        style={{ background: checked ? 'var(--accent)' : 'var(--bg-subtle)' }}
+      >
+        <div
+          className="absolute top-0.5 w-4 h-4 rounded-full transition-all"
+          style={{
+            left:       checked ? 'calc(100% - 1.1rem)' : '0.125rem',
+            background: checked ? '#fff' : 'var(--text-muted)',
+          }}
+        />
       </div>
     </button>
   )
@@ -1552,13 +1519,25 @@ function CheckItem({ text }: { text: string }) {
     <button
       type="button"
       onClick={() => setChecked(v => !v)}
-      className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl transition-colors hover:bg-[var(--bg-subtle)]"
-      style={{ border: `1px solid ${checked ? 'rgba(22,163,74,0.3)' : 'var(--border)'}`, background: checked ? 'rgba(22,163,74,0.04)' : 'transparent' }}
+      className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl
+                 transition-colors hover:bg-[var(--bg-subtle)]"
+      style={{
+        border:     `1px solid ${checked ? 'rgba(22,163,74,0.3)' : 'var(--border)'}`,
+        background: checked ? 'rgba(22,163,74,0.04)' : 'transparent',
+      }}
     >
-      <div className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all" style={{ background: checked ? '#16a34a' : 'var(--bg)', border: `1.5px solid ${checked ? '#16a34a' : 'var(--border)'}` }}>
+      <div
+        className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all"
+        style={{
+          background: checked ? '#16a34a' : 'var(--bg)',
+          border:     `1.5px solid ${checked ? '#16a34a' : 'var(--border)'}`,
+        }}
+      >
         {checked && <CheckCircle2 size={11} color="#fff" strokeWidth={3} />}
       </div>
-      <span className="text-sm" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{text}</span>
+      <span className="text-sm" style={{ color: checked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+        {text}
+      </span>
     </button>
   )
 }
