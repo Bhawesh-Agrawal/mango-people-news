@@ -213,8 +213,8 @@ function ArticleCell({
 
 // Small stacked card — for 4+ layout right column
 function SmallStackCard({ article }: { article: Article }) {
-  const crop   = article.cover_crop ?? null
-  const styles = applyCropStyle(crop)
+  /* const crop   = article.cover_crop ?? null */
+ /*  const styles = applyCropStyle(crop) */
 
   return (
     <Link
@@ -223,7 +223,7 @@ function SmallStackCard({ article }: { article: Article }) {
       style={{ borderBottom: '1px solid var(--border-muted)' }}
     >
       {/* Thumbnail — 16:9, small */}
-      {article.cover_image && (
+      {/* {article.cover_image && (
         <div
           className="flex-shrink-0 rounded-lg overflow-hidden"
           style={{ ...styles.container, width: '72px', height: '40px' }}
@@ -236,19 +236,19 @@ function SmallStackCard({ article }: { article: Article }) {
             style={styles.img}
           />
         </div>
-      )}
+      )} */}
 
       <div className="flex-1 min-w-0">
         <h4
-          className="font-display font-bold leading-tight tracking-tight
+          className="font-display font-semibold leading-tight tracking-tight
                      line-clamp-2 transition-colors duration-150
                      group-hover:text-[var(--accent)]"
-          style={{ fontSize: '15px', color: 'var(--text-primary)' }}
+          style={{ fontSize: '24px', color: 'var(--text-primary)' }}
         >
           {article.title}
         </h4>
         {article.excerpt && (
-          <p className="text-xs leading-relaxed mt-1 line-clamp-2"
+          <p className="text-md leading-relaxed mt-1 line-clamp-2"
             style={{ color: 'var(--text-secondary)' }}>
             {article.excerpt}
           </p>
@@ -322,20 +322,21 @@ function Layout4Plus({ articles, flip }: { articles: Article[]; flip: boolean })
           <ArticleCell article={bottomLeft} size="md" reserveBadge={anyBreakingBot} />
         </div>
         <ColDivider />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1"> 
           <ArticleCell article={bottomRight} size="md" reserveBadge={anyBreakingBot} />
-          {stacked.length > 0 && (
-            <div
-              className="mt-5 pt-5"
-              style={{ borderTop: '1px solid var(--border-muted)' }}
-            >
-              {stacked.slice(0, 3).map(a => (
-                <SmallStackCard key={a.id} article={a} />
-              ))}
-            </div>
-          )}
         </div>
       </div>
+
+      {stacked.length > 0 && (
+        <div
+          className="mt-5 pt-5"
+          style={{ borderTop: '1px solid var(--border-muted)' }}
+        >
+          {stacked.slice(0, 3).map(a => (
+            <SmallStackCard key={a.id} article={a} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
