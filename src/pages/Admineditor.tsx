@@ -218,6 +218,8 @@ function ReviewReadOnlyView({
   form:   ArticleForm
   onBack: () => void
 }) {
+  const coverCrop = { ...DEFAULT_CROP, ...(form.cover_crop ?? {}) }
+
   return (
     <div style={{ color: 'var(--text-primary)' }}>
       <button
@@ -287,9 +289,9 @@ function ReviewReadOnlyView({
                 width:           '100%',
                 height:          '100%',
                 objectFit:       'cover',
-                objectPosition:  `${form.cover_crop.x}% ${form.cover_crop.y}%`,
-                transform:       `scale(${form.cover_crop.zoom})`,
-                transformOrigin: `${form.cover_crop.x}% ${form.cover_crop.y}%`,
+                objectPosition:  `${coverCrop.x}% ${coverCrop.y}%`,
+                transform:       `scale(${coverCrop.zoom})`,
+                transformOrigin: `${coverCrop.x}% ${coverCrop.y}%`,
               }}
             />
           </div>
@@ -356,6 +358,7 @@ export default function AdminEditor() {
   const canDelete    = !isNew
 
   const [{ form, dirty }, dispatch] = useReducer(reducer, { form: INITIAL_FORM, dirty: false })
+  const formCoverCrop = { ...DEFAULT_CROP, ...(form.cover_crop ?? {}) }
 
   const [loadingArticle, setLoadingArticle] = useState(!isNew)
   const [loadError,      setLoadError]      = useState('')
@@ -444,7 +447,9 @@ export default function AdminEditor() {
             excerpt:          a.excerpt          ?? '',
             category_id:      a.category_id      ?? '',
             cover_image:      a.cover_image      ?? '',
-            cover_crop:       a.cover_crop       ?? { ...DEFAULT_CROP },
+            cover_crop:       a.cover_crop && typeof a.cover_crop === 'object'
+              ? { ...DEFAULT_CROP, ...a.cover_crop }
+              : { ...DEFAULT_CROP },
             status:           a.status           ?? 'draft',
             is_featured:      a.is_featured      ?? false,
             is_breaking:      a.is_breaking      ?? false,
@@ -1157,9 +1162,9 @@ export default function AdminEditor() {
                         width:           '100%',
                         height:          '100%',
                         objectFit:       'cover',
-                        objectPosition:  `${form.cover_crop.x}% ${form.cover_crop.y}%`,
-                        transform:       `scale(${form.cover_crop.zoom})`,
-                        transformOrigin: `${form.cover_crop.x}% ${form.cover_crop.y}%`,
+                        objectPosition:  `${formCoverCrop.x}% ${formCoverCrop.y}%`,
+                        transform:       `scale(${formCoverCrop.zoom})`,
+                        transformOrigin: `${formCoverCrop.x}% ${formCoverCrop.y}%`,
                       }}
                     />
                   </div>
@@ -1189,7 +1194,7 @@ export default function AdminEditor() {
                 {/* ── Crop + zoom editor ── */}
                 <CoverImageEditor
                   imageUrl={form.cover_image}
-                  crop={form.cover_crop}
+                  crop={formCoverCrop}
                   onChange={newCrop =>
                     dispatch({ type: 'SET_FIELD', field: 'cover_crop', value: newCrop })
                   }

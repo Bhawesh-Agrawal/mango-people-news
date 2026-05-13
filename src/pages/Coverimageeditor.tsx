@@ -121,16 +121,18 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
   const dragStart = useRef({ mouseX: 0, mouseY: 0, cropX: 0, cropY: 0 })
 
   // ── Derived helpers ──────────────────────────────────────────
+  const safeCrop = { ...DEFAULT_CROP, ...(crop ?? {}) }
+
   const update = useCallback((partial: Partial<CoverCrop>) => {
-    onChange({ ...crop, ...partial })
-  }, [crop, onChange])
+    onChange({ ...safeCrop, ...partial })
+  }, [safeCrop, onChange])
 
   const clamp = (v: number, min = 0, max = 100) => Math.max(min, Math.min(max, v))
 
   // ── Drag to pan ───────────────────────────────────────────────
   const startDrag = (clientX: number, clientY: number) => {
     dragging.current = true
-    dragStart.current = { mouseX: clientX, mouseY: clientY, cropX: crop.x, cropY: crop.y }
+    dragStart.current = { mouseX: clientX, mouseY: clientY, cropX: safeCrop.x, cropY: safeCrop.y }
   }
 
   const moveDrag = useCallback((clientX: number, clientY: number) => {
@@ -139,11 +141,11 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
     const dx    = (clientX - dragStart.current.mouseX) / rect.width  * 100
     const dy    = (clientY - dragStart.current.mouseY) / rect.height * 100
     // Moving right → we want to see more of the LEFT → decrease x
-    const newX  = clamp(dragStart.current.cropX - dx / crop.zoom)
-    const newY  = clamp(dragStart.current.cropY - dy / crop.zoom)
-    onChange({ ...crop, x: Math.round(newX), y: Math.round(newY) })
+    const newX  = clamp(dragStart.current.cropX - dx / safeCrop.zoom)
+    const newY  = clamp(dragStart.current.cropY - dy / safeCrop.zoom)
+    onChange({ ...safeCrop, x: Math.round(newX), y: Math.round(newY) })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [crop, onChange])
+  }, [safeCrop, onChange])
 
   const endDrag = () => { dragging.current = false }
 
@@ -164,24 +166,24 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault()
     const delta = e.deltaY > 0 ? -0.1 : 0.1
-    update({ zoom: clamp(+(crop.zoom + delta).toFixed(2), 1, 4) })
+    update({ zoom: clamp(+(safeCrop.zoom + delta).toFixed(2), 1, 4) })
   }
 
   // ── Reset ─────────────────────────────────────────────────────
   const reset = () => onChange({ x: 50, y: 50, zoom: 1 })
 
   // ── Zoom buttons ──────────────────────────────────────────────
-  const zoomIn  = () => update({ zoom: clamp(+(crop.zoom + 0.15).toFixed(2), 1, 4) })
-  const zoomOut = () => update({ zoom: clamp(+(crop.zoom - 0.15).toFixed(2), 1, 4) })
+  const zoomIn  = () => update({ zoom: clamp(+(safeCrop.zoom + 0.15).toFixed(2), 1, 4) })
+  const zoomOut = () => update({ zoom: clamp(+(safeCrop.zoom - 0.15).toFixed(2), 1, 4) })
 
   // ── CSS for the preview image ─────────────────────────────────
   const previewImgStyle: React.CSSProperties = {
     width:           '100%',
     height:          '100%',
     objectFit:       'cover',
-    objectPosition:  `${crop.x}% ${crop.y}%`,
-    transform:       `scale(${crop.zoom})`,
-    transformOrigin: `${crop.x}% ${crop.y}%`,
+    objectPosition:  `${safeCrop.x}% ${safeCrop.y}%`,
+    transform:       `scale(${safeCrop.zoom})`,
+    transformOrigin: `${safeCrop.x}% ${safeCrop.y}%`,
     cursor:          'grab',
     userSelect:      'none',
     WebkitUserSelect:'none',
@@ -210,7 +212,7 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
             className="text-[10px] font-mono px-1.5 py-0.5 rounded"
             style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
           >
-            {crop.x}% {crop.y}% ×{crop.zoom.toFixed(1)}
+            {safeCrop.x}% {safeCrop.y}% ×{safeCrop.zoom.toFixed(1)}
           </span>
           {open
             ? <ChevronUp size={12} style={{ color: 'var(--text-muted)' }} />
@@ -298,7 +300,7 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
           <div className="flex items-center gap-2">
             <button
               type="button" onClick={zoomOut}
-              disabled={crop.zoom <= 1}
+              disabled={safeCrop.zoom <= 1}
               className="p-1.5 rounded-lg disabled:opacity-30 transition-opacity"
               style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
             >
@@ -309,18 +311,18 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
               <input
                 type="range"
                 min={1} max={4} step={0.01}
-                value={crop.zoom}
+                value={safeCrop.zoom}
                 onChange={e => update({ zoom: parseFloat(e.target.value) })}
                 className="w-full h-1.5 rounded-full appearance-none outline-none cursor-pointer"
                 style={{
-                  background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((crop.zoom - 1) / 3) * 100}%, var(--border) ${((crop.zoom - 1) / 3) * 100}%, var(--border) 100%)`,
+                  background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${((safeCrop.zoom - 1) / 3) * 100}%, var(--border) ${((safeCrop.zoom - 1) / 3) * 100}%, var(--border) 100%)`,
                 }}
               />
             </div>
 
             <button
               type="button" onClick={zoomIn}
-              disabled={crop.zoom >= 4}
+              disabled={safeCrop.zoom >= 4}
               className="p-1.5 rounded-lg disabled:opacity-30 transition-opacity"
               style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}
             >
@@ -331,7 +333,7 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
               className="text-[11px] font-mono w-8 text-right flex-shrink-0"
               style={{ color: 'var(--text-muted)' }}
             >
-              {crop.zoom.toFixed(1)}×
+              {safeCrop.zoom.toFixed(1)}×
             </span>
           </div>
 
@@ -348,7 +350,7 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
               style={{ gridTemplateColumns: 'repeat(9, 1fr)' }}
             >
               {PRESETS.map(p => {
-                const active = crop.x === p.x && crop.y === p.y
+                const active = safeCrop.x === p.x && safeCrop.y === p.y
                 return (
                   <button
                     key={`${p.x}-${p.y}`}
@@ -408,9 +410,9 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
                   width:           '100%',
                   height:          '100%',
                   objectFit:       'cover',
-                  objectPosition:  `${crop.x}% ${crop.y}%`,
-                  transform:       `scale(${crop.zoom})`,
-                  transformOrigin: `${crop.x}% ${crop.y}%`,
+                  objectPosition:  `${safeCrop.x}% ${safeCrop.y}%`,
+                  transform:       `scale(${safeCrop.zoom})`,
+                  transformOrigin: `${safeCrop.x}% ${safeCrop.y}%`,
                   pointerEvents:   'none',
                 }}
               />
