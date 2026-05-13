@@ -18,6 +18,9 @@ const staticPages = [
   { loc: `${SITE_URL}/privacy-policy`,      lastmod: today, changefreq: 'monthly', priority: 0.5 },
   { loc: `${SITE_URL}/terms-and-conditions`,lastmod: today, changefreq: 'monthly', priority: 0.5 },
   { loc: `${SITE_URL}/disclaimer`,          lastmod: today, changefreq: 'monthly', priority: 0.5 },
+  { loc: `${SITE_URL}/about`,               lastmod: today, changefreq: 'monthly', priority: 0.5 },
+  { loc: `${SITE_URL}/contact`,             lastmod: today, changefreq: 'monthly', priority: 0.5 },
+  { loc: `${SITE_URL}/team`,                lastmod: today, changefreq: 'monthly', priority: 0.5 },
 ]
 
 const buildUrl = ({ loc, lastmod, changefreq, priority }) => `  <url>

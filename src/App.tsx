@@ -41,6 +41,7 @@ import ScrollToTop from './components/ui/ScrollToTop'
 import ReviewQueue from './pages/ReviewQueue'
 import AboutPage from './pages/Aboutus'
 import ContactPage from './pages/Contactus'
+import TeamPage from './pages/Team'
 
 function App() {
   return (
@@ -74,6 +75,7 @@ function App() {
                   <Route path="/reset-password"     element={<ResetPasswordPage />} />
                   <Route path = "/about"              element={<AboutPage />} />
                   <Route path = "/contact"          element={<ContactPage />} />
+                  <Route path = '/team'            element={<TeamPage />} /> 
 
                   <Route path="/saved" element={
                     <ProtectedRoute><SavedPage /></ProtectedRoute>
