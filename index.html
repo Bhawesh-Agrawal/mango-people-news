@@ -4,50 +4,30 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- ═══════════════════════════════════════════════
-         PRIMARY META
-         These are defaults. Every page overrides these
-         via SEO.tsx using react-helmet-async.
-    ═══════════════════════════════════════════════ -->
+    <!--
+      IMPORTANT: No og:, twitter:, or duplicate <title> tags here.
+      - Bots (Googlebot, WhatsApp, etc.) are routed to /meta/* by the
+        Cloudflare Worker and get fully-rendered HTML from the backend.
+      - Real users get this shell, and react-helmet-async injects the
+        correct per-page tags at runtime.
+      This file is the React app shell ONLY.
+    -->
+
+    <!-- Default title & description — Helmet overrides these per page -->
     <title>Mango People News — News for Every Indian</title>
-    <meta name="description" content="Mango People News — India's financial and business news platform. Markets, economy, policy and more. News for Every Indian." />
-    <meta name="keywords" content="India news, Indian financial news, stock market India, economy, business news, Mango People News" />
-    <meta name="author" content="Mango People News" />
+    <meta name="description"
+          content="India's financial and business news platform. Markets, economy, policy and more. News for Every Indian." />
+
+    <!-- Tell Google to index and follow — Helmet overrides this on noIndex pages -->
     <meta name="robots" content="index, follow" />
 
-    <!-- ═══════════════════════════════════════════════
-         OPEN GRAPH (Facebook, WhatsApp, LinkedIn, Telegram)
-         Article pages override og:title, og:description,
-         og:image, og:url via SEO.tsx
-    ════════════════════════════════════════════════ -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Mango People News" />
-    <meta property="og:title" content="Mango People News — News for Every Indian" />
-    <meta property="og:description" content="India's financial and business news platform. Markets, economy, policy and more." />
-    <meta property="og:url" content="https://www.mangopeoplenews.com" />
-    <meta property="og:image" content="https://www.mangopeoplenews.com/logo.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Mango People News — News for Every Indian" />
-    <meta property="og:locale" content="en_IN" />
-
-    <!-- ═══════════════════════════════════════════════
-         TWITTER CARD
-    ════════════════════════════════════════════════ -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@mangopeoplenews" />
-    <meta name="twitter:title" content="Mango People News — News for Every Indian" />
-    <meta name="twitter:description" content="India's financial and business news platform. Markets, economy, policy and more." />
-    <meta name="twitter:image" content="https://www.mangopeoplenews.com/logo.png" />
-
-    <!-- ═══════════════════════════════════════════════
-         ICONS & PWA
-    ════════════════════════════════════════════════ -->
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="apple-touch-icon" href="/logo.png" />
-    <meta name="theme-color" content="#C8820A" />
+    <!-- Icons & PWA manifest -->
+    <link rel="icon"             type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon"                  href="/logo.png" />
+    <meta name="theme-color"          content="#C8820A" />
     <meta name="msapplication-TileColor" content="#C8820A" />
 
+    <!-- Fonts — non-blocking load -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -63,6 +43,7 @@
       />
     </noscript>
 
+    <!-- Organization JSON-LD (static, site-wide — stays here, not in Helmet) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -79,19 +60,16 @@
     }
     </script>
 
-    <!-- ═══════════════════════════════════════════════
-         GOOGLE ADSENSE
-    ════════════════════════════════════════════════ -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9442958982270576"
-     crossorigin="anonymous"></script>
+    <!-- Google AdSense -->
+    <script async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9442958982270576"
+      crossorigin="anonymous"></script>
 
-    <!-- ═══════════════════════════════════════════════
-         GOOGLE PUBLISHER CENTER
-    ════════════════════════════════════════════════ -->
+    <!-- Google Publisher Center (Subscribe with Google) -->
     <script async type="application/javascript"
-        src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
+      src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
     <script>
-      (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+      (self.SWG_BASIC = self.SWG_BASIC || []).push(basicSubscriptions => {
         basicSubscriptions.init({
           type: "NewsArticle",
           isPartOfType: ["Product"],
