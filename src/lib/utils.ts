@@ -40,3 +40,15 @@ export const truncate = (str: string, words: number): string => {
   if (arr.length <= words) return str
   return arr.slice(0, words).join(' ') + '…'
 }
+
+// Build a Cloudinary URL with exact output dimensions for the placeholder.
+export function cloudinaryUrl(
+  url: string | null | undefined,
+  width: number,
+  height: number,
+): string {
+  if (!url) return ''
+  if (!url.includes('res.cloudinary.com')) return url
+  const transform = `w_${Math.round(width)},h_${Math.round(height)},c_fill,f_auto,q_auto`
+  return url.replace('/image/upload/', `/image/upload/${transform}/`)
+}

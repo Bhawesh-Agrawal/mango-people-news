@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, X, TrendingUp, ArrowRight } from 'lucide-react'
 import { getArticles } from '../../api/articles'
 import type { Article } from '../../types'
-import { timeAgo } from '../../lib/utils'
+import { cloudinaryUrl, timeAgo } from '../../lib/utils'
 
 function useDebounce<T>(value: T, delay: number): T {
   const [dv, setDv] = useState(value)
@@ -405,8 +405,10 @@ function Results({
             style={{ width: '56px', height: '44px', background: 'var(--bg-subtle)' }}
           >
             {article.cover_image && (
-              <img src={article.cover_image} alt=""
-                className="w-full h-full object-cover" />
+              <img src={cloudinaryUrl(article.cover_image, 56, 44)} alt=""
+                className="w-full h-full object-cover"
+                width={56}
+                height={44} />
             )}
           </div>
           <div className="flex-1 min-w-0">

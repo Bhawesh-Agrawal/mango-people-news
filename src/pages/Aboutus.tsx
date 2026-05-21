@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Shield, Users, Zap, CheckCircle } from 'lucide-react'
 import { useArticles } from '../hooks/useArticles'
+import { cloudinaryUrl } from '../lib/utils'
 
 // ── Internal article link card ────────────────────────────────────
 function ArticleCard({ article }: { article: any }) {
@@ -14,11 +15,13 @@ function ArticleCard({ article }: { article: any }) {
       {article.cover_image && (
         <div className="flex-shrink-0 w-20 h-16 rounded-xl overflow-hidden">
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 80, 64)}
             alt={article.title}
             className="w-full h-full object-cover transition-transform
                        duration-500 group-hover:scale-105"
             loading="lazy"
+            width={80}
+            height={64}
           />
         </div>
       )}

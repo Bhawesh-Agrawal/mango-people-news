@@ -14,7 +14,7 @@ import { Link }                 from 'react-router-dom'
 import { TrendingUp, Eye, Heart, MessageCircle, Clock } from 'lucide-react'
 import { client }               from '../api/client'
 import type { Article }         from '../types'
-import { timeAgo, formatCount } from '../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount } from '../lib/utils'
 
 type Period = 'today' | 'week' | 'month' | 'all'
 
@@ -157,10 +157,12 @@ export default function TrendingPage() {
                     style={{ width: '220px', height: '148px' }}
                   >
                     <img
-                      src={lead.cover_image}
+                      src={cloudinaryUrl(lead.cover_image, 220, 148)}
                       alt={lead.title}
                       className="w-full h-full object-cover transition-transform
                                  duration-300 group-hover:scale-[1.03]"
+                      width={220}
+                      height={148}
                     />
                   </div>
                 )}
@@ -310,10 +312,12 @@ function RankedRow({ article, rank }: { article: Article; rank: number }) {
           style={{ width: '72px', height: '54px' }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 72, 54)}
             alt=""
             className="w-full h-full object-cover transition-transform
                        duration-300 group-hover:scale-105"
+            width={72}
+            height={54}
           />
         </div>
       )}

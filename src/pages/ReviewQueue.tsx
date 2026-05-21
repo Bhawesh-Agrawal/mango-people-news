@@ -5,6 +5,7 @@ import {
   User, Tag, BookOpen,
 } from 'lucide-react'
 import { getReviewQueue, reviewAction } from '../api/articles'
+import { cloudinaryUrl } from '../lib/utils'
 import type { ApiResponse, ReviewArticle } from '../types'
 
 type ActionState = 'idle' | 'loading' | 'done' | 'error'
@@ -122,9 +123,11 @@ function ArticleReviewCard({
           {/* Cover thumbnail */}
           {article.cover_image && (
             <img
-              src={article.cover_image}
+              src={cloudinaryUrl(article.cover_image, 80, 64)}
               alt=""
               className="w-20 h-16 rounded-xl object-cover flex-shrink-0"
+              width={80}
+              height={64}
             />
           )}
         </div>

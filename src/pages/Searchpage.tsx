@@ -18,7 +18,7 @@ import { Search, X, Clock, Eye, SlidersHorizontal }   from 'lucide-react'
 import { getArticles }                                from '../api/articles'
 import { getCategories }                              from '../api/categories'
 import type { Article, Category }                     from '../types'
-import { timeAgo, formatCount }                       from '../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount }       from '../lib/utils'
 
 const LIMIT = 12
 
@@ -354,10 +354,12 @@ function ArticleCard({ article }: { article: Article }) {
           style={{ aspectRatio: '16/9' }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 1280, 720)}
             alt={article.title}
             className="w-full h-full object-cover transition-transform
                        duration-300 group-hover:scale-[1.03]"
+            width={1280}
+            height={720}
           />
         </div>
       ) : (

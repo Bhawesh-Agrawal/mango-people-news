@@ -11,7 +11,7 @@ import { useAuth }   from '../../context/AuthContext'
 import { getCategories } from '../../api/categories'
 import { getArticles }   from '../../api/articles'
 import type { Category, Article, User } from '../../types'
-import { timeAgo } from '../../lib/utils'
+import { cloudinaryUrl, timeAgo } from '../../lib/utils'
 import SearchOverlay from '../ui/Searchoverlay'
 
 // ── Bottom nav definition ─────────────────────────────────────
@@ -580,9 +580,11 @@ export default function Navbar() {
                         }}
                       >
                         {article.cover_image && (
-                          <img src={article.cover_image} alt=""
+                          <img src={cloudinaryUrl(article.cover_image, 56, 56)} alt=""
                             className="w-14 h-14 object-cover rounded-md flex-shrink-0"
-                            loading="lazy" />
+                            loading="lazy"
+                            width={56}
+                            height={56} />
                         )}
                         <div className="flex-1 min-w-0 pt-0.5">
                           <p className="text-sm font-semibold leading-snug line-clamp-2

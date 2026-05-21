@@ -12,7 +12,7 @@ import { Clock, Eye, Search, X }  from 'lucide-react'
 import { getArticles }            from '../api/articles'
 import { getCategories }          from '../api/categories'
 import type { Article, Category } from '../types'
-import { formatCount }            from '../lib/utils'
+import { cloudinaryUrl, formatCount } from '../lib/utils'
 import SEO                        from '../seo/Seo'
 
 const LIMIT = 20
@@ -439,10 +439,12 @@ function ArticleRow({ article }: { article: Article }) {
           style={{ width: '72px', height: '54px' }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 72, 54)}
             alt={article.title}
             className="w-full h-full object-cover transition-transform
                        duration-300 group-hover:scale-105"
+            width={72}
+            height={54}
           />
         </div>
       )}
