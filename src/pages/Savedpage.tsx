@@ -15,7 +15,7 @@ import { Bookmark, Trash2, Clock, Eye, AlertTriangle } from 'lucide-react'
 import { useAuth }    from '../context/AuthContext'
 import { client }     from '../api/client'
 import type { Article } from '../types'
-import { timeAgo, formatCount } from '../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount } from '../lib/utils'
 
 const LOCAL_SAVED_KEY = 'mpn_saved_articles'
 
@@ -330,9 +330,11 @@ function SavedCard({
         <div className="rounded-xl overflow-hidden"
           style={{ width: '88px', height: '66px' }}>
           {article.cover_image ? (
-            <img src={article.cover_image} alt=""
+            <img src={cloudinaryUrl(article.cover_image, 88, 66)} alt=""
               className="w-full h-full object-cover transition-transform
-                         duration-300 group-hover:scale-105" />
+                         duration-300 group-hover:scale-105"
+              width={88}
+              height={66} />
           ) : (
             <div className="w-full h-full flex items-center justify-center"
               style={{ background: 'var(--bg-subtle)' }}>

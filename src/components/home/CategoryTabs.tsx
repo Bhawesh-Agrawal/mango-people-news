@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Clock, ArrowRight } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories'
 import { useArticles } from '../../hooks/useArticles'
-import { timeAgo } from '../../lib/utils'
+import { cloudinaryUrl, timeAgo } from '../../lib/utils'
 import type { Article, Category } from '../../types'
 
 // ── Article card for grid ─────────────────────────────────────────
@@ -39,11 +39,13 @@ function CategoryArticleCard({ article }: { article: Article }) {
           style={{ height: '160px' }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 640, 160)}
             alt=""
             className="w-full h-full object-cover transition-transform
                        duration-500 group-hover:scale-105"
             loading="lazy"
+            width={640}
+            height={160}
           />
         </div>
       )}

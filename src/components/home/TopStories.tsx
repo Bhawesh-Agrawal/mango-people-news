@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Clock, Eye, TrendingUp } from 'lucide-react'
 import { useArticles } from '../../hooks/useArticles'
 import { useTrending } from '../../hooks/useTrending'
-import { timeAgo, formatCount } from '../../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount } from '../../lib/utils'
 import type { Article } from '../../types'
 
 function ArticleCard({ article, size = 'normal' }: {
@@ -25,11 +25,13 @@ function ArticleCard({ article, size = 'normal' }: {
           style={{ height: size === 'large' ? '220px' : '160px' }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, size === 'large' ? 960 : 640, size === 'large' ? 220 : 160)}
             alt=""
             className="w-full h-full object-cover transition-transform
                        duration-500 group-hover:scale-105"
             loading="lazy"
+            width={size === 'large' ? 960 : 640}
+            height={size === 'large' ? 220 : 160}
           />
         </div>
       )}
@@ -41,11 +43,13 @@ function ArticleCard({ article, size = 'normal' }: {
             style={{ width: '80px', height: '68px' }}
           >
             <img
-              src={article.cover_image}
+              src={cloudinaryUrl(article.cover_image, 80, 68)}
               alt=""
               className="w-full h-full object-cover transition-transform
                          duration-300 group-hover:scale-105"
               loading="lazy"
+              width={80}
+              height={68}
             />
           </div>
         )}

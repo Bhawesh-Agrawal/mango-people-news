@@ -14,7 +14,7 @@ import {
 import type { Comment } from '../api/articles'
 import { useAuth }        from '../context/AuthContext'
 import type { Article }   from '../types'
-import { timeAgo, formatCount, formatDate } from '../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount, formatDate } from '../lib/utils'
 import {
   toggleSaveArticle,
   getInitialSaveStatus,
@@ -905,8 +905,10 @@ export default function ArticlePage() {
                 <figure className="mb-8 -mx-4 sm:mx-0">
                   <div className="img-zoom sm:rounded-xl overflow-hidden"
                     style={{ aspectRatio: '16/9' }}>
-                    <img src={article.cover_image} alt={article.title}
-                      className="w-full h-full object-cover" />
+                    <img src={cloudinaryUrl(article.cover_image, 1280, 720)} alt={article.title}
+                      className="w-full h-full object-cover"
+                      width={1280}
+                      height={720} />
                   </div>
                 </figure>
               )}
@@ -977,8 +979,10 @@ export default function ArticlePage() {
                         {a.cover_image && (
                           <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
                             style={{ width: '72px', height: '56px' }}>
-                            <img src={a.cover_image} alt= {a.title}
-                              className="w-full h-full object-cover" />
+                            <img src={cloudinaryUrl(a.cover_image, 72, 56)} alt={a.title}
+                              className="w-full h-full object-cover"
+                              width={72}
+                              height={56} />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -1034,8 +1038,10 @@ export default function ArticlePage() {
                     {a.cover_image && (
                       <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom sm:w-full"
                         style={{ width: '80px', height: '64px' }}>
-                        <img src={a.cover_image} alt={a.title}
-                          className="w-full h-full object-cover" />
+                        <img src={cloudinaryUrl(a.cover_image, 80, 64)} alt={a.title}
+                          className="w-full h-full object-cover"
+                          width={80}
+                          height={64} />
                       </div>
                     )}
                     <div className="flex-1 sm:mt-2">

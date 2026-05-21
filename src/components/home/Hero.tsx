@@ -1,18 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Clock, Eye, ArrowRight, BookOpen } from 'lucide-react'
 import { useArticles } from '../../hooks/useArticles'
-import { timeAgo, formatCount, truncate } from '../../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount, truncate } from '../../lib/utils'
 import type { Article } from '../../types'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
-
-// ── Cloudinary URL optimizer ───────────────────────────────────────
-function cloudinaryUrl(url: string, width: number, height: number): string {
-  if (!url || !url.includes('res.cloudinary.com')) return url
-  return url.replace(
-    '/image/upload/',
-    `/image/upload/w_${width},h_${height},c_fill,f_auto,q_auto/`
-  )
-}
 
 // ── Consistent cover renderer ─────────────────────────────────────
 /**

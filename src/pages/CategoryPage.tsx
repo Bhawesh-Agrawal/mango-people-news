@@ -4,7 +4,7 @@ import { Clock, Eye, ChevronRight, ArrowRight } from 'lucide-react'
 import { useCategories }  from '../hooks/useCategories'
 import { getArticles }    from '../api/articles'
 import type { Article, Category } from '../types'
-import { timeAgo, formatCount } from '../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount } from '../lib/utils'
 import MarketTicker from '../components/ui/MarketTicker'
 import SEO          from '../seo/Seo'
 
@@ -140,10 +140,12 @@ function HeroArticle({ article }: { article: Article }) {
           style={{ aspectRatio: '16/9' }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 1280, 720)}
             alt={article.title}
             className="w-full h-full object-cover"
             loading="eager"
+            width={1280}
+            height={720}
           />
         </div>
       )}
@@ -195,10 +197,12 @@ function SecondaryList({ articles }: { articles: Article[] }) {
               style={{ width: '72px', height: '60px' }}
             >
               <img
-                src={article.cover_image}
+                src={cloudinaryUrl(article.cover_image, 72, 60)}
                 alt=""
                 className="w-full h-full object-cover"
                 loading="lazy"
+                width={72}
+                height={60}
               />
             </div>
           )}
@@ -303,10 +307,14 @@ function ArticleRow({
           style={{ width: imgW, height: imgH }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image,
+              size === 'large' ? 160 : size === 'small' ? 80 : 112,
+              size === 'large' ? 120 : size === 'small' ? 68 : 88)}
             alt=""
             className="w-full h-full object-cover"
             loading="lazy"
+            width={size === 'large' ? 160 : size === 'small' ? 80 : 112}
+            height={size === 'large' ? 120 : size === 'small' ? 68 : 88}
           />
         </div>
       )}

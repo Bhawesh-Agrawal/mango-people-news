@@ -26,6 +26,7 @@ import {
 import { client }  from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { Link }    from 'react-router-dom'
+import { cloudinaryUrl } from '../lib/utils'
 import CoverImageEditor, { DEFAULT_CROP, type CoverCrop } from '../pages/Coverimageeditor'
 
 // ── Types ─────────────────────────────────────────────────────
@@ -283,8 +284,10 @@ function ReviewReadOnlyView({
             style={{ aspectRatio: '16/9' }}
           >
             <img
-              src={form.cover_image}
+              src={cloudinaryUrl(form.cover_image, 1280, 720)}
               alt="Cover"
+              width={1280}
+              height={720}
               style={{
                 width:           '100%',
                 height:          '100%',
@@ -1156,8 +1159,10 @@ export default function AdminEditor() {
                     style={{ aspectRatio: '16 / 9' }}
                   >
                     <img
-                      src={form.cover_image}
+                      src={cloudinaryUrl(form.cover_image, 1280, 720)}
                       alt="Cover preview"
+                      width={1280}
+                      height={720}
                       style={{
                         width:           '100%',
                         height:          '100%',

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Clock, Eye } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories'
 import { useArticles } from '../../hooks/useArticles'
-import { timeAgo, formatCount } from '../../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount } from '../../lib/utils'
 import type { Article, Category } from '../../types'
 import MarketTicker from '../ui/MarketTicker'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
@@ -28,10 +28,12 @@ function ArticleCover({
       style={{ ...styles.container, aspectRatio: '16 / 9' }}
     >
       <img
-        src={article.cover_image!}
+        src={cloudinaryUrl(article.cover_image!, 720, 405)}
         alt={article.title}
         className="transition-transform duration-500 group-hover:scale-105"
         loading="lazy"
+        width={720}
+        height={405}
         style={styles.img}
       />
     </div>
