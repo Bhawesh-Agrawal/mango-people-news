@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { Clock, Eye, ArrowRight, BookOpen } from 'lucide-react'
-import { useArticles } from '../../hooks/useArticles'
 import { cloudinaryUrl, timeAgo, formatCount, truncate } from '../../lib/utils'
 import type { Article } from '../../types'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
@@ -99,71 +98,8 @@ function ArticleRow({ article }: { article: Article }) {
   )
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────
-function HeroSkeleton() {
-  return (
-    <div>
-      <div className="md:hidden">
-        <div className="px-4 pt-4 space-y-3">
-          <div className="skeleton h-3 w-24 rounded" />
-          <div className="skeleton h-7 w-full rounded" />
-          <div className="skeleton h-7 w-4/5 rounded" />
-          <div className="skeleton h-4 w-full rounded" />
-          <div className="skeleton h-4 w-3/4 rounded" />
-        </div>
-        {/* 16:9 aspect ratio skeleton */}
-        <div className="skeleton w-full mt-4" style={{ aspectRatio: '16/9' }} />
-        <div className="px-4 pt-4 space-y-3">
-          {[1, 2, 3, 4, 5].map(n => (
-            <div key={n} className="flex gap-3 py-2">
-              <div className="skeleton w-[72px] h-[54px] rounded-lg flex-shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="skeleton h-2.5 w-16 rounded" />
-                <div className="skeleton h-4 w-full rounded" />
-                <div className="skeleton h-4 w-4/5 rounded" />
-                <div className="skeleton h-2.5 w-24 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="hidden md:block page-container py-6">
-        <div className="grid grid-cols-3 gap-5">
-          <div className="col-span-2 space-y-4">
-            <div className="skeleton h-5 w-24 rounded" />
-            <div className="skeleton h-10 w-full rounded" />
-            <div className="skeleton h-10 w-3/4 rounded" />
-            <div className="skeleton h-4 w-full rounded" />
-            <div className="skeleton h-4 w-5/6 rounded" />
-            {/* 16:9 skeleton */}
-            <div className="skeleton w-full rounded-2xl" style={{ aspectRatio: '16/9' }} />
-          </div>
-          <div className="space-y-0">
-            <div className="skeleton h-10 w-full rounded-t-2xl" />
-            {[1, 2, 3, 4, 5].map(n => (
-              <div key={n} className="flex gap-3 py-3 px-4 border-b"
-                style={{ borderColor: 'var(--border-muted)' }}>
-                <div className="skeleton w-[72px] h-[54px] rounded-lg flex-shrink-0" />
-                <div className="flex-1 space-y-2 pt-1">
-                  <div className="skeleton h-2.5 w-16 rounded" />
-                  <div className="skeleton h-4 w-full rounded" />
-                  <div className="skeleton h-4 w-4/5 rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── Main ──────────────────────────────────────────────────────────
-export default function Hero() {
-  const { articles, loading } = useArticles({ limit: 9 })
-
-  if (loading) return <HeroSkeleton />
+export default function Hero({ articles }: { articles: Article[] }) {
   if (articles.length === 0) return null
 
   const main       = articles[0]

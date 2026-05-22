@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Clock, Eye } from 'lucide-react'
-import { useCategories } from '../../hooks/useCategories'
-import { useArticles } from '../../hooks/useArticles'
 import { cloudinaryUrl, timeAgo, formatCount } from '../../lib/utils'
-import type { Article, Category } from '../../types'
+import type { Article, Category, Quote } from '../../types'
 import MarketTicker from '../ui/MarketTicker'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
 
@@ -344,45 +342,24 @@ function Layout4Plus({ articles, flip }: { articles: Article[]; flip: boolean })
 }
 
 // ══════════════════════════════════════════════════════════════════
-// SKELETON
-// ══════════════════════════════════════════════════════════════════
-function BlockSkeleton() {
-  return (
-    <div className="py-8" style={{ borderTop: '1px solid var(--border)' }}>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2.5">
-          <div className="skeleton w-1.5 h-7 rounded-full" />
-          <div className="skeleton h-7 w-32 rounded" />
-        </div>
-        <div className="skeleton h-4 w-24 rounded" />
-      </div>
-      <div className="space-y-3 mb-6">
-        <div className="skeleton h-7 w-full rounded" />
-        <div className="skeleton h-7 w-4/5 rounded" />
-        <div className="skeleton h-4 w-full rounded" />
-        <div className="skeleton h-4 w-3/4 rounded" />
-        <div className="skeleton h-3 w-32 rounded" />
-        {/* 16:9 skeleton */}
-        <div className="skeleton rounded-lg w-full" style={{ aspectRatio: '16/9' }} />
-      </div>
-    </div>
-  )
-}
-
-// ══════════════════════════════════════════════════════════════════
 // CATEGORY BLOCK
 // ══════════════════════════════════════════════════════════════════
-function CategoryBlock({ category, index }: { category: Category; index: number }) {
-  const { articles, loading } = useArticles({
-    category: category.slug,
-    limit:    6,
-  })
-
+function CategoryBlock({
+  category,
+  index,
+  categoryArticles,
+  marketQuotes,
+}: {
+  category: Category
+  index: number
+  categoryArticles: Record<string, Article[]>
+  marketQuotes: Quote[]
+}) {
+  const articles = categoryArticles[category.slug] ?? []
   const flip      = index % 2 !== 0
   const isMarkets = category.slug === 'market'
   const count     = articles.length
 
-  if (loading) return <BlockSkeleton />
   if (count === 0) return null
 
   return (
@@ -433,7 +410,7 @@ function CategoryBlock({ category, index }: { category: Category; index: number 
         </Link>
       </div>
 
-      {isMarkets && <MarketTicker />}
+      {isMarkets && <MarketTicker quotes={marketQuotes} />}
 
       {count === 1 && <Layout1 articles={articles} />}
       {count === 2 && <Layout2 articles={articles} />}
@@ -446,9 +423,15 @@ function CategoryBlock({ category, index }: { category: Category; index: number 
 // ══════════════════════════════════════════════════════════════════
 // MAIN
 // ══════════════════════════════════════════════════════════════════
-export default function CategorySections() {
-  const { categories, loading } = useCategories()
-
+export default function CategorySections({
+  categories,
+  categoryArticles,
+  marketQuotes,
+}: {
+  categories: Category[]
+  categoryArticles: Record<string, Article[]>
+  marketQuotes: Quote[]
+}) {
   return (
     <section className="page-container py-2 md:py-4">
       <div
@@ -474,12 +457,15 @@ export default function CategorySections() {
         </Link>
       </div>
 
-      {loading
-        ? Array(3).fill(null).map((_, i) => <BlockSkeleton key={i} />)
-        : categories.map((cat, i) => (
-            <CategoryBlock key={cat.id} category={cat} index={i} />
-          ))
-      }
+      {categories.map((cat, i) => (
+        <CategoryBlock
+          key={cat.id}
+          category={cat}
+          index={i}
+          categoryArticles={categoryArticles}
+          marketQuotes={marketQuotes}
+        />
+      ))}
     </section>
   )
 }

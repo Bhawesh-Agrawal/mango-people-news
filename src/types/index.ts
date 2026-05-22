@@ -46,6 +46,25 @@ export interface Category {
   is_active?:    boolean
 }
 
+export interface Quote {
+  symbol:    string
+  name:      string
+  price:     number
+  change:    number
+  changePct: number
+  isUp:      boolean
+  currency:  string
+}
+
+export interface HomeData {
+  categories:       Category[]
+  breaking:         Article[]
+  hero:             Article[]
+  aiSummaries:      Article[]
+  categoryArticles: Record<string, Article[]>
+  marketQuotes:     Quote[]
+}
+
 export interface PaginatedResponse<T> {
   success: boolean
   data:    T[]
