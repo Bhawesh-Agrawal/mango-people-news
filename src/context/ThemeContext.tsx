@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState} from 'react';
-import type { ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState} from 'react'
+import type { ReactNode } from 'react'
 
 type Theme = 'light' | 'dark';
 
@@ -19,7 +19,7 @@ export const ThemeProvider = ({children} : {children: ReactNode}) => {
         if (stored) return stored
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark'
         return 'light'
-    });
+    })
 
     useEffect(() => {
         const root = document.documentElement

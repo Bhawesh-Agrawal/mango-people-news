@@ -39,7 +39,7 @@ export default function AccountPage() {
   const { user, isLoggedIn, logout, refresh } = useAuth()
   const navigate = useNavigate()
 
-  console.log(user);
+  console.log(user)
 
   const [editingName,    setEditingName]    = useState(false)
   const [editingBio,     setEditingBio]     = useState(false)

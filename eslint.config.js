@@ -14,6 +14,11 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      {
+        rules: {
+          'semi': ['error', 'never'],
+        },
+      },
     ],
     languageOptions: {
       ecmaVersion: 2020,

@@ -13,6 +13,7 @@ import {
 } from '../api/articles'
 import type { Comment } from '../api/articles'
 import { useAuth }        from '../context/AuthContext'
+import { AxiosError }     from 'axios'
 import type { Article }   from '../types'
 import { cloudinaryUrl, timeAgo, formatCount, formatDate } from '../lib/utils'
 import {
@@ -365,8 +366,11 @@ function CommentsSection({
       setSuccessMsg(result.message ?? 'Comment posted')
       setTimeout(() => setSuccessMsg(''), 6000)
       await load()
-    } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Could not post comment. Please try again.')
+    } catch (err: unknown) {
+      const message = err instanceof AxiosError
+        ? err.response?.data?.message
+        : 'Could not post comment. Please try again.'
+      setError(message ?? 'Could not post comment. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -386,8 +390,11 @@ function CommentsSection({
       setReplyBody('')
       setReplyingTo(null)
       await load()
-    } catch (err: any) {
-      setReplyError(err?.response?.data?.message ?? 'Could not post reply. Please try again.')
+    } catch (err: unknown) {
+      const msg = err instanceof AxiosError
+        ? err.response?.data?.message
+        : 'Could not post reply. Please try again.'
+      setReplyError(msg ?? 'Could not post reply. Please try again.')
     } finally {
       setReplySubmitting(false)
     }

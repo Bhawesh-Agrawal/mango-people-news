@@ -144,7 +144,7 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
     const newX  = clamp(dragStart.current.cropX - dx / safeCrop.zoom)
     const newY  = clamp(dragStart.current.cropY - dy / safeCrop.zoom)
     onChange({ ...safeCrop, x: Math.round(newX), y: Math.round(newY) })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [safeCrop, onChange])
 
   const endDrag = () => { dragging.current = false }

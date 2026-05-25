@@ -25,7 +25,6 @@ export const login = async (payload: LoginPayload) => {
     '/auth/login', payload
   )
 
-  console.log(data);
   return data
 }
 

@@ -9,16 +9,16 @@ import type { Article, PaginatedResponse, ApiResponse, ReviewArticle } from '../
 // We generate it once and cache it. It is a simple hash of stable browser
 // signals — no external library needed.
 
-const FP_KEY = 'mpn_fp';
+const FP_KEY = 'mpn_fp'
 
 function hashString(str: string): string {
   // djb2 hash — fast, small, good distribution for this use case
-  let hash = 5381;
+  let hash = 5381
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
-    hash = hash >>> 0; // keep it unsigned 32-bit
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i)
+    hash = hash >>> 0 // keep it unsigned 32-bit
   }
-  return hash.toString(36);
+  return hash.toString(36)
 }
 
 function generateFingerprint(): string {
@@ -30,23 +30,23 @@ function generateFingerprint(): string {
     screen.colorDepth,
     new Date().getTimezoneOffset(),
     navigator.hardwareConcurrency ?? '',
-  ].join('|');
+  ].join('|')
 
   // Prefix with a random component so two identical machines still differ
-  const random = Math.random().toString(36).slice(2, 10);
-  return `${hashString(signals)}-${random}`;
+  const random = Math.random().toString(36).slice(2, 10)
+  return `${hashString(signals)}-${random}`
 }
 
 export function getFingerprint(): string {
   try {
-    const stored = localStorage.getItem(FP_KEY);
-    if (stored) return stored;
-    const fp = generateFingerprint();
-    localStorage.setItem(FP_KEY, fp);
-    return fp;
+    const stored = localStorage.getItem(FP_KEY)
+    if (stored) return stored
+    const fp = generateFingerprint()
+    localStorage.setItem(FP_KEY, fp)
+    return fp
   } catch {
     // localStorage blocked (private mode, etc.) — generate ephemeral one
-    return generateFingerprint();
+    return generateFingerprint()
   }
 }
 

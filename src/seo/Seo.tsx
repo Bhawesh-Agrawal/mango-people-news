@@ -1,14 +1,14 @@
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "react-helmet-async"
 
 // ─────────────────────────────────────────────────────────────
 //  Constants — update SITE_URL once production domain is live
 // ─────────────────────────────────────────────────────────────
-const SITE_URL = "https://www.mangopeoplenews.com";
-const SITE_NAME = "Mango People News";
+const SITE_URL = "https://www.mangopeoplenews.com"
+const SITE_NAME = "Mango People News"
 const DEFAULT_DESCRIPTION =
-  "India's financial and business news platform. Markets, economy, policy and more. News for Every Indian.";
-const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`;
-const TWITTER_HANDLE = "@mangopeoplenews";
+  "India's financial and business news platform. Markets, economy, policy and more. News for Every Indian."
+const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`
+const TWITTER_HANDLE = "@mangopeoplenews"
 
 // ─────────────────────────────────────────────────────────────
 //  Types
@@ -55,14 +55,14 @@ export default function SEO({
 }: SEOProps) {
   const fullTitle = title
     ? `${title} — ${SITE_NAME}`
-    : `${SITE_NAME} — News for Every Indian`;
+    : `${SITE_NAME} — News for Every Indian`
 
-  const canonicalUrl = `${SITE_URL}${path}`;
+  const canonicalUrl = `${SITE_URL}${path}`
 
   // Ensure OG image is absolute
   const resolvedOgImage = ogImage.startsWith("http")
     ? ogImage
-    : `${SITE_URL}${ogImage}`;
+    : `${SITE_URL}${ogImage}`
 
   return (
     <Helmet>
@@ -118,5 +118,5 @@ export default function SEO({
         </>
       )}
     </Helmet>
-  );
+  )
 }
