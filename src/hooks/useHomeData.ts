@@ -4,7 +4,7 @@ import { client } from '../api/client'
 import { apiCache, TTL } from '../lib/apiCache'
 import type { HomeData, Quote } from '../types'
 
-const MARKET_REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
+const MARKET_REFRESH_INTERVAL = 5 * 60 * 1000
 
 export function useHomeData() {
   const [data, setData] = useState<HomeData | null>(
@@ -14,12 +14,11 @@ export function useHomeData() {
     () => !apiCache.get<HomeData>('home:data')
   )
   const [error, setError] = useState<string | null>(null)
-  const [tick, setTick] = useState(0)
+  const [tick,  setTick]  = useState(0)
 
-  // Market quotes — integrated from useMarketData
-  const [quotes, setQuotes] = useState<Quote[]>([])
+  const [quotes,       setQuotes]       = useState<Quote[]>([])
   const [marketLoading, setMarketLoading] = useState(true)
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [lastUpdated,  setLastUpdated]  = useState<Date | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const refetch = useCallback(() => {
@@ -27,11 +26,11 @@ export function useHomeData() {
     setTick(t => t + 1)
   }, [])
 
-  const fetchMarketQuotes = async () => {
+  const fetchMarketQuotes = useCallback(async () => {
     try {
-      const { data } = await client.get('/market/quotes')
-      if (data.data?.length > 0) {
-        setQuotes(data.data)
+      const { data: res } = await client.get('/market/quotes')
+      if (res.data?.length > 0) {
+        setQuotes(res.data)
         setLastUpdated(new Date())
       }
     } catch {
@@ -39,9 +38,9 @@ export function useHomeData() {
     } finally {
       setMarketLoading(false)
     }
-  }
+  }, [])
 
-  // Critical path: home data
+  // Critical path: home data (categories come from CategoriesContext — no duplication)
   useEffect(() => {
     let cancelled = false
 
@@ -56,7 +55,7 @@ export function useHomeData() {
     apiCache
       .getOrFetch<HomeData>(
         'home:data',
-        () => getHomeData().then(response => response.data),
+        () => getHomeData().then(r => r.data),
         TTL.LIST
       )
       .then(homeData => {
@@ -76,7 +75,7 @@ export function useHomeData() {
     return () => { cancelled = true }
   }, [tick])
 
-  // Non-critical path: market quotes, starts after home data is ready, refreshes every 5 min
+  // Non-critical path: market quotes fire only after home data is ready
   useEffect(() => {
     if (!data) return
 
@@ -86,7 +85,7 @@ export function useHomeData() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [!!data])
+  }, [!!data, fetchMarketQuotes])
 
   return { data, loading, error, refetch, quotes, marketLoading, lastUpdated }
 }

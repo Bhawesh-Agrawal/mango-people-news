@@ -43,6 +43,8 @@ import AboutPage from './pages/Aboutus'
 import ContactPage from './pages/Contactus'
 import TeamPage from './pages/Team'
 
+import { CategoriesProvider } from './context/CategoriesContext'
+
 function App() {
   return (
     <BrowserRouter>
@@ -54,6 +56,7 @@ function App() {
           path="/*"
           element={
             <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+              <CategoriesProvider>
               <Navbar />
               <main>
                 <Routes>
@@ -95,6 +98,7 @@ function App() {
                 </Routes>
               </main>
               <Footer />
+              </CategoriesProvider>
             </div>
           }
         />
