@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
 import { useMarketData } from '../../hooks/useMarketData'
-import type { Quote } from '../../hooks/useMarketData'
+import type { Quote } from '../../types'
 
 function QuoteChip({ q }: { q: Quote }) {
   const color = q.isUp ? '#15803D' : '#B91C1C'
@@ -30,7 +30,7 @@ function QuoteChip({ q }: { q: Quote }) {
         style={{ color }}
       >
         {q.isUp
-          ? <TrendingUp  size={12} />
+          ? <TrendingUp size={12} />
           : <TrendingDown size={12} />
         }
         {q.changePct >= 0 ? '+' : ''}{q.changePct.toFixed(2)}%
@@ -39,22 +39,7 @@ function QuoteChip({ q }: { q: Quote }) {
   )
 }
 
-export default function MarketTicker() {
-  const { quotes, loading, lastUpdated } = useMarketData()
-
-  if (loading) {
-    return (
-      <div className="flex gap-3 overflow-x-auto scrollbar-none py-3">
-        {[1,2,3,4,5,6].map(n => (
-          <div key={n}
-            className="skeleton flex-shrink-0 rounded-lg"
-            style={{ width: '140px', height: '56px' }}
-          />
-        ))}
-      </div>
-    )
-  }
-
+function MarketTickerContent({ quotes, lastUpdated }: { quotes: Quote[]; lastUpdated?: Date | null }) {
   if (quotes.length === 0) return null
 
   return (
@@ -63,7 +48,7 @@ export default function MarketTicker() {
         className="flex gap-3 overflow-x-auto scrollbar-none py-3"
         style={{
           background: 'var(--bg-surface)',
-          border:     '1px solid var(--border)',
+          border: '1px solid var(--border)',
           borderRadius: '1rem',
           padding: '0.25rem',
         }}
@@ -84,4 +69,37 @@ export default function MarketTicker() {
       )}
     </div>
   )
+}
+
+function MarketTickerWithLiveData() {
+  const { quotes, loading, lastUpdated } = useMarketData()
+
+  if (loading) {
+    return (
+      <div className="flex gap-3 overflow-x-auto scrollbar-none py-3">
+        {[1, 2, 3, 4, 5, 6].map(n => (
+          <div key={n}
+            className="skeleton flex-shrink-0 rounded-lg"
+            style={{ width: '140px', height: '56px' }}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  return <MarketTickerContent quotes={quotes} lastUpdated={lastUpdated} />
+}
+
+export default function MarketTicker({
+  quotes,
+  lastUpdated,
+}: {
+  quotes?: Quote[]
+  lastUpdated?: Date | null
+}) {
+  if (quotes) {
+    return <MarketTickerContent quotes={quotes} lastUpdated={lastUpdated} />
+  }
+
+  return <MarketTickerWithLiveData />
 }

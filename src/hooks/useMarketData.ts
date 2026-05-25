@@ -1,15 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { client } from '../api/client'
-
-export interface Quote {
-  symbol:    string
-  name:      string
-  price:     number
-  change:    number
-  changePct: number
-  isUp:      boolean
-  currency:  string
-}
+import type { Quote } from '../types'
 
 const REFRESH_INTERVAL = 5 * 60 * 1000 // 5 minutes
 

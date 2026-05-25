@@ -1,5 +1,5 @@
 import { Link }        from 'react-router-dom'
-import { useArticles } from '../hooks/useArticles'
+
 import { timeAgo }     from '../lib/utils'
 import type { Article } from '../types'
 
@@ -56,10 +56,8 @@ function SummaryPill({ article }: { article: Article }) {
 }
 
 // ── Main ─────────────────────────────────────────────────────────
-export default function AISummaryStrip() {
-  const { articles, loading } = useArticles({ limit: 20 })
-
-  if (loading) return null // silent — no skeleton for interstitials
+export default function AISummaryStrip({ articles }: { articles: Article[] }) {
+  if (articles.length === 0) return null
 
   const yesterdayStart = new Date()
   yesterdayStart.setDate(yesterdayStart.getDate() - 1)

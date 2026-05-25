@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Zap, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useArticles } from '../../hooks/useArticles'
+import type { Article } from '../../types'
 
-export default function BreakingBar() {
-  const { articles, loading } = useArticles({ limit: 12 })
+export default function BreakingBar({ articles }: { articles: Article[] }) {
+  const loading = false
   const [current,   setCurrent]   = useState(0)
   const [paused,    setPaused]    = useState(false)
   const [animating, setAnimating] = useState(false)
