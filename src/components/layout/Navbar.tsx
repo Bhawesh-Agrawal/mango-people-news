@@ -6,31 +6,26 @@ import {
   ChevronRight, ChevronDown, Settings,
   Search, LogIn, UserPlus,
 } from 'lucide-react'
-import { useTheme }  from '../../context/ThemeContext'
-import { useAuth }   from '../../context/AuthContext'
-import { getCategories } from '../../api/categories'
+import { useTheme }      from '../../context/ThemeContext'
+import { useAuth }       from '../../context/AuthContext'
+import { useCategories } from '../../context/CategoriesContext'
 import { getArticles }   from '../../api/articles'
-import type { Category, Article, User } from '../../types'
+import type { Article, User } from '../../types'
 import { cloudinaryUrl, timeAgo } from '../../lib/utils'
 import SearchOverlay from '../ui/Searchoverlay'
 
-// ── Bottom nav definition ─────────────────────────────────────
-// Search sits at index 2 (middle slot). Rendered as a button, not a Link.
-// Using a flat array with a `isSearch` flag so all 5 items go through
-// the same flex container — guarantees equal spacing and true centering.
 type NavSlot =
   | { kind: 'link';   to: string; icon: React.ElementType; label: string }
   | { kind: 'search'; icon: React.ElementType; label: string }
 
 const BOTTOM_NAV: NavSlot[] = [
-  { kind: 'link',   to: '/',                 icon: Home,       label: 'Home'     },
-  { kind: 'link',   to: '/category/market',  icon: BarChart2,  label: 'Market'   },
-  { kind: 'search',                          icon: Search,     label: 'Search'   },
-  { kind: 'link',   to: '/trending',         icon: TrendingUp, label: 'Trending' },
-  { kind: 'link',   to: '/saved',            icon: Bookmark,   label: 'Saved'    },
+  { kind: 'link',   to: '/',                icon: Home,       label: 'Home'     },
+  { kind: 'link',   to: '/category/market', icon: BarChart2,  label: 'Market'   },
+  { kind: 'search',                         icon: Search,     label: 'Search'   },
+  { kind: 'link',   to: '/trending',        icon: TrendingUp, label: 'Trending' },
+  { kind: 'link',   to: '/saved',           icon: Bookmark,   label: 'Saved'    },
 ]
 
-// ── Desktop user dropdown ─────────────────────────────────────
 function DesktopUserMenu({ user }: { user: User }) {
   const { logout } = useAuth()
   const navigate   = useNavigate()
@@ -100,7 +95,7 @@ function DesktopUserMenu({ user }: { user: User }) {
           </div>
 
           {[
-            { to: '/account', label: 'My Account'    },
+            { to: '/account', label: 'My Account'     },
             { to: '/saved',   label: 'Saved Articles' },
           ].map(item => (
             <Link
@@ -143,14 +138,13 @@ function DesktopUserMenu({ user }: { user: User }) {
   )
 }
 
-// ── Main Navbar ───────────────────────────────────────────────
 export default function Navbar() {
   const { theme, toggleTheme }       = useTheme()
   const { user, isLoggedIn, logout } = useAuth()
   const location                     = useLocation()
   const navigate                     = useNavigate()
+  const categories                   = useCategories() // ← from context, no fetch
 
-  const [categories,   setCategories]   = useState<Category[]>([])
   const [menuArticles, setMenuArticles] = useState<Record<string, Article[]>>({})
   const [expanded,     setExpanded]     = useState<string | null>(null)
   const [scrolled,     setScrolled]     = useState(false)
@@ -159,14 +153,6 @@ export default function Navbar() {
   const [navVisible,   setNavVisible]   = useState(true)
   const [lastScrollY,  setLastScrollY]  = useState(0)
 
-  // ── Fetch categories ──────────────────────────────────────
-  useEffect(() => {
-    getCategories()
-      .then(res => setCategories(res.data || []))
-      .catch(() => setCategories([]))
-  }, [])
-
-  // ── Scroll detection ──────────────────────────────────────
   useEffect(() => {
     const fn = () => {
       const cur = window.scrollY
@@ -178,7 +164,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', fn)
   }, [lastScrollY])
 
-  // ── Body scroll lock (menu only; overlay manages its own) ─
   useEffect(() => {
     if (!searchOpen) {
       document.body.style.overflow = menuOpen ? 'hidden' : ''
@@ -186,27 +171,21 @@ export default function Navbar() {
     return () => { if (!searchOpen) document.body.style.overflow = '' }
   }, [menuOpen, searchOpen])
 
-  // ── Close on route change ─────────────────────────────────
   useEffect(() => {
     setMenuOpen(false)
     setSearchOpen(false)
     setExpanded(null)
   }, [location.pathname])
 
-  // ── Lazy-load category articles (mobile menu) ─────────────
   const handleExpand = async (slug: string) => {
     if (expanded === slug) { setExpanded(null); return }
     setExpanded(slug)
     if (menuArticles[slug]) return
     try {
-      const res     = await getArticles({ category: slug, limit: 3 })
-      const articles = res.data || []
-      setMenuArticles(prev => ({ ...prev, [slug]: articles }))
+      const res = await getArticles({ category: slug, limit: 3 })
+      setMenuArticles(prev => ({ ...prev, [slug]: res.data || [] }))
     } catch {
-      setMenuArticles(prev => ({
-        ...prev,
-        [slug]: [],
-      }))
+      setMenuArticles(prev => ({ ...prev, [slug]: [] }))
     }
   }
 
@@ -219,41 +198,24 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ════════════════════════════════════════
-          MAIN HEADER
-      ════════════════════════════════════════ */}
       <header
         className={`sticky top-0 z-50 transition-shadow duration-300 ${scrolled ? 'shadow-md' : ''}`}
         style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="page-container">
-
-          {/* Logo + actions row */}
           <div className="flex items-center justify-between h-16">
-
-            {/* Logo */}
-            <Link
-              to="/"
-              className="flex items-center gap-2.5 flex-shrink-0"
-              aria-label="Mango People News"
-            >
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center
-                           text-xl flex-shrink-0 transition-transform duration-200 hover:scale-105"
-              >
+            <Link to="/" className="flex items-center gap-2.5 flex-shrink-0" aria-label="Mango People News">
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0
+                             transition-transform duration-200 hover:scale-105">
                 <img src="/logo.png" alt="Logo" className="w-9 h-9 object-cover" />
               </div>
               <div className="leading-none select-none">
-                <div
-                  className="font-display text-xl font-bold tracking-tight leading-none"
-                  style={{ color: 'var(--text-primary)' }}
-                >
+                <div className="font-display text-xl font-bold tracking-tight leading-none"
+                  style={{ color: 'var(--text-primary)' }}>
                   MANGO PEOPLE
                 </div>
-                <div
-                  className="text-[9px] font-bold tracking-[0.16em] uppercase mt-0.5"
-                  style={{ color: 'var(--accent)' }}
-                >
+                <div className="text-[9px] font-bold tracking-[0.16em] uppercase mt-0.5"
+                  style={{ color: 'var(--accent)' }}>
                   News for Every Indian
                 </div>
               </div>
@@ -274,7 +236,6 @@ export default function Navbar() {
               >
                 <Search size={15} />
               </button>
-
               <button
                 onClick={toggleTheme}
                 className="w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200"
@@ -287,7 +248,6 @@ export default function Navbar() {
               >
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
               </button>
-
               {isLoggedIn && user ? (
                 <DesktopUserMenu user={user} />
               ) : (
@@ -312,7 +272,6 @@ export default function Navbar() {
               >
                 {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
               </button>
-
               <button
                 onClick={() => setMenuOpen(v => !v)}
                 className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-150"
@@ -411,9 +370,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ════════════════════════════════════════
-          MOBILE FULL-SCREEN MENU
-      ════════════════════════════════════════ */}
+      {/* Mobile full-screen menu */}
       {menuOpen && (
         <div
           className="md:hidden fixed inset-0 z-50 flex flex-col animate-fade-in"
@@ -443,9 +400,7 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Auth block */}
-          <div className="flex-shrink-0 px-4 py-4"
-            style={{ borderBottom: '2px solid var(--border)' }}>
+          <div className="flex-shrink-0 px-4 py-4" style={{ borderBottom: '2px solid var(--border)' }}>
             {isLoggedIn && user ? (
               <div className="flex items-center gap-3">
                 <div
@@ -498,7 +453,6 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Scrollable nav */}
           <div className="flex-1 overflow-y-auto overscroll-contain">
             <div className="px-4 pt-4 pb-2">
               <span className="text-[10px] font-bold tracking-[0.08em] uppercase"
@@ -513,11 +467,9 @@ export default function Navbar() {
                          transition-colors hover:bg-[var(--bg-subtle)] group"
               style={{ borderBottom: '1px solid var(--border-muted)' }}
             >
-              <span
-                className="font-display text-2xl font-bold tracking-tight uppercase
-                           group-hover:text-[var(--accent)] transition-colors"
-                style={{ color: 'var(--text-primary)' }}
-              >
+              <span className="font-display text-2xl font-bold tracking-tight uppercase
+                               group-hover:text-[var(--accent)] transition-colors"
+                style={{ color: 'var(--text-primary)' }}>
                 Home
               </span>
               <ChevronRight size={15} style={{ color: 'var(--text-faint)' }} />
@@ -552,7 +504,7 @@ export default function Navbar() {
                   <div className="px-4 pb-3 animate-fade-in" style={{ background: 'var(--bg-subtle)' }}>
                     {!menuArticles[cat.slug] && (
                       <div className="space-y-3 pt-3">
-                        {[1,2,3].map(n => (
+                        {[1, 2, 3].map(n => (
                           <div key={n} className="flex gap-3 items-start">
                             <div className="skeleton w-14 h-14 rounded-md flex-shrink-0" />
                             <div className="flex-1 space-y-2 pt-1">
@@ -580,11 +532,14 @@ export default function Navbar() {
                         }}
                       >
                         {article.cover_image && (
-                          <img src={cloudinaryUrl(article.cover_image, 56, 56)} alt=""
+                          <img
+                            src={cloudinaryUrl(article.cover_image, 56, 56)}
+                            alt=""
                             className="w-14 h-14 object-cover rounded-md flex-shrink-0"
                             loading="lazy"
                             width={56}
-                            height={56} />
+                            height={56}
+                          />
                         )}
                         <div className="flex-1 min-w-0 pt-0.5">
                           <p className="text-sm font-semibold leading-snug line-clamp-2
@@ -647,9 +602,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* ════════════════════════════════════════
-          BOTTOM FLOATING NAV
-      ════════════════════════════════════════ */}
+      {/* Bottom floating nav */}
       <nav
         className={`
           md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50
@@ -671,11 +624,6 @@ export default function Navbar() {
         aria-label="Main navigation"
         aria-hidden={menuOpen}
       >
-        {/*
-          All 5 items rendered in one pass from BOTTOM_NAV.
-          Search sits at index 2 — natural flex centering, no order hacks.
-          Each item gets `flex-1` so spacing is mathematically equal.
-        */}
         {BOTTOM_NAV.map((slot) => {
           if (slot.kind === 'search') {
             return (
@@ -728,13 +676,7 @@ export default function Navbar() {
         })}
       </nav>
 
-      {/* ════════════════════════════════════════
-          SEARCH OVERLAY — root level, always available
-      ════════════════════════════════════════ */}
-      <SearchOverlay
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-      />
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   )
 }
