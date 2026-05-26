@@ -13,7 +13,6 @@ import {
   logout       as apiLogout,
   getMe,
   googleLogin  as apiGoogleLogin,
-  refreshToken as apiRefreshToken,
 } from '../api/auth'
 import type { LoginPayload, RegisterPayload } from '../api/auth'
 import { client } from '../api/client'
@@ -63,38 +62,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isSuperAdmin = user?.role === 'super_admin'
   const emailVerified = user?.email_verified ?? false
 
-  // ── Restore session on mount ──────────────────────────────────
+  // ── Phase 1: unblock render immediately ───────────────────────
+  // AuthGate shows a pulse spinner until loading=false. We flip it
+  // synchronously so the app renders before any network call.
   useEffect(() => {
-    const restoreSession = async () => {
-      const token = localStorage.getItem('mpn_token')
+    const token = localStorage.getItem('mpn_token')
+    if (!token) setUser(null)
+    setLoading(false)
+  }, [])
 
-      // ✅ FIX: Skip refresh if no token exists
-      if (!token) {
-        setLoading(false)
-        return
-      }
+  // ── Phase 2: background session restore (does NOT block render) ──
+  // The client.ts interceptor handles expired access tokens automatically,
+  // so we just call getMe() directly.
+  useEffect(() => {
+    const token = localStorage.getItem('mpn_token')
+    if (!token) return
 
-      try {
-        // Step 1: use the httpOnly cookie to get a fresh access token
-        const refreshRes = await apiRefreshToken()
-        if (refreshRes.data?.accessToken) {
-          localStorage.setItem('mpn_token', refreshRes.data.accessToken)
-        }
+    let cancelled = false
 
-        // Step 2: fetch the full user profile
-        const meRes = await getMe()
-        if (meRes.data) setUser(meRes.data)
-
-      } catch {
-        // No valid refresh token cookie — user is logged out
+    getMe()
+      .then(res => {
+        if (cancelled) return
+        if (res.data) setUser(res.data)
+      })
+      .catch(() => {
+        if (cancelled) return
         localStorage.removeItem('mpn_token')
         setUser(null)
-      } finally {
-        setLoading(false)
-      }
-    }
+      })
 
-    restoreSession()
+    return () => { cancelled = true }
   }, [])
 
   useEffect(() => {
@@ -121,11 +118,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (res.data?.user) {
       setUser(res.data.user)
     }
-
-    try {
-      const me = await getMe()
-      if (me.data) setUser(me.data)
-    } catch {}
   }, [])
 
   // ── Register ──────────────────────────────────────────────────
@@ -146,11 +138,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (res.data?.user) {
       setUser(res.data.user)
     }
-
-    try {
-      const me = await getMe()
-      if (me.data) setUser(me.data)
-    } catch {}
   }, [])
 
   // ── Logout ────────────────────────────────────────────────────

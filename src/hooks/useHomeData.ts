@@ -1,10 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { getHomeData } from '../api/home'
-import { client } from '../api/client'
 import { apiCache, TTL } from '../lib/apiCache'
-import type { HomeData, Quote } from '../types'
-
-const MARKET_REFRESH_INTERVAL = 5 * 60 * 1000
+import type { HomeData } from '../types'
 
 export function useHomeData() {
   const [data, setData] = useState<HomeData | null>(
@@ -16,42 +13,18 @@ export function useHomeData() {
   const [error, setError] = useState<string | null>(null)
   const [tick,  setTick]  = useState(0)
 
-  const [quotes,       setQuotes]       = useState<Quote[]>([])
-  const [marketLoading, setMarketLoading] = useState(true)
-  const [lastUpdated,  setLastUpdated]  = useState<Date | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const refetch = useCallback(() => {
+  const refetch = () => {
     apiCache.invalidate('home:data')
+    setLoading(true)
     setTick(t => t + 1)
-  }, [])
-
-  const fetchMarketQuotes = useCallback(async () => {
-    try {
-      const { data: res } = await client.get('/market/quotes')
-      if (res.data?.length > 0) {
-        setQuotes(res.data)
-        setLastUpdated(new Date())
-      }
-    } catch {
-      // Silent — keep stale data
-    } finally {
-      setMarketLoading(false)
-    }
-  }, [])
+  }
 
   // Critical path: home data (categories come from CategoriesContext — no duplication)
   useEffect(() => {
     let cancelled = false
 
-    const cached = apiCache.get<HomeData>('home:data')
-    if (cached) {
-      setData(cached)
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
+    // Cache already populated by useState initializer — no fetch needed
+    if (apiCache.get<HomeData>('home:data')) return
     apiCache
       .getOrFetch<HomeData>(
         'home:data',
@@ -75,17 +48,5 @@ export function useHomeData() {
     return () => { cancelled = true }
   }, [tick])
 
-  // Non-critical path: market quotes fire only after home data is ready
-  useEffect(() => {
-    if (!data) return
-
-    fetchMarketQuotes()
-    intervalRef.current = setInterval(fetchMarketQuotes, MARKET_REFRESH_INTERVAL)
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [!!data, fetchMarketQuotes])
-
-  return { data, loading, error, refetch, quotes, marketLoading, lastUpdated }
+  return { data, loading, error, refetch }
 }
