@@ -41,6 +41,8 @@ export const truncate = (str: string, words: number): string => {
   return arr.slice(0, words).join(' ') + '…'
 }
 
+const SRC_SET_BREAKPOINTS = [480, 768, 1200]
+
 // Build a Cloudinary URL with exact output dimensions for the placeholder.
 export function cloudinaryUrl(
   url: string | null | undefined,
@@ -51,4 +53,23 @@ export function cloudinaryUrl(
   if (!url.includes('res.cloudinary.com')) return url
   const transform = `w_${Math.round(width)},h_${Math.round(height)},c_fill,f_auto,q_auto`
   return url.replace('/image/upload/', `/image/upload/${transform}/`)
+}
+
+// Generate a srcSet string at standard breakpoints, preserving aspect ratio.
+export function cloudinarySrcSet(
+  url: string | null | undefined,
+  width: number,
+  height: number,
+): string {
+  if (!url) return ''
+  if (!url.includes('res.cloudinary.com')) return ''
+  const aspect = width / height
+  return SRC_SET_BREAKPOINTS
+    .map(w => {
+      const h = Math.round(w / aspect)
+      const t = `w_${w},h_${h},c_fill,f_auto,q_auto`
+      const u = url.replace('/image/upload/', `/image/upload/${t}/`)
+      return `${u} ${w}w`
+    })
+    .join(', ')
 }

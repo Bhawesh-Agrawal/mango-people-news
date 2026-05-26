@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Clock, Eye } from 'lucide-react'
-import { cloudinaryUrl, timeAgo, formatCount } from '../../lib/utils'
+import { cloudinaryUrl, cloudinarySrcSet, timeAgo, formatCount } from '../../lib/utils'
 import type { Article, Category, Quote } from '../../types'
 import MarketTicker from '../ui/MarketTicker'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
@@ -27,6 +27,8 @@ function ArticleCover({
     >
       <img
         src={cloudinaryUrl(article.cover_image!, 720, 405)}
+        srcSet={cloudinarySrcSet(article.cover_image!, 720, 405)}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
         alt={article.title}
         className="transition-transform duration-500 group-hover:scale-105"
         loading="lazy"

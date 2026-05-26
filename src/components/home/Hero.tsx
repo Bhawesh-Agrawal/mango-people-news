@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Clock, Eye, ArrowRight, BookOpen } from 'lucide-react'
-import { cloudinaryUrl, timeAgo, formatCount, truncate } from '../../lib/utils'
+import { cloudinaryUrl, cloudinarySrcSet, timeAgo, formatCount, truncate } from '../../lib/utils'
 import type { Article } from '../../types'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
 
@@ -33,6 +33,8 @@ function CoverImage({
       {article.cover_image ? (
         <img
           src={cloudinaryUrl(article.cover_image, cloudW, cloudH)}
+          srcSet={cloudinarySrcSet(article.cover_image, cloudW, cloudH)}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
           alt={article.title}
           className="transition-transform duration-700 group-hover:scale-105"
           loading={eager ? 'eager' : 'lazy'}
@@ -63,6 +65,8 @@ function ArticleRow({ article }: { article: Article }) {
         >
           <img
             src={cloudinaryUrl(article.cover_image, 144, 108)}
+            srcSet={cloudinarySrcSet(article.cover_image, 144, 108)}
+            sizes="72px"
             alt={article.title}
             className="transition-transform duration-500 group-hover:scale-105"
             loading="lazy"

@@ -1,12 +1,25 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth }    from './context/AuthContext'
-import Navbar         from './components/layout/Navbar'
-import Footer         from './components/layout/Footer'
 import ProtectedRoute from './components/ui/ProtectedRoutes'
 import AdminLayout    from './components/layout/Adminlayout'
 import ScrollToTop    from './components/ui/ScrollToTop'
 import { CategoriesProvider } from './context/CategoriesContext'
+
+// ─────────────────────────────────────────────────────────────
+// LIGHTWEIGHT SKELETON — shown while Navbar chunk loads
+// ─────────────────────────────────────────────────────────────
+function NavbarSkeleton() {
+  return (
+    <div
+      style={{
+        height: 64,
+        background: 'var(--bg-card, #fff)',
+        borderBottom: '1px solid var(--border, #e5e7eb)',
+      }}
+    />
+  )
+}
 
 // ─────────────────────────────────────────────────────────────
 // LAZY PAGE IMPORTS
@@ -18,6 +31,10 @@ const HomePage     = lazy(() => import('./pages/HomePage'))
 const ArticlePage  = lazy(() => import('./pages/ArticlePage'))
 const CategoryPage = lazy(() => import('./pages/CategoryPage'))
 const ArticlesPage = lazy(() => import('./pages/Articlespage'))
+
+// 🔴 Layout — lazy loaded to keep main chunk lean
+const Navbar = lazy(() => import('./components/layout/Navbar'))
+const Footer = lazy(() => import('./components/layout/Footer'))
 
 // 🟡 Common public pages — preloaded on idle
 const SearchPage      = lazy(() => import('./pages/Searchpage'))
@@ -67,8 +84,10 @@ const AdminSettings = lazy(() =>
 // Call these to hint the browser to fetch chunks early,
 // before the user actually navigates there.
 // ─────────────────────────────────────────────────────────────
+// Preload critical chunks eagerly at module level — starts download before React renders
+import('./pages/HomePage')
+
 const preloadCritical = () => {
-  // These are the pages most visitors will hit — load them right away
   import('./pages/ArticlePage')
   import('./pages/CategoryPage')
   import('./pages/Articlespage')
@@ -150,7 +169,9 @@ function App() {
             element={
               <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
                 <CategoriesProvider>
-                  <Navbar />
+                  <Suspense fallback={<NavbarSkeleton />}>
+                    <Navbar />
+                  </Suspense>
                   <main>
                     <Routes>
                       <Route path="/"                       element={<HomePage />} />
@@ -198,7 +219,9 @@ function App() {
                       } />
                     </Routes>
                   </main>
-                  <Footer />
+                  <Suspense fallback={null}>
+                    <Footer />
+                  </Suspense>
                 </CategoriesProvider>
               </div>
             }
