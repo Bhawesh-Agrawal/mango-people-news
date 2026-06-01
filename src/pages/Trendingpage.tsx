@@ -10,12 +10,10 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Link }                 from 'react-router-dom'
-import { TrendingUp, Eye, Heart, MessageCircle, Clock } from 'lucide-react'
+import { TrendingUp }           from 'lucide-react'
 import { client }               from '../api/client'
 import type { Article }         from '../types'
 import SEO                     from '../seo/Seo'
-import { cloudinaryUrl, timeAgo, formatCount } from '../lib/utils'
 
 type Period = 'today' | 'week' | 'month' | 'all'
 
@@ -28,8 +26,8 @@ const PERIODS: { key: Period; label: string; days: number | null }[] = [
 
 export default function TrendingPage() {
   const [period,   setPeriod]   = useState<Period>('week')
-  const [articles, setArticles] = useState<Article[]>([])
-  const [loading,  setLoading]  = useState(true)
+  const [, setArticles] = useState<Article[]>([])
+  const [, setLoading]   = useState(true)
 
   const { days } = PERIODS.find(p => p.key === period)!
 
@@ -51,8 +49,6 @@ export default function TrendingPage() {
 
     return () => { cancelled = true }
   }, [days])
-
-  const [lead, ...rest] = articles
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -111,123 +107,3 @@ export default function TrendingPage() {
   )
 }
 
-// ── Ranked row — compact text strip ──────────────────────────
-
-function RankedRow({ article, rank }: { article: Article; rank: number }) {
-  // Visual weight changes: top 5 are heavier than the rest
-  const isTop5 = rank <= 5
-
-  return (
-    <Link
-      to={`/article/${article.slug}`}
-      className="group flex items-start gap-4 py-4 transition-colors
-                 hover:bg-[var(--bg-subtle)] -mx-4 px-4 rounded-xl"
-      style={{ borderBottom: '1px solid var(--border)' }}
-    >
-      {/* Rank number */}
-      <span
-        className="font-display font-bold flex-shrink-0 mt-0.5 w-6 text-right"
-        style={{
-          fontSize: isTop5 ? '18px' : '14px',
-          color:    isTop5 ? 'var(--accent)' : 'var(--text-muted)',
-          opacity:  isTop5 ? 0.6 : 0.4,
-          lineHeight: 1.2,
-        }}
-      >
-        {rank}
-      </span>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Category + breaking */}
-        <div className="flex items-center gap-2 mb-1">
-          {article.category_name && (
-            <span
-              className="text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: article.category_color ?? 'var(--accent)' }}
-            >
-              {article.category_name}
-            </span>
-          )}
-          {article.is_breaking && (
-            <span className="breaking-strip text-[9px]">● Breaking</span>
-          )}
-        </div>
-
-        {/* Headline */}
-        <h3
-          className="leading-snug mb-1.5 transition-colors
-                     group-hover:text-[var(--accent)]"
-          style={{
-            fontSize:   isTop5 ? '15px' : '14px',
-            fontWeight: isTop5 ? 600 : 500,
-            color:      'var(--text-primary)',
-          }}
-        >
-          {article.title}
-        </h3>
-
-        {/* Stats + byline */}
-        <StatsRow article={article} compact />
-      </div>
-
-      {/* Thumbnail — only shown for top 5, small */}
-      {isTop5 && article.cover_image && (
-        <div
-          className="flex-shrink-0 rounded-lg overflow-hidden hidden sm:block"
-          style={{ width: '72px', height: '54px' }}
-        >
-          <img
-            src={cloudinaryUrl(article.cover_image, 72, 54)}
-            alt=""
-            className="w-full h-full object-cover transition-transform
-                       duration-300 group-hover:scale-105"
-            width={72}
-            height={54}
-          />
-        </div>
-      )}
-    </Link>
-  )
-}
-
-// ── Shared stats row ──────────────────────────────────────────
-
-function StatsRow({ article, compact = false }: { article: Article; compact?: boolean }) {
-  const sz = compact ? 10 : 11
-
-  return (
-    <div
-      className="flex items-center flex-wrap gap-x-3 gap-y-1"
-      style={{ fontSize: `${sz}px`, color: 'var(--text-muted)' }}
-    >
-      {article.author_name && (
-        <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>
-          {article.author_name}
-        </span>
-      )}
-      <span className="flex items-center gap-1">
-        <Clock size={sz} />
-        {timeAgo(article.published_at)}
-      </span>
-      {(article.view_count ?? 0) > 0 && (
-        <span className="flex items-center gap-1">
-          <Eye size={sz} />{formatCount(article.view_count!)}
-        </span>
-      )}
-      {(article.like_count ?? 0) > 0 && (
-        <span className="flex items-center gap-1">
-          <Heart size={sz} />{formatCount(article.like_count!)}
-        </span>
-      )}
-      {(article.comment_count ?? 0) > 0 && (
-        <span className="flex items-center gap-1">
-          <MessageCircle size={sz} />{formatCount(article.comment_count!)}
-        </span>
-      )}
-      {article.reading_time && (
-        <span>{article.reading_time} min read</span>
-      )}
-    </div>
-  )
-}
