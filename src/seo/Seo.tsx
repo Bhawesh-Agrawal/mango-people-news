@@ -1,6 +1,22 @@
 import { Helmet } from "react-helmet-async"
 
 // ─────────────────────────────────────────────────────────────
+//  JSON-LD helpers
+// ─────────────────────────────────────────────────────────────
+function escapeJson(str: string): string {
+  return String(str)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+}
+
+function toIso(ts: string | undefined | null): string | null {
+  if (!ts) return null
+  const d = new Date(ts)
+  return isNaN(d.getTime()) ? null : d.toISOString()
+}
+
+// ─────────────────────────────────────────────────────────────
 //  Constants — update SITE_URL once production domain is live
 // ─────────────────────────────────────────────────────────────
 const SITE_URL = "https://www.mangopeoplenews.com"
@@ -39,6 +55,9 @@ interface SEOProps {
 
   // Set true for pages Google should NOT index (search results, account pages)
   noIndex?: boolean;
+
+  // Breadcrumb items for structured data (BreadcrumbList)
+  breadcrumbs?: { name: string; url: string }[];
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -52,6 +71,7 @@ export default function SEO({
   ogType = "website",
   article,
   noIndex = false,
+  breadcrumbs,
 }: SEOProps) {
   const fullTitle = title
     ? `${title} — ${SITE_NAME}`
@@ -63,6 +83,45 @@ export default function SEO({
   const resolvedOgImage = ogImage.startsWith("http")
     ? ogImage
     : `${SITE_URL}${ogImage}`
+
+  // ── Build NewsArticle JSON-LD ──────────────────────────────────
+  const articleJsonLd =
+    ogType === "article" && article
+      ? JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "NewsArticle",
+          mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+          headline: title || SITE_NAME,
+          description: description || DEFAULT_DESCRIPTION,
+          image: resolvedOgImage || DEFAULT_OG_IMAGE,
+          datePublished: toIso(article.publishedTime),
+          dateModified: toIso(article.modifiedTime) || toIso(article.publishedTime),
+          author: { "@type": "Person", name: article.authorName || SITE_NAME },
+          publisher: {
+            "@type": "NewsMediaOrganization",
+            name: SITE_NAME,
+            logo: { "@type": "ImageObject", url: `${SITE_URL}/logo.png` },
+          },
+          inLanguage: "en-IN",
+          isAccessibleForFree: true,
+          ...(article.section ? { articleSection: article.section } : {}),
+        }, null, 2)
+      : null
+
+  // ── Build BreadcrumbList JSON-LD ───────────────────────────────
+  const breadcrumbJsonLd =
+    breadcrumbs && breadcrumbs.length > 0
+      ? JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: breadcrumbs.map((item, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: item.name,
+            item: `${SITE_URL}${item.url}`,
+          })),
+        }, null, 2)
+      : null
 
   return (
     <Helmet>
@@ -116,6 +175,18 @@ export default function SEO({
             <meta key={tag} property="article:tag" content={tag} />
           ))}
         </>
+      )}
+
+      {/* ── Structured data (JSON-LD) ── */}
+      {articleJsonLd && (
+        <script type="application/ld+json">
+          {escapeJson(articleJsonLd)}
+        </script>
+      )}
+      {breadcrumbJsonLd && (
+        <script type="application/ld+json">
+          {escapeJson(breadcrumbJsonLd)}
+        </script>
       )}
     </Helmet>
   )

@@ -817,10 +817,16 @@ export default function ArticlePage() {
         ogType="article"
         article={{
           publishedTime: article.published_at,
+          modifiedTime:  article.updated_at,
           authorName:    article.author_name,
           section:       article.category_name,
           tags:          article.tags?.map(t => t.name),
         }}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: article.category_name, url: `/category/${article.category_slug}` },
+          { name: article.title, url: `/article/${article.slug}` },
+        ]}
       />
 
       <ReadingProgress />

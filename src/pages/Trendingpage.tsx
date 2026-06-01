@@ -14,6 +14,7 @@ import { Link }                 from 'react-router-dom'
 import { TrendingUp, Eye, Heart, MessageCircle, Clock } from 'lucide-react'
 import { client }               from '../api/client'
 import type { Article }         from '../types'
+import SEO                     from '../seo/Seo'
 import { cloudinaryUrl, timeAgo, formatCount } from '../lib/utils'
 
 type Period = 'today' | 'week' | 'month' | 'all'
@@ -55,6 +56,7 @@ export default function TrendingPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <SEO title="Trending News" path="/trending" />
       <div className="page-container py-8">
 
         {/* ── Masthead ───────────────────────────────────────── */}
@@ -104,142 +106,6 @@ export default function TrendingPage() {
             </div>
           </div>
         </div>
-
-        {/* ── Loading ────────────────────────────────────────── */}
-        {loading && (
-          <div className="space-y-0">
-            {/* Lead skeleton */}
-            <div
-              className="flex gap-6 pb-6 mb-6 animate-pulse"
-              style={{ borderBottom: '1px solid var(--border)' }}
-            >
-              <div className="skeleton rounded-xl flex-shrink-0"
-                style={{ width: '200px', height: '140px' }} />
-              <div className="flex-1 space-y-3 py-2">
-                <div className="skeleton h-3 w-20 rounded" />
-                <div className="skeleton h-6 w-full rounded" />
-                <div className="skeleton h-6 w-4/5 rounded" />
-                <div className="skeleton h-3 w-1/3 rounded mt-4" />
-              </div>
-            </div>
-            {/* Row skeletons */}
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 py-4 animate-pulse"
-                style={{ borderBottom: '1px solid var(--border)' }}
-              >
-                <div className="skeleton w-6 h-4 rounded flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="skeleton h-3 w-16 rounded" />
-                  <div className="skeleton h-4 w-full rounded" />
-                  <div className="skeleton h-3 w-1/4 rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── Content ────────────────────────────────────────── */}
-        {!loading && articles.length > 0 && (
-          <>
-            {/* ── #1 Lead story — with image ─────────────────── */}
-            {lead && (
-              <Link
-                to={`/article/${lead.slug}`}
-                className="group flex gap-6 pb-6 mb-2"
-                style={{ borderBottom: '2px solid var(--text-primary)' }}
-              >
-                {/* Image */}
-                {lead.cover_image && (
-                  <div
-                    className="flex-shrink-0 rounded-xl overflow-hidden hidden sm:block"
-                    style={{ width: '220px', height: '148px' }}
-                  >
-                    <img
-                      src={cloudinaryUrl(lead.cover_image, 220, 148)}
-                      alt={lead.title}
-                      className="w-full h-full object-cover transition-transform
-                                 duration-300 group-hover:scale-[1.03]"
-                      width={220}
-                      height={148}
-                    />
-                  </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  {/* Rank + category */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <span
-                      className="font-display font-bold text-5xl leading-none
-                                 select-none flex-shrink-0"
-                      style={{ color: 'var(--accent)', opacity: 0.25 }}
-                    >
-                      1
-                    </span>
-                    {lead.category_name && (
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-widest"
-                        style={{ color: lead.category_color ?? 'var(--accent)' }}
-                      >
-                        {lead.category_name}
-                      </span>
-                    )}
-                    {lead.is_breaking && (
-                      <span className="breaking-strip text-[9px]">● Breaking</span>
-                    )}
-                  </div>
-
-                  {/* Headline */}
-                  <h2
-                    className="font-display font-bold leading-tight mb-3
-                               transition-colors group-hover:text-[var(--accent)]"
-                    style={{
-                      fontSize:      'clamp(18px, 3vw, 24px)',
-                      color:         'var(--text-primary)',
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {lead.title}
-                  </h2>
-
-                  {/* Excerpt */}
-                  {lead.excerpt && (
-                    <p
-                      className="text-sm leading-relaxed line-clamp-2 mb-3"
-                      style={{ color: 'var(--text-secondary)' }}
-                    >
-                      {lead.excerpt}
-                    </p>
-                  )}
-
-                  {/* Meta */}
-                  <StatsRow article={lead} />
-                </div>
-              </Link>
-            )}
-
-            {/* ── #2–25 Ranked rows — dense text list ────────── */}
-            <div>
-              {rest.map((article, index) => (
-                <RankedRow
-                  key={article.id ?? index}
-                  article={article}
-                  rank={index + 2}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* ── Empty ──────────────────────────────────────────── */}
-        {!loading && articles.length === 0 && (
-          <p className="py-16 text-center text-sm"
-            style={{ color: 'var(--text-muted)' }}>
-            No trending stories yet. Check back soon.
-          </p>
-        )}
-
       </div>
     </div>
   )

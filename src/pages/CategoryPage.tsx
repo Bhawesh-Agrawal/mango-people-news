@@ -419,11 +419,7 @@ export default function CategoryPage() {
       {category && (
         <SEO
           title={`${category.name} News`}
-          description={
-            category.slug
-              ? category.slug
-              : `Latest ${category.name} news and analysis — Mango People News`
-          }
+          description={category.description || `Latest ${category.name} news and analysis — Mango People News`}
           path={`/category/${slug}`}
         />
       )}

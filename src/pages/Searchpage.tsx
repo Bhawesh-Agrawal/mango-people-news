@@ -18,6 +18,7 @@ import { Search, X, Clock, Eye, SlidersHorizontal }   from 'lucide-react'
 import { getArticles }                                from '../api/articles'
 import { getCategories }                              from '../api/categories'
 import type { Article, Category }                     from '../types'
+import SEO                                           from '../seo/Seo'
 import { cloudinaryUrl, timeAgo, formatCount }       from '../lib/utils'
 
 const LIMIT = 12
@@ -136,6 +137,7 @@ export default function SearchPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      <SEO title="Search" path="/search" noIndex />
       <div className="page-container py-8">
 
         {/* ── Search header ─────────────────────────────── */}

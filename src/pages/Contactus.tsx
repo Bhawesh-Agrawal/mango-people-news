@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, Send, ArrowRight, MessageSquare, Newspaper, AlertCircle } from 'lucide-react'
+import SEO from '../seo/Seo'
 
 const CONTACT_EMAIL = 'mangopeoplenews2026@gmail.com'
 
@@ -96,6 +97,7 @@ export default function ContactPage() {
 
   return (
     <main className="page-container py-10 md:py-16 max-w-3xl mx-auto">
+      <SEO title="Contact Us" path="/contact" />
 
       {/* ── Hero ───────────────────────────────────── */}
       <div className="mb-12">
@@ -362,6 +364,6 @@ export default function ContactPage() {
           </Link>
         ))}
       </div>
-    </main>
+      </main>
   )
 }

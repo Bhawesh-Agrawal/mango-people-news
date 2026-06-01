@@ -1,5 +1,6 @@
 import { Linkedin, Mail, Phone, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import SEO from '../seo/Seo'
 
 const team = [
   {
@@ -128,6 +129,7 @@ function MemberCard({ member }: { member: (typeof team)[0] }) {
 export default function TeamPage() {
   return (
     <main className="w-full max-w-6xl mx-auto px-8 md:px-16 py-16 md:py-24">
+      <SEO title="Our Team" path="/team" />
 
       {/* ── Hero ── */}
       <div className="mb-16">

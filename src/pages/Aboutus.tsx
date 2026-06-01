@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Shield, Users, Zap, CheckCircle } from 'lucide-react'
 import { useArticles } from '../hooks/useArticles'
+import SEO from '../seo/Seo'
 import { cloudinaryUrl } from '../lib/utils'
 
 // ── Internal article link card ────────────────────────────────────
@@ -83,6 +84,7 @@ export default function AboutPage() {
 
   return (
     <main className="page-container py-10 md:py-16 max-w-3xl mx-auto">
+      <SEO title="About Us" path="/about" />
 
       {/* ── Hero ───────────────────────────────────── */}
       <div className="mb-14">
@@ -289,6 +291,6 @@ export default function AboutPage() {
           </div>
         )}
       </div>
-    </main>
+      </main>
   )
 }

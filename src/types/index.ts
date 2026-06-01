@@ -16,6 +16,9 @@ export interface Article {
   category_color: string
   category_slug:  string
   published_at:   string
+  updated_at?:    string
+  meta_title?:    string
+  meta_description?: string
   is_breaking:    boolean
   is_featured:    boolean
   body?:          string
@@ -40,6 +43,7 @@ export interface Category {
   id:            string
   name:          string
   slug:          string
+  description?:  string
   color:         string
   article_count: number
   sort_order?:   number
