@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { subscribeNewsletterFooter } from '../../api/newsletter'
 import { useCategories } from '../../hooks/useCategories'
 
-const LINKS = {
+const LINKS: Record<string, { label: string; href: string; external?: boolean }[]> = {
   Company: [
     { label: 'About Us',  href: '/about'     },
     { label: 'Our Team',  href: '/team'      },
@@ -14,7 +14,7 @@ const LINKS = {
     { label: 'Privacy Policy', href: '/privacy-policy'       },
     { label: 'Terms of Use',   href: '/terms-and-conditions' },
     { label: 'Disclaimer',     href: '/disclaimer'           },
-    { label: 'Sitemap',       href: '/sitemap.xml'           },
+    { label: 'Sitemap',        href: '/sitemap.xml', external: true },
   ],
 }
 
@@ -199,14 +199,27 @@ export default function Footer() {
                 <ul className="space-y-2">
                   {links.map(link => (
                     <li key={link.href}>
-                      <Link
-                        to={link.href}
-                        className="text-xs transition-colors duration-150
-                                   hover:text-[var(--accent)]"
-                        style={{ color: 'var(--text-secondary)' }}
-                      >
-                        {link.label}
-                      </Link>
+                      {link.external ? (
+                        <a
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs transition-colors duration-150
+                                     hover:text-[var(--accent)]"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link
+                          to={link.href}
+                          className="text-xs transition-colors duration-150
+                                     hover:text-[var(--accent)]"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
