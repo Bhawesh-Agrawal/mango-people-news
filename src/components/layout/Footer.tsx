@@ -14,6 +14,7 @@ const LINKS = {
     { label: 'Privacy Policy', href: '/privacy-policy'       },
     { label: 'Terms of Use',   href: '/terms-and-conditions' },
     { label: 'Disclaimer',     href: '/disclaimer'           },
+    { label: 'Sitemap',       href: '/sitemap.xml'           },
   ],
 }
 
