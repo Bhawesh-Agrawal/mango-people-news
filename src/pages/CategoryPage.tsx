@@ -4,7 +4,7 @@ import { Clock, Eye, ChevronRight, ArrowRight } from 'lucide-react'
 import { useCategories }  from '../hooks/useCategories'
 import { getArticles }    from '../api/articles'
 import type { Article, Category } from '../types'
-import { cloudinaryUrl, timeAgo, formatCount } from '../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount, truncate } from '../lib/utils'
 import MarketTicker from '../components/ui/MarketTicker'
 import SEO          from '../seo/Seo'
 
@@ -82,11 +82,14 @@ function HeroArticle({ article }: { article: Article }) {
         )}
       </div>
 
-      <h1
-        className="font-display text-display-xl leading-tight mb-3
+          <h1
+        className="font-display font-black leading-tight tracking-tight mb-3
                    transition-colors duration-150
                    group-hover:text-[var(--accent)]"
-        style={{ color: 'var(--text-primary)' }}
+        style={{
+          color: 'var(--text-primary)',
+          fontSize: 'clamp(24px, 6vw, 32px)',
+        }}
       >
         {article.title}
       </h1>
@@ -212,6 +215,154 @@ function SecondaryList({ articles }: { articles: Article[] }) {
   )
 }
 
+function FeaturedCard({ article }: { article: Article }) {
+  return (
+    <Link
+      to={`/article/${article.slug}`}
+      className="group block min-w-[240px] md:min-w-0"
+    >
+      <div
+        className="rounded-[1.5rem] overflow-hidden mb-4"
+        style={{ aspectRatio: '4 / 3' }}
+      >
+        {article.cover_image ? (
+          <img
+            src={cloudinaryUrl(article.cover_image, 720, 450)}
+            alt={article.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            width={720}
+            height={450}
+          />
+        ) : (
+          <div className="w-full h-full" style={{ background: 'var(--bg-muted)' }} />
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 mb-3">
+        {article.is_breaking && (
+          <span className="breaking-strip">● Breaking</span>
+        )}
+        {article.is_featured && !article.is_breaking && (
+          <span
+            className="text-[10px] font-semibold px-2 py-1 rounded-sm uppercase tracking-wide"
+            style={{ background: 'var(--accent-light)', color: 'var(--accent-text)' }}
+          >
+            Featured
+          </span>
+        )}
+      </div>
+
+      <h3
+        className="font-display font-semibold leading-tight tracking-tight mb-2
+                   transition-colors duration-150 group-hover:text-[var(--accent)]"
+        style={{ color: 'var(--text-primary)', fontSize: 'clamp(16px, 2vw, 22px)' }}
+      >
+        {article.title}
+      </h3>
+
+      {(article.subtitle || article.excerpt) && (
+        <p
+          className="text-sm leading-relaxed line-clamp-3"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {article.subtitle || truncate(article.excerpt, 26)}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2 mt-3 text-xs"
+        style={{ color: 'var(--text-muted)' }}>
+        <span>{timeAgo(article.published_at)}</span>
+        <span>·</span>
+        <span>{article.reading_time} min read</span>
+      </div>
+    </Link>
+  )
+}
+
+function FeaturedCarousel({ articles }: { articles: Article[] }) {
+  return (
+    <div className="space-y-5">
+      <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {articles.map(article => (
+          <FeaturedCard key={article.id} article={article} />
+        ))}
+      </div>
+
+      <div className="md:hidden overflow-x-auto scrollbar-none -mx-4 px-4 pb-4">
+        <div className="flex gap-4">
+          {articles.map(article => (
+            <div key={article.id} className="min-w-[260px]">
+              <FeaturedCard article={article} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MoreStoryCard({ article, isLast }: { article: Article; isLast: boolean }) {
+  return (
+    <Link
+      to={`/article/${article.slug}`}
+      className={`group block py-5 ${isLast ? '' : 'border-b border-[var(--border-muted)]'} transition-colors duration-200 hover:bg-[var(--bg-surface)]`}
+    >
+      <div className="flex flex-col sm:flex-row gap-4 items-start">
+        <div className="flex-1 min-w-0">
+          {article.is_breaking && (
+            <span className="breaking-strip mb-2 inline-block">● Breaking</span>
+          )}
+          <h3
+            className="font-display font-semibold leading-tight tracking-tight text-lg sm:text-xl"
+            style={{ color: 'var(--text-primary)' }}
+          >
+            {article.title}
+          </h3>
+          {article.subtitle && (
+            <p
+              className="text-sm leading-relaxed mt-2 text-[var(--text-secondary)] line-clamp-2"
+              style={{ wordBreak: 'break-word' }}
+            >
+              {article.subtitle}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px]"
+            style={{ color: 'var(--text-muted)' }}>
+            <span>{article.author_name}</span>
+            <span>·</span>
+            <span>{timeAgo(article.published_at)}</span>
+            <span>·</span>
+            <span>{article.reading_time} min read</span>
+            {article.view_count > 500 && (
+              <>
+                <span>·</span>
+                <span className="flex items-center gap-1">
+                  <Eye size={10} />{formatCount(article.view_count)}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {article.cover_image && (
+          <div className="hidden sm:block flex-shrink-0 rounded-xl overflow-hidden"
+            style={{ width: '120px', height: '90px' }}>
+            <img
+              src={cloudinaryUrl(article.cover_image, 240, 180)}
+              alt={article.title}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              width={240}
+              height={180}
+            />
+          </div>
+        )}
+      </div>
+    </Link>
+  )
+}
+
 // ── Article row ───────────────────────────────────────────────
 function ArticleRow({
   article,
@@ -257,7 +408,7 @@ function ArticleRow({
           className={`font-display leading-tight transition-colors duration-150
                       group-hover:text-[var(--accent)]
                       ${size === 'large'
-                        ? 'text-display-md line-clamp-2'
+                        ? 'text-display-md line-clamp-3'
                         : 'text-display-sm line-clamp-2'
                       }`}
           style={{ color: 'var(--text-primary)' }}
@@ -387,10 +538,11 @@ export default function CategoryPage() {
     }
   }, [loadingMore, hasMore, slug, page])
 
-  const heroArticle     = allArticles[0]
-  const secondaryList   = allArticles.slice(1, 6)
-  const firstBatch      = allArticles.slice(6, 10)
-  const remainingBatch  = allArticles.slice(10)
+  const heroArticle      = allArticles[0]
+  const spotlightArticles = allArticles.slice(1, 8)
+  const relatedArticles   = allArticles.slice(8, 14)
+  const moreStories       = allArticles.slice(14, 20)
+  const continueBatch     = allArticles.slice(20)
 
   if (!catLoading && !category) {
     return (
@@ -452,8 +604,11 @@ export default function CategoryPage() {
             >
               <div className="flex items-center gap-3">
                 <h1
-                  className="font-display text-display-2xl leading-none"
-                  style={{ color: 'var(--text-primary)' }}
+                  className="font-display font-black leading-tight tracking-tight"
+                  style={{
+                    color: 'var(--text-primary)',
+                    fontSize: 'clamp(28px, 6vw, 38px)',
+                  }}
                 >
                   {category?.name ?? slug}
                 </h1>
@@ -480,6 +635,7 @@ export default function CategoryPage() {
                 </div>
               )}
             </div>
+
           </div>
 
           {isMarkets && (
@@ -516,43 +672,55 @@ export default function CategoryPage() {
 
                     <HeroArticle article={heroArticle} />
 
-                    {secondaryList.length > 0 && (
+                    {relatedArticles.length > 0 && (
                       <div className="lg:pl-8"
                         style={{ borderLeft: '1px solid var(--border)' }}>
                         <p className="section-label mb-0 pb-3"
                           style={{ borderBottom: '1px solid var(--border-muted)' }}>
-                          Latest in {category?.name}
+                          Related articles
                         </p>
-                        <SecondaryList articles={secondaryList} />
+                        <SecondaryList articles={relatedArticles} />
                       </div>
                     )}
                   </div>
                 )}
 
-                {firstBatch.length > 0 && (
-                  <div className="mt-8">
+                {spotlightArticles.length > 0 && (
+                  <div className="mt-10">
+                    <div className="flex items-center justify-between gap-4 mb-4">
+                      <h2 className="section-label mb-0">Spotlight</h2>
+                      <span className="text-xs font-semibold uppercase tracking-wide"
+                        style={{ color: 'var(--text-muted)' }}>
+                        Swipe or scroll for more
+                      </span>
+                    </div>
+                    <FeaturedCarousel articles={spotlightArticles} />
+                  </div>
+                )}
+
+                {moreStories.length > 0 && (
+                  <div className="mt-10">
                     <SectionDivider label="More stories" />
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10">
-                      {firstBatch.map((article, i) => (
-                        <ArticleRow
+                    <div className="space-y-0 divide-y divide-[var(--border-muted)]">
+                      {moreStories.map((article, i) => (
+                        <MoreStoryCard
                           key={article.id}
                           article={article}
-                          isLast={i === firstBatch.length - 1}
-                          size="large"
+                          isLast={i === moreStories.length - 1}
                         />
                       ))}
                     </div>
                   </div>
                 )}
 
-                {remainingBatch.length > 0 && (
-                  <div className="mt-2">
+                {continueBatch.length > 0 && (
+                  <div className="mt-10">
                     <SectionDivider label="Continue reading" />
-                    {remainingBatch.map((article, i) => (
+                    {continueBatch.map((article, i) => (
                       <ArticleRow
                         key={article.id}
                         article={article}
-                        isLast={i === remainingBatch.length - 1}
+                        isLast={i === continueBatch.length - 1}
                         size="normal"
                       />
                     ))}

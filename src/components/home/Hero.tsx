@@ -118,14 +118,11 @@ export default function Hero({ articles }: { articles: Article[] }) {
           className="px-4 pt-5 pb-4 space-y-3"
           style={{ background: 'var(--bg-surface)' }}
         >
-          <div className="flex items-center gap-2">
-            {main.is_breaking && (
+          {main.is_breaking && (
+            <div className="flex items-center gap-2">
               <span className="breaking-strip">● Breaking</span>
-            )}
-            <span className="cat-label" style={{ color: main.category_color }}>
-              {main.category_name}
-            </span>
-          </div>
+            </div>
+          )}
 
           <Link to={`/article/${main.slug}`} className="block w-full group">
             <h1
@@ -176,47 +173,13 @@ export default function Hero({ articles }: { articles: Article[] }) {
           to={`/article/${main.slug}`}
           className="block w-full relative overflow-hidden group"
         >
-          <CoverImage article={main} cloudW={800} cloudH={450} eager />
-
-          <div
-            className="absolute inset-0 flex items-center justify-center
-                       pointer-events-none overflow-hidden"
-            aria-hidden="true"
-          >
-            <span
-              className="font-display font-bold uppercase
-                         select-none whitespace-nowrap"
-              style={{
-                fontSize: '100px',
-                letterSpacing: '-0.04em',
-                color: 'rgba(255,255,255,0.06)',
-                lineHeight: '1',
-              }}
-            >
-              {main.category_name}
-            </span>
-          </div>
-
-          <div
-            className="absolute bottom-0 left-0 right-0 p-4"
-            style={{
-              background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)',
-            }}
-          >
-            <span
-              className="inline-flex items-center gap-2 text-xs font-bold
-                         tracking-wide uppercase px-4 py-2 rounded-lg
-                         transition-all duration-200 group-hover:gap-3"
-              style={{ background: 'var(--accent)', color: '#fff' }}
-            >
-              <BookOpen size={12} />
-              Read Full Article
-              <ArrowRight
-                size={12}
-                className="transition-transform duration-200 group-hover:translate-x-1"
-              />
-            </span>
-          </div>
+          <CoverImage
+            article={main}
+            cloudW={640}
+            cloudH={360}
+            eager
+            className="rounded-[1.25rem] max-h-[220px]"
+          />
         </Link>
 
         {/* Top stories */}
