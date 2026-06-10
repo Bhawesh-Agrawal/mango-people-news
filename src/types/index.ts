@@ -103,6 +103,9 @@ export interface User {
   created_at:  string
   auth_provider: string
   bio?:        string
+  instagram_profile?: string
+  twitter_profile?: string
+  linkedin_profile?: string
 }
 
 export interface ReviewArticle {

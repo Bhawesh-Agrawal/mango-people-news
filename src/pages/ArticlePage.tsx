@@ -4,7 +4,7 @@ import {
 import { Link, useParams, useLocation } from 'react-router-dom'
 import {
   Clock, Eye, Heart, Bookmark,
-  Link2, ChevronRight, Instagram, Twitter, Linkedin,
+  Link2, ChevronRight, Instagram, Linkedin,
   Trash2, CornerDownRight, X,
 } from 'lucide-react'
 import {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Clock, Eye, Instagram, Twitter, Linkedin, ArrowRight, Mail } from 'lucide-react'
+import { Clock, Eye, Instagram, Twitter, Linkedin } from 'lucide-react'
 import { client } from '../api/client'
-import { cloudinaryUrl, timeAgo, formatCount, truncate } from '../lib/utils'
+import { cloudinaryUrl, timeAgo, formatCount } from '../lib/utils'
 import SEO from '../seo/Seo'
 import type { Article } from '../types'
 
@@ -235,7 +235,7 @@ export default function UserProfilePage() {
               </div>
 
               <div className="space-y-0 divide-y divide-[var(--border-muted)]">
-                {articles.map((article, i) => (
+                {articles.map((article) => (
                   <Link
                     key={article.id}
                     to={`/article/${article.slug}`}
