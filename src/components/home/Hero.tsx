@@ -122,11 +122,6 @@ export default function Hero({ articles }: { articles: Article[] }) {
           className="px-4 pt-5 pb-4 space-y-3"
           style={{ background: 'var(--bg-surface)' }}
         >
-          {main.is_breaking && (
-            <div className="flex items-center gap-2">
-              <span className="breaking-strip">● Breaking</span>
-            </div>
-          )}
 
           <Link to={`/article/${main.slug}`} className="block w-full group">
             <h1
@@ -134,22 +129,13 @@ export default function Hero({ articles }: { articles: Article[] }) {
                          transition-colors duration-150
                          group-hover:text-[var(--accent)]"
               style={{
-                fontSize: 'clamp(24px, 7vw, 32px)',
+                fontSize: 'clamp(14px, 7vw, 20px)',
                 color: 'var(--text-primary)',
               }}
             >
               {main.title}
             </h1>
           </Link>
-
-          {(main.subtitle || main.excerpt) && (
-            <p
-              className="text-sm leading-relaxed line-clamp-3"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {main.subtitle || truncate(main.excerpt, 28)}
-            </p>
-          )}
 
           <div
             className="flex items-center gap-3 text-xs pt-0.5"
