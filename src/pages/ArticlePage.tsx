@@ -4,7 +4,7 @@ import {
 import { Link, useParams, useLocation } from 'react-router-dom'
 import {
   Clock, Eye, Heart, Bookmark,
-  Link2, ChevronRight,
+  Link2, ChevronRight, Instagram, Twitter, Linkedin,
   Trash2, CornerDownRight, X,
 } from 'lucide-react'
 import {
@@ -882,9 +882,12 @@ export default function ArticlePage() {
                 className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-5 mb-6 text-sm"
                 style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}
               >
-                <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>
+                <Link 
+                  to={`/user/${article.author_id}`}
+                  className="font-medium transition-opacity hover:opacity-70"
+                  style={{ color: 'var(--text-secondary)' }}>
                   {article.author_name}
-                </span>
+                </Link>
                 <span className="flex items-center gap-1">
                   <Clock size={13} />{formatDate(article.published_at)}
                 </span>
@@ -966,6 +969,94 @@ export default function ArticlePage() {
                   />
                 </div>
               )}
+
+              {article.author_id && (
+              <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--border)' }}>
+                <div style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '1.25rem' }}>
+                  <div className="flex items-start gap-4">
+
+                    {/* Avatar */}
+                    <Link to={`/user/${article.author_id}`} className="shrink-0">
+                      <div
+                        className="w-13 h-13 rounded-full overflow-hidden border border-[var(--border)]"
+                        style={{ width: '52px', height: '52px', filter: 'grayscale(100%)' }}
+                      >
+                        {(article.author_avatar || (article as any).avatar_url) ? (
+                          <img src={article.author_avatar || (article as any).avatar_url} alt={article.author_name}
+                            className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-[var(--bg-subtle)] text-lg font-semibold"
+                            style={{ color: 'var(--text-secondary)' }}>
+                            {article.author_name?.charAt(0)?.toUpperCase() ?? '?'}
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+
+                    {/* Everything right of avatar */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <Link to={`/user/${article.author_id}`}
+                          className="text-[15px] font-semibold transition-colors hover:text-[var(--accent)]"
+                          style={{ color: 'var(--text-primary)' }}>
+                          {article.author_name}
+                        </Link>
+                        <span className="text-[11px] uppercase tracking-[0.14em]"
+                          style={{ color: 'var(--text-muted)' }}>
+                          Author
+                        </span>
+                      </div>
+
+                      {article.author_bio && (
+                        <p className="text-[13px] leading-relaxed mb-3"
+                          style={{ color: 'var(--text-secondary)' }}>
+                          {article.author_bio}
+                        </p>
+                      )}
+
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
+                          {article.instagram_profile && (
+                            <a href={article.instagram_profile} target="_blank" rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg
+                                        transition-opacity hover:opacity-70"
+                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                              <Instagram size={12} /> Instagram
+                            </a>
+                          )}
+                          {article.twitter_profile && (
+                            <a href={article.twitter_profile} target="_blank" rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg
+                                        transition-opacity hover:opacity-70"
+                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+                              </svg>
+                              X
+                            </a>
+                          )}
+                          {article.linkedin_profile && (
+                            <a href={article.linkedin_profile} target="_blank" rel="noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg
+                                        transition-opacity hover:opacity-70"
+                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                              <Linkedin size={12} /> LinkedIn
+                            </a>
+                          )}
+                        </div>
+
+                        <Link to={`/user/${article.author_id}`}
+                          className="inline-flex items-center gap-1 text-[13px] font-semibold"
+                          style={{ color: 'var(--accent)' }}>
+                          More articles <ChevronRight size={13} />
+                        </Link>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            )}
 
               {article.id && (
                 <CommentsSection

@@ -43,6 +43,7 @@ const NewsletterPage  = lazy(() => import('./pages/Newsletterpage'))
 const AboutPage       = lazy(() => import('./pages/Aboutus'))
 const ContactPage     = lazy(() => import('./pages/Contactus'))
 const TeamPage        = lazy(() => import('./pages/Team'))
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 
 // 🟢 Auth pages — loaded on demand
 const LoginPage           = lazy(() => import('./pages/LoginPage'))
@@ -178,6 +179,7 @@ function App() {
                       <Route path="/articles"               element={<ArticlesPage />} />
                       <Route path="/article/:slug"          element={<ArticlePage />} />
                       <Route path="/category/:slug"         element={<CategoryPage />} />
+                      <Route path="/user/:userId"           element={<UserProfilePage />} />
                       <Route path="/search"                 element={<SearchPage />} />
                       <Route path="/trending"               element={<TrendingPage />} />
                       <Route path="/newsletter"             element={<NewsletterPage />} />

@@ -9,7 +9,7 @@ import {
   Edit2, Check, X, Camera, LogOut,
   ChevronRight, Bookmark, TrendingUp,
   Shield, Mail, Clock, User,
-  LayoutDashboard,
+  LayoutDashboard, Instagram, Twitter, Linkedin,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { client }  from '../api/client'
@@ -43,8 +43,12 @@ export default function AccountPage() {
 
   const [editingName,    setEditingName]    = useState(false)
   const [editingBio,     setEditingBio]     = useState(false)
+  const [editingSocial,  setEditingSocial]  = useState(false)
   const [nameValue,      setNameValue]      = useState(user?.full_name ?? '')
   const [bioValue,       setBioValue]       = useState(user?.bio ?? '')
+  const [instagramValue, setInstagramValue] = useState(user?.instagram_profile ?? '')
+  const [twitterValue,   setTwitterValue]   = useState(user?.twitter_profile ?? '')
+  const [linkedinValue,  setLinkedinValue]  = useState(user?.linkedin_profile ?? '')
   const [saving,         setSaving]         = useState(false)
   const [saveError,      setSaveError]      = useState('')
   const [saveSuccess,    setSaveSuccess]    = useState('')
@@ -78,7 +82,7 @@ export default function AccountPage() {
     )
   }
 
-  // ── Save name / bio ───────────────────────────────────────────
+  // ── Save name / bio / social profiles ─────────────────────────
   const saveProfile = async (fields: Record<string, string>) => {
     setSaving(true)
     setSaveError('')
@@ -89,6 +93,7 @@ export default function AccountPage() {
       setTimeout(() => setSaveSuccess(''), 3000)
       setEditingName(false)
       setEditingBio(false)
+      setEditingSocial(false)
     } catch (err: any) {
       setSaveError(err?.response?.data?.message ?? 'Could not save. Try again.')
     } finally {
@@ -430,6 +435,145 @@ export default function AccountPage() {
                 >
                   {user.bio || 'Tap to add a bio…'}
                 </p>
+              )}
+            </div>
+
+            {/* Social Media Profiles */}
+            <div className="mb-4 mt-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: 'var(--text-muted)' }}>
+                  Social Profiles (Optional)
+                </span>
+                {!editingSocial && (
+                  <button
+                    onClick={() => setEditingSocial(true)}
+                    className="p-1 rounded transition-colors hover:bg-[var(--bg-subtle)]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <Edit2 size={11} />
+                  </button>
+                )}
+              </div>
+
+              {editingSocial ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>
+                      <Instagram size={12} className="inline mr-1" /> Instagram
+                    </label>
+                    <input
+                      type="url"
+                      value={instagramValue}
+                      onChange={e => setInstagramValue(e.target.value)}
+                      placeholder="https://instagram.com/username"
+                      className="w-full text-sm outline-none rounded-xl px-3 py-2"
+                      style={{
+                        background: 'var(--bg)',
+                        border:     '1px solid var(--border)',
+                        color:      'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>
+                      <Twitter size={12} className="inline mr-1" /> Twitter / X
+                    </label>
+                    <input
+                      type="url"
+                      value={twitterValue}
+                      onChange={e => setTwitterValue(e.target.value)}
+                      placeholder="https://twitter.com/username"
+                      className="w-full text-sm outline-none rounded-xl px-3 py-2"
+                      style={{
+                        background: 'var(--bg)',
+                        border:     '1px solid var(--border)',
+                        color:      'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>
+                      <Linkedin size={12} className="inline mr-1" /> LinkedIn
+                    </label>
+                    <input
+                      type="url"
+                      value={linkedinValue}
+                      onChange={e => setLinkedinValue(e.target.value)}
+                      placeholder="https://linkedin.com/in/username"
+                      className="w-full text-sm outline-none rounded-xl px-3 py-2"
+                      style={{
+                        background: 'var(--bg)',
+                        border:     '1px solid var(--border)',
+                        color:      'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => saveProfile({
+                        instagram_profile: instagramValue,
+                        twitter_profile: twitterValue,
+                        linkedin_profile: linkedinValue,
+                      })}
+                      disabled={saving}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg
+                                 text-xs font-semibold disabled:opacity-50"
+                      style={{ background: 'var(--accent)', color: '#fff' }}
+                    >
+                      <Check size={11} />{saving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingSocial(false)
+                        setInstagramValue(user?.instagram_profile ?? '')
+                        setTwitterValue(user?.twitter_profile ?? '')
+                        setLinkedinValue(user?.linkedin_profile ?? '')
+                      }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
+                      style={{
+                        background: 'var(--bg-subtle)',
+                        color:      'var(--text-muted)',
+                        border:     '1px solid var(--border)',
+                      }}
+                    >
+                      <X size={11} /> Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5 text-sm">
+                  {instagramValue ? (
+                    <p style={{ color: 'var(--text-secondary)' }}>
+                      <Instagram size={12} className="inline mr-1" />
+                      <a href={instagramValue} target="_blank" rel="noopener noreferrer" className="hover:opacity-70 truncate">
+                        {instagramValue}
+                      </a>
+                    </p>
+                  ) : null}
+                  {twitterValue ? (
+                    <p style={{ color: 'var(--text-secondary)' }}>
+                      <Twitter size={12} className="inline mr-1" />
+                      <a href={twitterValue} target="_blank" rel="noopener noreferrer" className="hover:opacity-70 truncate">
+                        {twitterValue}
+                      </a>
+                    </p>
+                  ) : null}
+                  {linkedinValue ? (
+                    <p style={{ color: 'var(--text-secondary)' }}>
+                      <Linkedin size={12} className="inline mr-1" />
+                      <a href={linkedinValue} target="_blank" rel="noopener noreferrer" className="hover:opacity-70 truncate">
+                        {linkedinValue}
+                      </a>
+                    </p>
+                  ) : null}
+                  {!instagramValue && !twitterValue && !linkedinValue && (
+                    <p style={{ color: 'var(--text-muted)' }}>Tap to add social profiles…</p>
+                  )}
+                </div>
               )}
             </div>
 

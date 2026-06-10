@@ -10,8 +10,13 @@ export interface Article {
   view_count:     number
   like_count:     number
   comment_count:  number
+  author_id:      string
   author_name:    string
   author_avatar?: string
+  author_bio?:    string
+  instagram_profile?: string
+  twitter_profile?: string
+  linkedin_profile?: string
   category_name:  string
   category_color: string
   category_slug:  string
