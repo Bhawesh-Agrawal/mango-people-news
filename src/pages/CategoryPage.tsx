@@ -88,29 +88,11 @@ function HeroArticle({ article }: { article: Article }) {
                    group-hover:text-[var(--accent)]"
         style={{
           color: 'var(--text-primary)',
-          fontSize: 'clamp(24px, 6vw, 32px)',
+          fontSize: 'clamp(14px, 7vw, 20px)',
         }}
       >
         {article.title}
       </h1>
-
-      {article.subtitle && (
-        <p
-          className="serif-text text-lg leading-relaxed mb-3"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {article.subtitle}
-        </p>
-      )}
-
-      {article.excerpt && (
-        <p
-          className="text-sm leading-relaxed mb-4 line-clamp-3"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {article.excerpt}
-        </p>
-      )}
 
       <div
         className="flex items-center gap-2 text-xs mb-5"
@@ -594,12 +576,9 @@ export default function CategoryPage() {
               </span>
             </nav>
 
-            <div
-              className="flex items-end justify-between pb-4"
-              style={{ borderBottom: `3px solid ${category?.color ?? 'var(--accent)'}` }}
-            >
+            <div>
               <div className="flex items-center gap-3">
-                <h1
+                {/* <h1
                   className="font-display font-black leading-tight tracking-tight"
                   style={{
                     color: 'var(--text-primary)',
@@ -607,7 +586,7 @@ export default function CategoryPage() {
                   }}
                 >
                   {category?.name ?? slug}
-                </h1>
+                </h1> */}
                 {allArticles.length > 0 && (
                   <span
                     className="text-sm hidden sm:block"
@@ -643,7 +622,7 @@ export default function CategoryPage() {
             </div>
           )}
 
-          <div className="py-8">
+          <div className="py-2">
             {loading ? (
               <>
                 <HeroSkeleton />

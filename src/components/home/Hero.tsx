@@ -129,7 +129,7 @@ export default function Hero({ articles }: { articles: Article[] }) {
                          transition-colors duration-150
                          group-hover:text-[var(--accent)]"
               style={{
-                fontSize: 'clamp(14px, 7vw, 20px)',
+                fontSize: 'clamp(14px, 6vw, 20px)',
                 color: 'var(--text-primary)',
               }}
             >
@@ -158,19 +158,22 @@ export default function Hero({ articles }: { articles: Article[] }) {
           </div>
         </div>
 
-        {/* Cover image — full bleed, 16:9 enforced */}
-        <Link
-          to={`/article/${main.slug}`}
-          className="block w-full relative overflow-hidden group"
-        >
-          <CoverImage
-            article={main}
-            cloudW={640}
-            cloudH={360}
-            eager
-            className="rounded-[1.25rem] max-h-[220px]"
-          />
-        </Link>
+        {/* Cover image — smaller mobile card, centered */}
+        <div className="flex justify-center">
+          <Link
+            to={`/article/${main.slug}`}
+            className="relative overflow-hidden group rounded-[1.25rem]"
+            style={{ width: 'min(90vw, 320px)' }}
+          >
+            <CoverImage
+              article={main}
+              cloudW={560}
+              cloudH={300}
+              eager
+              className="max-h-[120px]"
+            />
+          </Link>
+        </div>
 
         {/* Top stories */}
         <div className="px-4" style={{ background: 'var(--bg)' }}>
