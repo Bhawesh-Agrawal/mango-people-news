@@ -2,7 +2,6 @@ import BreakingBar       from '../components/home/BreakingBar'
 import Hero              from '../components/home/Hero'
 import CategorySections  from '../components/home/CategorySections'
 import SEO               from '../seo/Seo'
-import AISummaryStrip    from './Aisummarystrip'
 import { useHomeData }   from '../hooks/useHomeData'
 
 function HomePageSkeleton() {
@@ -46,7 +45,6 @@ export default function HomePage() {
       />
       <BreakingBar articles={data?.breaking ?? []} />
       <Hero articles={data?.hero ?? []} />
-      <AISummaryStrip articles={data?.aiSummaries ?? []} />
       <CategorySections
         categories={data?.categories ?? []}
         categoryArticles={data?.categoryArticles ?? {}}
