@@ -12,26 +12,23 @@ import { Clock, Eye, Search, X }  from 'lucide-react'
 import { getArticles }            from '../api/articles'
 import { getCategories }          from '../api/categories'
 import type { Article, Category } from '../types'
-import { cloudinaryUrl, formatCount } from '../lib/utils'
+import { cloudinaryUrl, cloudinarySrcSet, formatCount } from '../lib/utils'
 import SEO                        from '../seo/Seo'
+import { applyCropStyle } from './Coverimageeditor'
 
 const LIMIT = 20
 
 // ── Date grouping helpers ─────────────────────────────────────
-
 function dateLabel(iso: string): string {
   const d     = new Date(iso)
   const today = new Date()
   const yest  = new Date(today); yest.setDate(yest.getDate() - 1)
-
   const sameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth()    === b.getMonth()    &&
     a.getDate()     === b.getDate()
-
   if (sameDay(d, today)) return 'Today'
   if (sameDay(d, yest))  return 'Yesterday'
-
   const daysAgo = Math.floor((today.getTime() - d.getTime()) / 86_400_000)
   if (daysAgo < 7) {
     return d.toLocaleDateString('en-IN', { weekday: 'long' })
@@ -264,7 +261,7 @@ export default function ArticlesPage() {
                       <div className="skeleton h-3 w-1/4 rounded" />
                     </div>
                     <div className="skeleton rounded-lg flex-shrink-0"
-                      style={{ width: '72px', height: '54px' }} />
+                      style={{ width: '72px', height: '40px' }} />
                   </div>
                 ))}
               </div>
@@ -358,6 +355,9 @@ function DateGroup({ label, articles }: { label: string; articles: Article[] }) 
 // ── Article row ───────────────────────────────────────────────
 
 function ArticleRow({ article }: { article: Article }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+  
   const publishTime = new Date(article.published_at).toLocaleTimeString('en-IN', {
     hour: '2-digit', minute: '2-digit', hour12: true,
   })
@@ -435,16 +435,20 @@ function ArticleRow({ article }: { article: Article }) {
 
       {article.cover_image && (
         <div
-          className="flex-shrink-0 rounded-lg overflow-hidden"
-          style={{ width: '72px', height: '54px' }}
+          className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
+          style={{ ...styles.container, width: '72px', aspectRatio: '16/9' }}
         >
           <img
-            src={cloudinaryUrl(article.cover_image, 72, 54)}
+            src={cloudinaryUrl(article.cover_image, 72, 40)}
+            srcSet={cloudinarySrcSet(article.cover_image, 72, 40)}
+            sizes="72px"
             alt={article.title}
             className="w-full h-full object-cover transition-transform
                        duration-300 group-hover:scale-105"
+            loading="lazy"
             width={72}
-            height={54}
+            height={40}
+            style={styles.img}
           />
         </div>
       )}

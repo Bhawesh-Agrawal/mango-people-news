@@ -4,26 +4,23 @@ import { cloudinaryUrl, cloudinarySrcSet, timeAgo, formatCount, truncate } from 
 import type { Article } from '../../types'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
 
-// ── Consistent cover renderer ─────────────────────────────────────
-/**
- * Renders a cover image at a guaranteed 16:9 aspect ratio,
- * applying the author's crop settings uniformly.
- */
+// ── Cover image — always 16:9, crop applied only for hero sizes ───
 function CoverImage({
   article,
   cloudW,
   cloudH,
   className = '',
   eager = false,
+  applyCrop = true,
 }: {
-  article:   Article
-  cloudW:    number
-  cloudH:    number
+  article:    Article
+  cloudW:     number
+  cloudH:     number
   className?: string
-  eager?:    boolean
+  eager?:     boolean
+  applyCrop?: boolean
 }) {
-  const crop   = article.cover_crop ?? null
-  const styles = applyCropStyle(crop)
+  const styles = applyCrop ? applyCropStyle(article.cover_crop ?? null) : { container: {}, img: {} }
 
   return (
     <div
@@ -36,12 +33,12 @@ function CoverImage({
           srcSet={cloudinarySrcSet(article.cover_image, cloudW, cloudH)}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
           alt={article.title}
-          className="transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={eager ? 'high' : undefined}
           width={cloudW}
           height={cloudH}
-          style={styles.img}
+          style={applyCrop ? styles.img : undefined}
           draggable={false}
         />
       ) : (
@@ -51,34 +48,47 @@ function CoverImage({
   )
 }
 
-// ── Article Row ───────────────────────────────────────────────────
-function ArticleRow({ article }: { article: Article }) {
-  const crop   = article.cover_crop ?? null
-  const styles = applyCropStyle(crop)
-
+// ── Thumbnail — small fixed-size, NO crop applied ─────────────────
+function Thumbnail({ article, width = 80 }: { article: Article; width?: number }) {
+  const h = Math.round(width * (9 / 16))
+  if (!article.cover_image) return null
   return (
-    <Link to={`/article/${article.slug}`} className="flex gap-3 group py-2">
+    <div
+      className="flex-shrink-0 rounded-lg overflow-hidden"
+      style={{ width: `${width}px`, aspectRatio: '16 / 9' }}
+    >
+      <img
+        src={cloudinaryUrl(article.cover_image, width * 2, h * 2)}
+        alt={article.title}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+        draggable={false}
+      />
+    </div>
+  )
+}
+
+// ── Article row for sidebar lists ─────────────────────────────────
+function ArticleRow({ article }: { article: Article }) {
+  return (
+    <Link to={`/article/${article.slug}`} className="flex items-start gap-3 group py-2.5">
       {article.cover_image && (
         <div
           className="flex-shrink-0 rounded-lg overflow-hidden"
-          style={{ ...styles.container, width: '72px', height: '54px' }}
+          style={{ width: '120px', aspectRatio: '16 / 9' }}
         >
           <img
-            src={cloudinaryUrl(article.cover_image, 144, 108)}
-            srcSet={cloudinarySrcSet(article.cover_image, 144, 108)}
-            sizes="72px"
+            src={cloudinaryUrl(article.cover_image, 240, 135)}
             alt={article.title}
-            className="transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
-            width={144}
-            height={108}
-            style={styles.img}
+            draggable={false}
           />
         </div>
       )}
       <div className="flex-1 min-w-0">
         {article.category_name && (
-          <span className="cat-label block mb-0.5" style={{ color: article.category_color }}>
+          <span className="cat-label block mb-0.5 text-[10px]" style={{ color: article.category_color }}>
             {article.category_name}
           </span>
         )}
@@ -86,16 +96,15 @@ function ArticleRow({ article }: { article: Article }) {
           className="text-sm font-bold leading-snug line-clamp-2
                      transition-colors duration-150
                      group-hover:text-[var(--accent)]"
-          style={{ color: 'var(--text-primary)' }}
+          style={{ color: 'var(--text-primary)', fontSize: '13px' }}
         >
           {article.title}
         </p>
-        <span
-          className="flex items-center gap-1 text-xs mt-1"
-          style={{ color: 'var(--text-muted)' }}
-        >
+        <span className="flex items-center gap-1 text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
           <Clock size={10} />
           {timeAgo(article.published_at)}
+          <span>·</span>
+          {article.reading_time} min
         </span>
       </div>
     </Link>
@@ -112,33 +121,30 @@ export default function Hero({ articles }: { articles: Article[] }) {
   return (
     <section>
 
-      {/* ════════════════════════════════════════════
+      {/* ══════════════════════════════════════════
           MOBILE
-      ════════════════════════════════════════════ */}
+      ══════════════════════════════════════════ */}
       <div className="md:hidden">
 
         {/* Text block — above image */}
-        <div
-          className="px-4 pt-5 pb-4 space-y-3"
-          style={{ background: 'var(--bg-surface)' }}
-        >
-
-          <Link to={`/article/${main.slug}`} className="block w-full group">
+        <div className="px-4 pt-5 pb-4 space-y-2" style={{ background: 'var(--bg-surface)' }}>
+          {main.category_name && (
+            <span className="cat-label text-[10px]" style={{ color: main.category_color }}>
+              {main.category_name}
+            </span>
+          )}
+          <Link to={`/article/${main.slug}`} className="block group">
             <h1
               className="font-display font-black leading-tight tracking-tight
-                         transition-colors duration-150
-                         group-hover:text-[var(--accent)]"
-              style={{
-                fontSize: 'clamp(14px, 6vw, 20px)',
-                color: 'var(--text-primary)',
-              }}
+                         transition-colors duration-150 group-hover:text-[var(--accent)]"
+              style={{ fontSize: 'clamp(18px, 5.5vw, 24px)', color: 'var(--text-primary)' }}
             >
               {main.title}
             </h1>
           </Link>
 
           <div
-            className="flex items-center gap-3 text-xs pt-0.5"
+            className="flex items-center flex-wrap gap-x-3 gap-y-0.5 text-xs pt-0.5"
             style={{ color: 'var(--text-muted)' }}
           >
             <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
@@ -158,24 +164,19 @@ export default function Hero({ articles }: { articles: Article[] }) {
           </div>
         </div>
 
-        {/* Cover image — smaller mobile card, centered */}
-        <div className="flex justify-center">
-          <Link
-            to={`/article/${main.slug}`}
-            className="relative overflow-hidden group rounded-[1.25rem]"
-            style={{ width: 'min(90vw, 320px)' }}
-          >
-            <CoverImage
-              article={main}
-              cloudW={560}
-              cloudH={300}
-              eager
-              className="max-h-[120px]"
-            />
-          </Link>
-        </div>
+        {/* Hero image — below text, full width */}
+        <Link to={`/article/${main.slug}`} className="block group px-4 pb-4" style={{ background: 'var(--bg-surface)' }}>
+          <CoverImage
+            article={main}
+            cloudW={720}
+            cloudH={405}
+            eager
+            applyCrop
+            className="rounded-xl"
+          />
+        </Link>
 
-        {/* Top stories */}
+        {/* Top stories list */}
         <div className="px-4" style={{ background: 'var(--bg)' }}>
           <div className="flex items-center justify-between pt-4 pb-1">
             <span className="section-label">Top Stories</span>
@@ -204,9 +205,9 @@ export default function Hero({ articles }: { articles: Article[] }) {
         </div>
       </div>
 
-      {/* ════════════════════════════════════════════
+      {/* ══════════════════════════════════════════
           DESKTOP
-      ════════════════════════════════════════════ */}
+      ══════════════════════════════════════════ */}
       <div className="hidden md:block page-container py-6">
         <div className="grid grid-cols-3 gap-6 items-stretch">
 
@@ -217,18 +218,15 @@ export default function Hero({ articles }: { articles: Article[] }) {
                 {main.is_breaking && (
                   <span className="breaking-strip">● Breaking</span>
                 )}
-                <span className="cat-label" style={{ color: main.category_color }}>
-                  {main.category_name}
-                </span>
+                {main.category_name && (
+                  <span className="cat-label" style={{ color: main.category_color }}>
+                    {main.category_name}
+                  </span>
+                )}
               </div>
 
-              <Link
-                to={`/article/${main.slug}`}
-                className="block w-full group"
-                aria-hidden="true"
-                tabIndex={-1}
-              >
-                <p
+              <Link to={`/article/${main.slug}`} className="block w-full group">
+                <h1
                   className="font-display font-black leading-tight tracking-tight
                              transition-colors duration-150
                              group-hover:text-[var(--accent)]"
@@ -238,7 +236,7 @@ export default function Hero({ articles }: { articles: Article[] }) {
                   }}
                 >
                   {main.title}
-                </p>
+                </h1>
               </Link>
 
               {(main.subtitle || main.excerpt) && (
@@ -278,17 +276,18 @@ export default function Hero({ articles }: { articles: Article[] }) {
               </div>
             </div>
 
-            {/* Cover image — 16:9 enforced */}
+            {/* Hero cover — crop applied, 16:9 */}
             <Link
               to={`/article/${main.slug}`}
               className="block relative rounded-2xl overflow-hidden group flex-1"
             >
               <CoverImage
                 article={main}
-                cloudW={1330}
-                cloudH={748}
+                cloudW={1280}
+                cloudH={720}
                 className="rounded-2xl"
                 eager
+                applyCrop
               />
 
               <div
@@ -369,6 +368,7 @@ export default function Hero({ articles }: { articles: Article[] }) {
               ))}
             </div>
           </div>
+
         </div>
       </div>
     </section>

@@ -4,9 +4,10 @@ import { Clock, Eye, ChevronRight, ArrowRight } from 'lucide-react'
 import { useCategories }  from '../hooks/useCategories'
 import { getArticles }    from '../api/articles'
 import type { Article, Category } from '../types'
-import { cloudinaryUrl, timeAgo, formatCount, truncate } from '../lib/utils'
+import { cloudinaryUrl, cloudinarySrcSet, timeAgo, formatCount, truncate } from '../lib/utils'
 import MarketTicker from '../components/ui/MarketTicker'
 import SEO          from '../seo/Seo'
+import { applyCropStyle } from './Coverimageeditor'
 
 // ── Skeleton ──────────────────────────────────────────────────
 function HeroSkeleton() {
@@ -32,7 +33,7 @@ function HeroSkeleton() {
               <div className="skeleton h-3 w-24 rounded" />
             </div>
             <div className="skeleton rounded-lg flex-shrink-0"
-              style={{ width: '72px', height: '60px' }} />
+              style={{ width: '72px', height: '40px' }} />
           </div>
         ))}
       </div>
@@ -53,7 +54,7 @@ function GridSkeleton() {
             <div className="skeleton h-3 w-40 rounded" />
           </div>
           <div className="skeleton rounded-xl flex-shrink-0"
-            style={{ width: '112px', height: '88px' }} />
+            style={{ width: '112px', height: '63px' }} />
         </div>
       ))}
     </div>
@@ -62,6 +63,9 @@ function GridSkeleton() {
 
 // ── Hero lead article ─────────────────────────────────────────
 function HeroArticle({ article }: { article: Article }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
   return (
     <Link to={`/article/${article.slug}`} className="group block">
       <div className="flex items-center gap-2 mb-3">
@@ -82,7 +86,7 @@ function HeroArticle({ article }: { article: Article }) {
         )}
       </div>
 
-          <h1
+      <h1
         className="font-display font-black leading-tight tracking-tight mb-3
                    transition-colors duration-150
                    group-hover:text-[var(--accent)]"
@@ -107,7 +111,7 @@ function HeroArticle({ article }: { article: Article }) {
           {timeAgo(article.published_at)}
         </span>
         <span>·</span>
-        <span>{article.reading_time} min read</span>
+        <span>{article.reading_time} min</span>
         {article.view_count > 500 && (
           <>
             <span>·</span>
@@ -118,19 +122,29 @@ function HeroArticle({ article }: { article: Article }) {
           </>
         )}
       </div>
+      {(article.subtitle || article.excerpt) && (
+        <p
+          className="hidden md:block text-base leading-relaxed max-w-2xl line-clamp-2 mb-6"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {article.subtitle || truncate(article.excerpt, 30)}
+        </p>
+      )}
 
       {article.cover_image && (
         <div
           className="w-full rounded-xl overflow-hidden img-zoom"
-          style={{ aspectRatio: '16/9' }}
+          style={{ ...styles.container, aspectRatio: '16/9' }}
         >
           <img
             src={cloudinaryUrl(article.cover_image, 1280, 720)}
+            srcSet={cloudinarySrcSet(article.cover_image, 1280, 720)}
             alt={article.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="eager"
             width={1280}
             height={720}
+            style={styles.img}
           />
         </div>
       )}
@@ -153,6 +167,20 @@ function SecondaryList({ articles }: { articles: Article[] }) {
               : 'none',
           }}
         >
+          {article.cover_image && (
+            <div
+              className="flex-shrink-0 rounded-lg overflow-hidden"
+              style={{ width: '120px', aspectRatio: '16 / 9' }}
+            >
+              <img
+                src={cloudinaryUrl(article.cover_image, 240, 135)}
+                alt={article.title}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+                draggable={false}
+              />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             {article.is_breaking && (
               <span className="breaking-strip mb-1.5 inline-block">● Breaking</span>
@@ -171,26 +199,10 @@ function SecondaryList({ articles }: { articles: Article[] }) {
             >
               <Clock size={10} />
               <span>{timeAgo(article.published_at)}</span>
-              <span>·</span>
+              <span>.</span>
               <span>{article.reading_time} min</span>
             </div>
           </div>
-
-          {article.cover_image && (
-            <div
-              className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
-              style={{ width: '72px', height: '60px' }}
-            >
-              <img
-                src={cloudinaryUrl(article.cover_image, 72, 60)}
-                alt=""
-                className="w-full h-full object-cover"
-                loading="lazy"
-                width={72}
-                height={60}
-              />
-            </div>
-          )}
         </Link>
       ))}
     </div>
@@ -198,6 +210,9 @@ function SecondaryList({ articles }: { articles: Article[] }) {
 }
 
 function FeaturedCard({ article }: { article: Article }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
   return (
     <Link
       to={`/article/${article.slug}`}
@@ -205,16 +220,18 @@ function FeaturedCard({ article }: { article: Article }) {
     >
       <div
         className="rounded-[1.5rem] overflow-hidden mb-4"
-        style={{ aspectRatio: '4 / 3' }}
+        style={{ ...styles.container, aspectRatio: '16 / 9' }}
       >
         {article.cover_image ? (
           <img
-            src={cloudinaryUrl(article.cover_image, 720, 450)}
+            src={cloudinaryUrl(article.cover_image, 720, 405)}
+            srcSet={cloudinarySrcSet(article.cover_image, 720, 405)}
             alt={article.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             width={720}
-            height={450}
+            height={405}
+            style={styles.img}
           />
         ) : (
           <div className="w-full h-full" style={{ background: 'var(--bg-muted)' }} />
@@ -285,6 +302,9 @@ function FeaturedCarousel({ articles }: { articles: Article[] }) {
 }
 
 function MoreStoryCard({ article, isLast }: { article: Article; isLast: boolean }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
   return (
     <Link
       to={`/article/${article.slug}`}
@@ -303,8 +323,8 @@ function MoreStoryCard({ article, isLast }: { article: Article; isLast: boolean 
           </h3>
           {article.subtitle && (
             <p
-              className="text-sm leading-relaxed mt-2 text-[var(--text-secondary)] line-clamp-2"
-              style={{ wordBreak: 'break-word' }}
+              className="text-sm leading-relaxed mt-2 line-clamp-2"
+              style={{ color: 'var(--text-secondary)', wordBreak: 'break-word' }}
             >
               {article.subtitle}
             </p>
@@ -329,14 +349,16 @@ function MoreStoryCard({ article, isLast }: { article: Article; isLast: boolean 
 
         {article.cover_image && (
           <div className="hidden sm:block flex-shrink-0 rounded-xl overflow-hidden"
-            style={{ width: '120px', height: '90px' }}>
+            style={{ ...styles.container, width: '120px', aspectRatio: '16/9' }}>
             <img
-              src={cloudinaryUrl(article.cover_image, 240, 180)}
+              src={cloudinaryUrl(article.cover_image, 120, 67.5)}
+              srcSet={cloudinarySrcSet(article.cover_image, 120, 67.5)}
               alt={article.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
-              width={240}
-              height={180}
+              width={120}
+              height={67.5}
+              style={styles.img}
             />
           </div>
         )}
@@ -355,8 +377,12 @@ function ArticleRow({
   isLast:  boolean
   size?:   'large' | 'normal' | 'small'
 }) {
-  const imgW = size === 'large' ? '160px' : size === 'small' ? '80px' : '112px'
-  const imgH = size === 'large' ? '120px' : size === 'small' ? '68px' : '88px'
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+  
+  // 16:9 aspect ratio dimensions
+  const imgW = size === 'large' ? 160 : size === 'small' ? 80 : 112
+  const imgH = size === 'large' ? 90 : size === 'small' ? 45 : 63
 
   return (
     <Link
@@ -437,17 +463,17 @@ function ArticleRow({
       {article.cover_image && (
         <div
           className="flex-shrink-0 rounded-xl overflow-hidden img-zoom self-start"
-          style={{ width: imgW, height: imgH }}
+          style={{ ...styles.container, width: `${imgW}px`, aspectRatio: '16/9' }}
         >
           <img
-            src={cloudinaryUrl(article.cover_image,
-              size === 'large' ? 160 : size === 'small' ? 80 : 112,
-              size === 'large' ? 120 : size === 'small' ? 68 : 88)}
+            src={cloudinaryUrl(article.cover_image, imgW, imgH)}
+            srcSet={cloudinarySrcSet(article.cover_image, imgW, imgH)}
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
-            width={size === 'large' ? 160 : size === 'small' ? 80 : 112}
-            height={size === 'large' ? 120 : size === 'small' ? 68 : 88}
+            width={imgW}
+            height={imgH}
+            style={styles.img}
           />
         </div>
       )}

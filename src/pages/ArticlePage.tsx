@@ -15,13 +15,32 @@ import type { Comment } from '../api/articles'
 import { useAuth }        from '../context/AuthContext'
 import { AxiosError }     from 'axios'
 import type { Article }   from '../types'
-import { cloudinaryUrl, timeAgo, formatCount, formatDate } from '../lib/utils'
+import { cloudinaryUrl, cloudinarySrcSet, timeAgo, formatCount, formatDate } from '../lib/utils'
 import {
   toggleSaveArticle,
   getInitialSaveStatus,
 } from './Savedpage'
 import SEO from '../seo/Seo'
 import AISummaryBlock from './Aisummaryblock'
+import { applyCropStyle } from './Coverimageeditor'
+
+// ── Cover image component with crop support ─────────────────────
+function CoverImage({ article }: { article: Article }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+  return (
+    <img
+      src={cloudinaryUrl(article.cover_image!, 1280, 720)}
+      srcSet={cloudinarySrcSet(article.cover_image!, 1280, 720)}
+      alt={article.title}
+      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      loading="lazy"
+      width={1280}
+      height={720}
+      style={styles.img}
+    />
+  )
+}
 
 // ── Reading progress bar ──────────────────────────────────────
 
@@ -838,7 +857,7 @@ export default function ArticlePage() {
       <div style={{ background: 'var(--bg)' }}>
         <div className="page-container">
 
-          <nav className="flex items-center gap-2 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <nav className="flex items-center gap-2 pt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <Link to="/" className="transition-opacity hover:opacity-70">Home</Link>
             <ChevronRight size={12} />
             <Link to={`/category/${article.category_slug}`}
@@ -859,14 +878,14 @@ export default function ArticlePage() {
                 {article.is_breaking && (
                   <span className="breaking-strip">● Breaking</span>
                 )}
-                <Link to={`/category/${article.category_slug}`}
+{/*                 <Link to={`/category/${article.category_slug}`}
                   className="cat-label transition-opacity hover:opacity-70"
                   style={{ color: article.category_color }}>
                   {article.category_name}
-                </Link>
+                </Link> */}
               </div>
 
-              <h1 className="font-display text-display-xl mb-3 leading-tight"
+              <h1 className="font-display text-display-md mb-3 leading-tight"
                 style={{ color: 'var(--text-primary)' }}>
                 {article.title}
               </h1>
@@ -879,7 +898,7 @@ export default function ArticlePage() {
               )}
 
               <div
-                className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-5 mb-6 text-sm"
+                className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-5 mb-3 text-sm"
                 style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}
               >
                 <Link 
@@ -900,7 +919,7 @@ export default function ArticlePage() {
               </div>
 
               {article.id && (
-                <div className="mb-6">
+                <div className="mb-3">
                   <ActionBar
                     article={article}
                     liked={liked}
@@ -913,48 +932,42 @@ export default function ArticlePage() {
                 </div>
               )}
 
-              {article.ai_summary && (
-                <AISummaryBlock summary={article.ai_summary} />
-              )}
-
               {article.cover_image && (
                 <figure className="mb-8 -mx-4 sm:mx-0">
                   <div className="img-zoom sm:rounded-xl overflow-hidden"
                     style={{ aspectRatio: '16/9' }}>
-                    <img src={cloudinaryUrl(article.cover_image, 1280, 720)} alt={article.title}
-                      className="w-full h-full object-cover"
-                      width={1280}
-                      height={720} />
+                    <CoverImage article={article} />
                   </div>
                 </figure>
               )}
 
+              {article.ai_summary && (
+                <AISummaryBlock summary={article.ai_summary} />
+              )}
+
               {article.body ? (
-                <div className="article-body prose-article"
-                  dangerouslySetInnerHTML={{ __html: article.body }} />
+                <div className="article-body prose-article">
+                  <style>{`
+                    .article-body ul { list-style: disc; padding-left: 1.5rem; margin: 0.8em 0; }
+                    .article-body ol { list-style: decimal; padding-left: 1.5rem; margin: 0.8em 0; }
+                    .article-body li { display: list-item; margin: 0.3em 0; line-height: 1.75; color: var(--text-secondary); }
+                    .article-body li::marker { color: var(--accent); }
+                    .article-body h2 { font-size: 1.4rem; font-weight: 800; margin: 1.5em 0 0.5em; color: var(--text-primary); }
+                    .article-body h3 { font-size: 1.1rem; font-weight: 700; margin: 1.2em 0 0.4em; color: var(--text-primary); }
+                    .article-body blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 1.2em 0; color: var(--text-secondary); font-style: italic; }
+                    .article-body a { color: var(--accent); text-decoration: underline; }
+                    .article-body hr { border-color: var(--border); margin: 1.5em 0; }
+                    .article-body img { max-width: 100%; border-radius: 10px; margin: 1em 0; }
+                    .article-body code { background: var(--bg-subtle); padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.85em; }
+                    .article-body pre { background: var(--bg-subtle); padding: 1em; border-radius: 8px; overflow-x: auto; }
+                    .article-body p { margin: 0.8em 0; line-height: 1.75; font-size: 15px; color: var(--text-secondary); }
+                    .article-body ul ul, .article-body ol ol { margin: 0.25rem 0; }
+                  `}</style>
+                  <div dangerouslySetInnerHTML={{ __html: article.body }} />
+                </div>
               ) : article.excerpt ? (
                 <div className="article-body"><p>{article.excerpt}</p></div>
               ) : null}
-
-              {article.tags && article.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-10 pt-6"
-                  style={{ borderTop: '1px solid var(--border)' }}>
-                  {article.tags.map(tag => (
-                    <span
-                      key={tag.id}
-                      className="text-xs font-medium px-3 py-1.5 rounded-full cursor-pointer
-                                 transition-opacity hover:opacity-70"
-                      style={{
-                        background: 'var(--bg-subtle)',
-                        color:      'var(--text-muted)',
-                        border:     '1px solid var(--border)',
-                      }}
-                    >
-                      #{tag.name}
-                    </span>
-                  ))}
-                </div>
-              )}
 
               {article.id && (
                 <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
@@ -1082,11 +1095,11 @@ export default function ArticlePage() {
                         className="flex gap-3 group">
                         {a.cover_image && (
                           <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
-                            style={{ width: '72px', height: '56px' }}>
-                            <img src={cloudinaryUrl(a.cover_image, 72, 56)} alt={a.title}
+                            style={{ width: '72px', aspectRatio: '16/9' }}>
+                            <img src={cloudinaryUrl(a.cover_image, 72, 40)} alt={a.title}
                               className="w-full h-full object-cover"
                               width={72}
-                              height={56} />
+                              height={40} />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -1139,13 +1152,13 @@ export default function ArticlePage() {
                 {related.map((a, i) => (
                   <Link key={a.id ?? i} to={`/article/${a.slug}`}
                     className="flex sm:flex-col gap-3 group">
-                    {a.cover_image && (
+                {a.cover_image && (
                       <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom sm:w-full"
-                        style={{ width: '80px', height: '64px' }}>
-                        <img src={cloudinaryUrl(a.cover_image, 80, 64)} alt={a.title}
+                        style={{ width: '80px', aspectRatio: '16/9' }}>
+                        <img src={cloudinaryUrl(a.cover_image, 80, 45)} alt={a.title}
                           className="w-full h-full object-cover"
                           width={80}
-                          height={64} />
+                          height={45} />
                       </div>
                     )}
                     <div className="flex-1 sm:mt-2">

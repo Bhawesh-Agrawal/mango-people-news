@@ -2,12 +2,80 @@ import { Link } from 'react-router-dom'
 import { Clock, Eye, TrendingUp } from 'lucide-react'
 import { useArticles } from '../../hooks/useArticles'
 import { useTrending } from '../../hooks/useTrending'
-import { cloudinaryUrl, timeAgo, formatCount } from '../../lib/utils'
+import { cloudinaryUrl, cloudinarySrcSet, timeAgo, formatCount } from '../../lib/utils'
 import type { Article } from '../../types'
+import { applyCropStyle } from '../../pages/Coverimageeditor'
 
-function ArticleCard({ article, size = 'normal' }: {
+// ── Thumbnail — no crop applied at small sizes ────────────────────
+function Thumbnail({
+  article,
+  width,
+  className = '',
+}: {
+  article:    Article
+  width:      number
+  className?: string
+}) {
+  const h = Math.round(width * (9 / 16))
+  if (!article.cover_image) return null
+  return (
+    <div
+      className={`flex-shrink-0 rounded-lg overflow-hidden ${className}`}
+      style={{ width: `${width}px`, aspectRatio: '16 / 9' }}
+    >
+      <img
+        src={cloudinaryUrl(article.cover_image, width * 2, h * 2)}
+        alt={article.title}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+        draggable={false}
+      />
+    </div>
+  )
+}
+
+// ── Hero/normal cover — crop applied ─────────────────────────────
+function CoverImage({
+  article,
+  cloudW,
+  cloudH,
+  className = '',
+}: {
+  article:    Article
+  cloudW:     number
+  cloudH:     number
+  className?: string
+}) {
+  const styles = applyCropStyle(article.cover_crop ?? null)
+  if (!article.cover_image) return null
+  return (
+    <div
+      className={`w-full overflow-hidden ${className}`}
+      style={{ ...styles.container, aspectRatio: '16 / 9' }}
+    >
+      <img
+        src={cloudinaryUrl(article.cover_image, cloudW, cloudH)}
+        srcSet={cloudinarySrcSet(article.cover_image, cloudW, cloudH)}
+        sizes="(max-width: 768px) 100vw, 640px"
+        alt={article.title}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+        width={cloudW}
+        height={cloudH}
+        style={styles.img}
+        draggable={false}
+      />
+    </div>
+  )
+}
+
+// ── Article card — large hero or normal grid card ─────────────────
+function ArticleCard({
+  article,
+  size = 'normal',
+}: {
   article: Article
-  size?:   'large' | 'normal' | 'small'
+  size?:   'large' | 'normal'
 }) {
   return (
     <Link
@@ -19,124 +87,81 @@ function ArticleCard({ article, size = 'normal' }: {
         marginBottom:  '16px',
       }}
     >
-      {size !== 'small' && article.cover_image && (
-        <div
-          className="w-full rounded-xl overflow-hidden mb-3 flex-shrink-0"
-          style={{ height: size === 'large' ? '220px' : '160px' }}
+      <CoverImage
+        article={article}
+        cloudW={size === 'large' ? 1200 : 720}
+        cloudH={size === 'large' ? 675  : 405}
+        className="rounded-xl mb-3"
+      />
+
+      <span
+        className="cat-label text-[10px] block mb-1.5"
+        style={{ color: article.category_color }}
+      >
+        {article.category_name}
+      </span>
+
+      <h3
+        className={`font-display font-bold leading-tight tracking-tight
+                    transition-colors duration-150
+                    group-hover:text-[var(--accent)]
+                    ${size === 'large' ? 'text-xl md:text-2xl' : 'text-base md:text-lg'}`}
+        style={{ color: 'var(--text-primary)' }}
+      >
+        {article.title}
+      </h3>
+
+      {article.excerpt && (
+        <p
+          className="text-sm leading-relaxed mt-1.5 line-clamp-2"
+          style={{ color: 'var(--text-secondary)' }}
         >
-          <img
-            src={cloudinaryUrl(article.cover_image, size === 'large' ? 960 : 640, size === 'large' ? 220 : 160)}
-            alt=""
-            className="w-full h-full object-cover transition-transform
-                       duration-500 group-hover:scale-105"
-            loading="lazy"
-            width={size === 'large' ? 960 : 640}
-            height={size === 'large' ? 220 : 160}
-          />
-        </div>
+          {article.excerpt}
+        </p>
       )}
 
-      <div className="flex gap-3">
-        {size === 'small' && article.cover_image && (
-          <div
-            className="flex-shrink-0 rounded-lg overflow-hidden"
-            style={{ width: '80px', height: '68px' }}
-          >
-            <img
-              src={cloudinaryUrl(article.cover_image, 80, 68)}
-              alt=""
-              className="w-full h-full object-cover transition-transform
-                         duration-300 group-hover:scale-105"
-              loading="lazy"
-              width={80}
-              height={68}
-            />
-          </div>
-        )}
-
-        <div className="flex-1 min-w-0">
-          <span
-            className="cat-label text-[10px] block mb-1.5"
-            style={{ color: article.category_color }}
-          >
-            {article.category_name}
-          </span>
-
-          <h3
-            className={`font-display font-bold leading-tight tracking-tight
-                        transition-colors duration-150
-                        group-hover:text-[var(--accent)]
-                        ${size === 'large'
-                          ? 'text-xl md:text-2xl'
-                          : size === 'normal'
-                          ? 'text-base md:text-lg'
-                          : 'text-sm'
-                        }`}
-            style={{ color: 'var(--text-primary)' }}
-          >
-            {article.title}
-          </h3>
-
-          {size !== 'small' && article.excerpt && (
-            <p
-              className="text-sm leading-relaxed mt-1.5 line-clamp-2"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {article.excerpt}
-            </p>
-          )}
-
-          <div
-            className="flex items-center gap-2 mt-2 text-xs"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <span
-              className="font-semibold"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {article.author_name}
-            </span>
+      <div
+        className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mt-2 text-xs"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
+          {article.author_name}
+        </span>
+        <span>·</span>
+        <span className="flex items-center gap-1">
+          <Clock size={10} />
+          {timeAgo(article.published_at)}
+        </span>
+        <span>·</span>
+        <span>{article.reading_time} min</span>
+        {article.view_count > 500 && (
+          <>
             <span>·</span>
             <span className="flex items-center gap-1">
-              <Clock size={10} />
-              {timeAgo(article.published_at)}
+              <Eye size={10} />
+              {formatCount(article.view_count)}
             </span>
-            <span>·</span>
-            <span>{article.reading_time} min</span>
-            {article.view_count > 500 && (
-              <>
-                <span>·</span>
-                <span className="flex items-center gap-1">
-                  <Eye size={10} />
-                  {formatCount(article.view_count)}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </Link>
   )
 }
 
-function TrendingItem({ article, rank }: {
-  article: Article
-  rank:    number
-}) {
+// ── Trending sidebar item ─────────────────────────────────────────
+function TrendingItem({ article, rank }: { article: Article; rank: number }) {
   return (
     <Link
       to={`/article/${article.slug}`}
-      className="flex gap-3 group py-3"
+      className="flex items-start gap-3 group py-3"
       style={{ borderBottom: '1px solid var(--border-muted)' }}
     >
       <span
-        className="font-display text-3xl font-bold leading-none
-                   flex-shrink-0 w-7 pt-0.5 select-none"
+        className="font-display text-3xl font-bold leading-none flex-shrink-0 w-7 pt-0.5 select-none"
         style={{ color: rank <= 3 ? 'var(--accent)' : 'var(--border)' }}
       >
         {rank}
       </span>
-
       <div className="flex-1 min-w-0">
         <span
           className="cat-label text-[10px] block mb-1"
@@ -168,18 +193,15 @@ function TrendingItem({ article, rank }: {
   )
 }
 
+// ── Skeleton ──────────────────────────────────────────────────────
 function TopStoriesSkeleton() {
   return (
     <div className="page-container py-6">
       <div className="skeleton h-20 w-80 rounded mb-6" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-5">
-          {[1,2,3,4].map(n => (
-            <div
-              key={n}
-              className="space-y-2 pb-4"
-              style={{ borderBottom: '1px solid var(--border-muted)' }}
-            >
+          {[1, 2, 3, 4].map(n => (
+            <div key={n} className="space-y-2 pb-4" style={{ borderBottom: '1px solid var(--border-muted)' }}>
               <div className="skeleton h-40 w-full rounded-xl" />
               <div className="skeleton h-3 w-20 rounded" />
               <div className="skeleton h-5 w-full rounded" />
@@ -190,12 +212,8 @@ function TopStoriesSkeleton() {
         </div>
         <div>
           <div className="skeleton h-10 w-full rounded-t-xl" />
-          {[1,2,3,4,5,6].map(n => (
-            <div
-              key={n}
-              className="flex gap-3 py-3"
-              style={{ borderBottom: '1px solid var(--border-muted)' }}
-            >
+          {[1, 2, 3, 4, 5, 6].map(n => (
+            <div key={n} className="flex gap-3 py-3" style={{ borderBottom: '1px solid var(--border-muted)' }}>
               <div className="skeleton w-7 h-8 rounded flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="skeleton h-3 w-16 rounded" />
@@ -210,6 +228,7 @@ function TopStoriesSkeleton() {
   )
 }
 
+// ── Main ──────────────────────────────────────────────────────────
 export default function TopStories() {
   const { articles: latest,           loading: l1 } = useArticles({ limit: 8 })
   const { articles: trendingArticles, loading: l2 } = useTrending(6)
@@ -224,11 +243,8 @@ export default function TopStories() {
   return (
     <section className="page-container py-4 md:py-6">
 
-      {/* ── Heading ── */}
-      <div
-        className="mb-6 pb-4"
-        style={{ borderBottom: '3px solid var(--border)' }}
-      >
+      {/* Heading */}
+      <div className="mb-6 pb-4" style={{ borderBottom: '3px solid var(--border)' }}>
         <h2
           className="font-display font-black uppercase leading-none"
           style={{
@@ -243,23 +259,17 @@ export default function TopStories() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-0 md:gap-8">
 
-        {/* ── Left: article grid ──────────────────── */}
+        {/* Left — article grid */}
         <div className="md:col-span-2">
-          {featured && (
-            <ArticleCard article={featured} size="large" />
-          )}
+          {featured && <ArticleCard article={featured} size="large" />}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
             {rest.map(article => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                size="normal"
-              />
+              <ArticleCard key={article.id} article={article} size="normal" />
             ))}
           </div>
         </div>
 
-        {/* ── Right: trending sidebar ─────────────── */}
+        {/* Right — trending sidebar (desktop only) */}
         <div className="hidden md:block">
           <div
             className="sticky top-20 rounded-2xl overflow-hidden"
@@ -278,15 +288,12 @@ export default function TopStories() {
 
             <div className="px-4">
               {trendingArticles.map((article, i) => (
-                <TrendingItem
-                  key={article.id}
-                  article={article}
-                  rank={i + 1}
-                />
+                <TrendingItem key={article.id} article={article} rank={i + 1} />
               ))}
             </div>
           </div>
         </div>
+
       </div>
     </section>
   )

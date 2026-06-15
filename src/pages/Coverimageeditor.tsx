@@ -41,14 +41,14 @@ export function applyCropStyle(crop: CoverCrop | null | undefined): {
   return {
     container: { overflow: 'hidden', position: 'relative' },
     img: {
-      width:     '100%',
-      height:    '100%',
-      objectFit: 'cover',
+      width:           '100%',
+      height:          '100%',
+      objectFit:       'cover',
       // We encode x/y as objectPosition percentages.
       // At zoom=1, objectPosition covers the full image (default 50%/50% feel).
       // At zoom>1, we scale the image and shift via transform.
       objectPosition: `${c.x}% ${c.y}%`,
-      transform:      `scale(${c.zoom})`,
+      transform:      `scale(${Math.max(1, c.zoom)})`,
       transformOrigin: `${c.x}% ${c.y}%`,
       transition:     'transform 0.2s ease',
     },
@@ -204,7 +204,7 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
             className="text-xs font-semibold uppercase tracking-wider"
             style={{ color: 'var(--text-muted)' }}
           >
-            Crop &amp; Zoom
+            Crop & Zoom
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function CoverImageEditor({ imageUrl, crop, onChange }: Props) {
                   stroke="white" strokeWidth="1" strokeDasharray="4 4" />
                 <line x1="0" y1="33.33%" x2="100%" y2="33.33%"
                   stroke="white" strokeWidth="1" strokeDasharray="4 4" />
-                <line x1="0" y1="66.66%" x2="100%" y2="66.66%"
+                <line x1="0" y1="66.66%" y2="100%"
                   stroke="white" strokeWidth="1" strokeDasharray="4 4" />
               </svg>
               {/* Corner brackets */}

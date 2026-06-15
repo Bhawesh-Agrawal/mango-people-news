@@ -5,21 +5,9 @@ import type { Article, Category, Quote } from '../../types'
 import MarketTicker from '../ui/MarketTicker'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
 
-// ── Consistent cover image ────────────────────────────────────────
-/**
- * All article thumbnails across CategorySections use this component.
- * It enforces 16:9 and applies the author's crop settings.
- */
-function ArticleCover({
-  article,
-  className = '',
-}: {
-  article:    Article
-  className?: string
-}) {
-  const crop   = article.cover_crop ?? null
-  const styles = applyCropStyle(crop)
-
+// ── Hero/feature cover — crop applied, always 16:9 ────────────────
+function ArticleCover({ article, className = '' }: { article: Article; className?: string }) {
+  const styles = applyCropStyle(article.cover_crop ?? null)
   return (
     <div
       className={`w-full rounded-lg overflow-hidden ${className}`}
@@ -30,15 +18,36 @@ function ArticleCover({
         srcSet={cloudinarySrcSet(article.cover_image!, 720, 405)}
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
         alt={article.title}
-        className="transition-transform duration-500 group-hover:scale-105"
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         loading="lazy"
         width={720}
         height={405}
         style={styles.img}
+        draggable={false}
       />
     </div>
   )
 }
+
+// ── Small thumbnail — NO crop, object-cover centered ──────────────
+// Crop offsets designed for large images cause heavy cropping at small sizes.
+/* function Thumbnail({ article }: { article: Article }) {
+  if (!article.cover_image) return null
+  return (
+    <div
+      className="flex-shrink-0 rounded-lg overflow-hidden"
+      style={{ width: '80px', aspectRatio: '16 / 9' }}
+    >
+      <img
+        src={cloudinaryUrl(article.cover_image, 160, 90)}
+        alt={article.title}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+        draggable={false}
+      />
+    </div>
+  )
+} */
 
 // ══════════════════════════════════════════════════════════════════
 // DIVIDERS
@@ -68,8 +77,10 @@ const RowDivider = () => (
 // ══════════════════════════════════════════════════════════════════
 function Meta({ article }: { article: Article }) {
   return (
-    <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-xs mt-2.5"
-      style={{ color: 'var(--text-muted)' }}>
+    <div
+      className="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-xs mt-2.5"
+      style={{ color: 'var(--text-muted)' }}
+    >
       <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
         {article.author_name}
       </span>
@@ -92,7 +103,7 @@ function Meta({ article }: { article: Article }) {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// ARTICLE CELL
+// ARTICLE CELL — feature/hero cards, crop applied
 // ══════════════════════════════════════════════════════════════════
 function ArticleCell({
   article,
@@ -104,18 +115,15 @@ function ArticleCell({
   reserveBadge?: boolean
 }) {
   const headingSize =
-    size === 'lg' ? 'clamp(22px, 3vw, 30px)'    :
-    size === 'md' ? 'clamp(17px, 2.2vw, 22px)'  :
+    size === 'lg' ? 'clamp(22px, 3vw, 30px)'   :
+    size === 'md' ? 'clamp(17px, 2.2vw, 22px)' :
                    'clamp(14px, 1.8vw, 17px)'
 
   const excerptLines = size === 'lg' ? 4 : size === 'md' ? 3 : 2
 
   return (
-    <Link
-      to={`/article/${article.slug}`}
-      className="group flex flex-col h-full"
-    >
-      {/* Badge row */}
+    <Link to={`/article/${article.slug}`} className="group flex flex-col h-full">
+
       {(article.is_breaking || reserveBadge) && (
         <div className="mb-2.5" style={{ minHeight: '22px' }}>
           {article.is_breaking && (
@@ -124,7 +132,6 @@ function ArticleCell({
         </div>
       )}
 
-      {/* Headline */}
       <h3
         className="font-display font-bold leading-tight tracking-tight
                    transition-colors duration-150
@@ -134,7 +141,6 @@ function ArticleCell({
         {article.title}
       </h3>
 
-      {/* Subtitle */}
       {article.subtitle && (
         <p className="text-sm font-medium leading-relaxed mt-2"
           style={{ color: 'var(--text-secondary)' }}>
@@ -142,26 +148,23 @@ function ArticleCell({
         </p>
       )}
 
-      {/* Excerpt */}
       {article.excerpt && (
         <p
           className="text-sm leading-relaxed mt-2"
           style={{
-            color:              'var(--text-secondary)',
-            display:            '-webkit-box',
-            WebkitLineClamp:    excerptLines,
-            WebkitBoxOrient:    'vertical',
-            overflow:           'hidden',
+            color:           'var(--text-secondary)',
+            display:         '-webkit-box',
+            WebkitLineClamp: excerptLines,
+            WebkitBoxOrient: 'vertical',
+            overflow:        'hidden',
           }}
         >
           {article.excerpt}
         </p>
       )}
 
-      {/* Meta */}
       <Meta article={article} />
 
-      {/* Image — always 16:9 via ArticleCover */}
       <div className="mt-4 flex-1">
         {article.cover_image ? (
           <ArticleCover article={article} />
@@ -171,16 +174,14 @@ function ArticleCell({
               <p
                 className="text-sm leading-relaxed"
                 style={{
-                  color:              'var(--text-secondary)',
-                  display:            '-webkit-box',
-                  WebkitLineClamp:    size === 'lg' ? 8 : 5,
-                  WebkitBoxOrient:    'vertical',
-                  overflow:           'hidden',
+                  color:           'var(--text-secondary)',
+                  display:         '-webkit-box',
+                  WebkitLineClamp: size === 'lg' ? 8 : 5,
+                  WebkitBoxOrient: 'vertical',
+                  overflow:        'hidden',
                 }}
                 dangerouslySetInnerHTML={{
-                  __html: article.body
-                    .replace(/<[^>]*>/g, ' ')
-                    .slice(0, 600),
+                  __html: article.body.replace(/<[^>]*>/g, ' ').slice(0, 600),
                 }}
               />
             )}
@@ -188,19 +189,18 @@ function ArticleCell({
               <p
                 className="text-sm leading-relaxed"
                 style={{
-                  color:              'var(--text-secondary)',
-                  display:            '-webkit-box',
-                  WebkitLineClamp:    size === 'lg' ? 6 : 4,
-                  WebkitBoxOrient:    'vertical',
-                  overflow:           'hidden',
+                  color:           'var(--text-secondary)',
+                  display:         '-webkit-box',
+                  WebkitLineClamp: size === 'lg' ? 6 : 4,
+                  WebkitBoxOrient: 'vertical',
+                  overflow:        'hidden',
                 }}
               >
                 {article.excerpt}
               </p>
             )}
             <span
-              className="inline-block mt-3 text-xs font-bold
-                         tracking-wide uppercase
+              className="inline-block mt-3 text-xs font-bold tracking-wide uppercase
                          group-hover:opacity-70 transition-opacity"
               style={{ color: 'var(--accent)' }}
             >
@@ -213,50 +213,46 @@ function ArticleCell({
   )
 }
 
-// Small stacked card — for 4+ layout right column
+// ══════════════════════════════════════════════════════════════════
+// SMALL STACK CARD — thumbnail row, NO crop
+// ══════════════════════════════════════════════════════════════════
 function SmallStackCard({ article }: { article: Article }) {
-  /* const crop   = article.cover_crop ?? null */
- /*  const styles = applyCropStyle(crop) */
-
   return (
     <Link
       to={`/article/${article.slug}`}
-      className="group py-3 flex gap-3"
+      className="group py-3 flex items-start gap-3"
       style={{ borderBottom: '1px solid var(--border-muted)' }}
     >
-      {/* Thumbnail — 16:9, small */}
-      {/* {article.cover_image && (
+      {article.cover_image && (
         <div
           className="flex-shrink-0 rounded-lg overflow-hidden"
-          style={{ ...styles.container, width: '72px', height: '40px' }}
+          style={{ width: '120px', aspectRatio: '16 / 9' }}
         >
           <img
-            src={article.cover_image}
+            src={cloudinaryUrl(article.cover_image, 240, 135)}
             alt={article.title}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             loading="lazy"
-            className="transition-transform duration-300 group-hover:scale-105"
-            style={styles.img}
+            draggable={false}
           />
         </div>
-      )} */}
-
+      )}
       <div className="flex-1 min-w-0">
         <h4
           className="font-display font-semibold leading-tight tracking-tight
                      line-clamp-2 transition-colors duration-150
                      group-hover:text-[var(--accent)]"
-          style={{ fontSize: '24px', color: 'var(--text-primary)' }}
+          style={{ fontSize: '13px', color: 'var(--text-primary)' }}
         >
           {article.title}
         </h4>
         {article.excerpt && (
-          <p className="text-md leading-relaxed mt-1 line-clamp-2"
+          <p className="text-xs leading-relaxed mt-1 line-clamp-2"
             style={{ color: 'var(--text-secondary)' }}>
             {article.excerpt}
           </p>
         )}
-        <div className="flex items-center gap-1.5 text-[11px] mt-1.5"
-          style={{ color: 'var(--text-muted)' }}>
+        <div className="flex items-center gap-1.5 text-[11px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
           <Clock size={10} />
           {timeAgo(article.published_at)}
           <span>·</span>
@@ -270,7 +266,6 @@ function SmallStackCard({ article }: { article: Article }) {
 // ══════════════════════════════════════════════════════════════════
 // LAYOUTS
 // ══════════════════════════════════════════════════════════════════
-
 function Layout1({ articles }: { articles: Article[] }) {
   return <ArticleCell article={articles[0]} size="lg" />
 }
@@ -310,10 +305,10 @@ function Layout3({ articles }: { articles: Article[] }) {
 }
 
 function Layout4Plus({ articles, flip }: { articles: Article[]; flip: boolean }) {
-  const bottomLeft      = flip ? articles[2] : articles[1]
-  const bottomRight     = flip ? articles[1] : articles[2]
-  const stacked         = articles.slice(3)
-  const anyBreakingBot  = [bottomLeft, bottomRight].some(a => a.is_breaking)
+  const bottomLeft     = flip ? articles[2] : articles[1]
+  const bottomRight    = flip ? articles[1] : articles[2]
+  const stacked        = articles.slice(3)
+  const anyBreakingBot = [bottomLeft, bottomRight].some(a => a.is_breaking)
 
   return (
     <div>
@@ -324,16 +319,13 @@ function Layout4Plus({ articles, flip }: { articles: Article[]; flip: boolean })
           <ArticleCell article={bottomLeft} size="md" reserveBadge={anyBreakingBot} />
         </div>
         <ColDivider />
-        <div className="flex-1"> 
+        <div className="flex-1">
           <ArticleCell article={bottomRight} size="md" reserveBadge={anyBreakingBot} />
         </div>
       </div>
 
       {stacked.length > 0 && (
-        <div
-          className="mt-5 pt-5"
-          style={{ borderTop: '1px solid var(--border-muted)' }}
-        >
+        <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--border-muted)' }}>
           {stacked.slice(0, 3).map(a => (
             <SmallStackCard key={a.id} article={a} />
           ))}
@@ -352,10 +344,10 @@ function CategoryBlock({
   categoryArticles,
   marketQuotes,
 }: {
-  category: Category
-  index: number
+  category:         Category
+  index:            number
   categoryArticles: Record<string, Article[]>
-  marketQuotes: Quote[]
+  marketQuotes:     Quote[]
 }) {
   const articles = categoryArticles[category.slug] ?? []
   const flip      = index % 2 !== 0
@@ -370,7 +362,6 @@ function CategoryBlock({
       className="py-8 scroll-mt-28"
       style={{ borderTop: '1px solid var(--border)' }}
     >
-      {/* Category header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2.5">
           <div
@@ -379,10 +370,7 @@ function CategoryBlock({
           />
           <h2
             className="font-display font-bold tracking-tight uppercase"
-            style={{
-              fontSize: 'clamp(20px, 3.5vw, 28px)',
-              color:    'var(--text-primary)',
-            }}
+            style={{ fontSize: 'clamp(20px, 3.5vw, 28px)', color: 'var(--text-primary)' }}
           >
             {category.name}
           </h2>
@@ -430,9 +418,9 @@ export default function CategorySections({
   categoryArticles,
   marketQuotes,
 }: {
-  categories: Category[]
+  categories:       Category[]
   categoryArticles: Record<string, Article[]>
-  marketQuotes: Quote[]
+  marketQuotes:     Quote[]
 }) {
   return (
     <section className="page-container py-2 md:py-4">
@@ -442,10 +430,7 @@ export default function CategorySections({
       >
         <span
           className="font-display font-bold tracking-tight uppercase"
-          style={{
-            fontSize: 'clamp(28px, 5vw, 42px)',
-            color:    'var(--text-primary)',
-          }}
+          style={{ fontSize: 'clamp(28px, 5vw, 42px)', color: 'var(--text-primary)' }}
         >
           Latest News
         </span>

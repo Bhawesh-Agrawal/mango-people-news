@@ -3,11 +3,15 @@ import { Link } from 'react-router-dom'
 import { Clock, ArrowRight } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories'
 import { useArticles } from '../../hooks/useArticles'
-import { cloudinaryUrl, timeAgo } from '../../lib/utils'
+import { cloudinaryUrl, cloudinarySrcSet, timeAgo } from '../../lib/utils'
 import type { Article, Category } from '../../types'
+import { applyCropStyle } from '../../pages/Coverimageeditor'
 
 // ── Article card for grid ─────────────────────────────────────────
 function CategoryArticleCard({ article }: { article: Article }) {
+  const crop   = article.cover_crop ?? null
+  const styles = applyCropStyle(crop)
+
   return (
     <Link
       to={`/article/${article.slug}`}
@@ -35,17 +39,20 @@ function CategoryArticleCard({ article }: { article: Article }) {
       {/* Image */}
       {article.cover_image && (
         <div
-          className="w-full overflow-hidden flex-shrink-0"
-          style={{ height: '160px' }}
+          className="w-full overflow-hidden flex-shrink-0 img-zoom"
+          style={{ ...styles.container, aspectRatio: '16/9' }}
         >
           <img
-            src={cloudinaryUrl(article.cover_image, 640, 160)}
-            alt=""
+            src={cloudinaryUrl(article.cover_image, 640, 360)}
+            srcSet={cloudinarySrcSet(article.cover_image, 640, 360)}
+            sizes="(max-width: 768px) 50vw, 33vw"
+            alt={article.title}
             className="w-full h-full object-cover transition-transform
                        duration-500 group-hover:scale-105"
             loading="lazy"
             width={640}
-            height={160}
+            height={360}
+            style={styles.img}
           />
         </div>
       )}
@@ -116,7 +123,7 @@ function CardSkeleton() {
         borderRadius: '12px',
       }}
     >
-      <div className="skeleton w-full" style={{ height: '160px' }} />
+      <div className="skeleton w-full" style={{ aspectRatio: '16/9' }} />
       <div className="p-3.5 space-y-2">
         <div className="skeleton h-2.5 w-16 rounded" />
         <div className="skeleton h-4 w-full rounded" />
