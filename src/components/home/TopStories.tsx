@@ -7,7 +7,7 @@ import type { Article } from '../../types'
 import { applyCropStyle } from '../../pages/Coverimageeditor'
 
 // ── Thumbnail — no crop applied at small sizes ────────────────────
-function Thumbnail({
+/* function Thumbnail({
   article,
   width,
   className = '',
@@ -32,7 +32,7 @@ function Thumbnail({
       />
     </div>
   )
-}
+} */
 
 // ── Hero/normal cover — crop applied ─────────────────────────────
 function CoverImage({

@@ -49,7 +49,7 @@ function CoverImage({
 }
 
 // ── Thumbnail — small fixed-size, NO crop applied ─────────────────
-function Thumbnail({ article, width = 80 }: { article: Article; width?: number }) {
+/* function Thumbnail({ article, width = 80 }: { article: Article; width?: number }) {
   const h = Math.round(width * (9 / 16))
   if (!article.cover_image) return null
   return (
@@ -66,7 +66,7 @@ function Thumbnail({ article, width = 80 }: { article: Article; width?: number }
       />
     </div>
   )
-}
+} */
 
 // ── Article row for sidebar lists ─────────────────────────────────
 function ArticleRow({ article }: { article: Article }) {
