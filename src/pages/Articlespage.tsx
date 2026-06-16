@@ -12,9 +12,8 @@ import { Clock, Eye, Search, X }  from 'lucide-react'
 import { getArticles }            from '../api/articles'
 import { getCategories }          from '../api/categories'
 import type { Article, Category } from '../types'
-import { cloudinaryUrl, cloudinarySrcSet, formatCount } from '../lib/utils'
+import { cloudinaryUrl, formatCount } from '../lib/utils'
 import SEO                        from '../seo/Seo'
-import { applyCropStyle } from './Coverimageeditor'
 
 const LIMIT = 20
 
@@ -150,6 +149,7 @@ export default function ArticlesPage() {
 
       <div className="page-container py-8">
 
+        {/* ── Header ── */}
         <div
           className="pb-5 mb-6"
           style={{ borderBottom: '3px solid var(--text-primary)' }}
@@ -205,6 +205,7 @@ export default function ArticlesPage() {
           </div>
         </div>
 
+        {/* ── Category filters ── */}
         {categories.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap mb-6">
             <button
@@ -244,6 +245,7 @@ export default function ArticlesPage() {
           </div>
         )}
 
+        {/* ── Skeleton ── */}
         {loading && (
           <div>
             {[...Array(3)].map((_, gi) => (
@@ -252,7 +254,7 @@ export default function ArticlesPage() {
                 {[...Array(4)].map((__, ri) => (
                   <div
                     key={ri}
-                    className="flex gap-3 py-4 animate-pulse"
+                    className="flex gap-4 py-4 animate-pulse"
                     style={{ borderBottom: '1px solid var(--border)' }}
                   >
                     <div className="flex-1 space-y-2">
@@ -260,8 +262,10 @@ export default function ArticlesPage() {
                       <div className="skeleton h-4 w-full rounded" />
                       <div className="skeleton h-3 w-1/4 rounded" />
                     </div>
-                    <div className="skeleton rounded-lg flex-shrink-0"
-                      style={{ width: '72px', height: '40px' }} />
+                    <div
+                      className="skeleton rounded-lg flex-shrink-0"
+                      style={{ width: '120px', aspectRatio: '16/9' }}
+                    />
                   </div>
                 ))}
               </div>
@@ -269,6 +273,7 @@ export default function ArticlesPage() {
           </div>
         )}
 
+        {/* ── Article list ── */}
         {!loading && (
           <>
             {articles.length === 0 ? (
@@ -353,11 +358,10 @@ function DateGroup({ label, articles }: { label: string; articles: Article[] }) 
 }
 
 // ── Article row ───────────────────────────────────────────────
+// No applyCropStyle — crop offsets cause heavy cropping at small sizes.
+// object-cover + centered fill looks correct at thumbnail size.
 
 function ArticleRow({ article }: { article: Article }) {
-  const crop   = article.cover_crop ?? null
-  const styles = applyCropStyle(crop)
-  
   const publishTime = new Date(article.published_at).toLocaleTimeString('en-IN', {
     hour: '2-digit', minute: '2-digit', hour12: true,
   })
@@ -369,6 +373,7 @@ function ArticleRow({ article }: { article: Article }) {
                  transition-colors hover:bg-[var(--bg-subtle)]"
       style={{ borderBottom: '1px solid var(--border)' }}
     >
+      {/* Text */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           {article.category_name && (
@@ -433,22 +438,19 @@ function ArticleRow({ article }: { article: Article }) {
         </div>
       </div>
 
+      {/* Thumbnail — 120px, no crop styles */}
       {article.cover_image && (
         <div
-          className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
-          style={{ ...styles.container, width: '72px', aspectRatio: '16/9' }}
+          className="flex-shrink-0 rounded-lg overflow-hidden"
+          style={{ width: '120px', aspectRatio: '16 / 9' }}
         >
           <img
-            src={cloudinaryUrl(article.cover_image, 72, 40)}
-            srcSet={cloudinarySrcSet(article.cover_image, 72, 40)}
-            sizes="72px"
+            src={cloudinaryUrl(article.cover_image, 240, 135)}
             alt={article.title}
             className="w-full h-full object-cover transition-transform
                        duration-300 group-hover:scale-105"
             loading="lazy"
-            width={72}
-            height={40}
-            style={styles.img}
+            draggable={false}
           />
         </div>
       )}

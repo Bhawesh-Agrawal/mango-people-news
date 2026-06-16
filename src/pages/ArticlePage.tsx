@@ -24,10 +24,9 @@ import SEO from '../seo/Seo'
 import AISummaryBlock from './Aisummaryblock'
 import { applyCropStyle } from './Coverimageeditor'
 
-// ── Cover image component with crop support ─────────────────────
+// ── Cover image — hero size, crop applied ─────────────────────
 function CoverImage({ article }: { article: Article }) {
-  const crop   = article.cover_crop ?? null
-  const styles = applyCropStyle(crop)
+  const styles = applyCropStyle(article.cover_crop ?? null)
   return (
     <img
       src={cloudinaryUrl(article.cover_image!, 1280, 720)}
@@ -38,12 +37,12 @@ function CoverImage({ article }: { article: Article }) {
       width={1280}
       height={720}
       style={styles.img}
+      draggable={false}
     />
   )
 }
 
 // ── Reading progress bar ──────────────────────────────────────
-
 function ReadingProgress() {
   const [progress, setProgress] = useState(0)
 
@@ -67,7 +66,6 @@ function ReadingProgress() {
 }
 
 // ── Article skeleton ──────────────────────────────────────────
-
 function ArticleSkeleton() {
   return (
     <div className="page-container py-8 space-y-6 animate-pulse">
@@ -86,7 +84,6 @@ function ArticleSkeleton() {
 }
 
 // ── Save gate modal ───────────────────────────────────────────
-
 function SaveGateModal({ onClose }: { onClose: () => void }) {
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose()
@@ -145,11 +142,7 @@ function SaveGateModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="flex items-center justify-center w-full rounded-xl
                        text-sm font-bold transition-opacity hover:opacity-90"
-            style={{
-              height:     '46px',
-              background: 'var(--accent)',
-              color:      '#fff',
-            }}
+            style={{ height: '46px', background: 'var(--accent)', color: '#fff' }}
           >
             Sign in
           </Link>
@@ -175,15 +168,8 @@ function SaveGateModal({ onClose }: { onClose: () => void }) {
 }
 
 // ── Action bar ────────────────────────────────────────────────
-
 function ActionBar({
-  article,
-  liked,
-  likeCount,
-  saved,
-  savePending,
-  onLike,
-  onSave,
+  article, liked, likeCount, saved, savePending, onLike, onSave,
 }: {
   article:     Article
   liked:       boolean
@@ -233,7 +219,6 @@ function ActionBar({
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-
       <button
         onClick={onLike}
         style={{
@@ -250,20 +235,8 @@ function ActionBar({
         <span>{formatCount(likeCount)}</span>
       </button>
 
-      <button 
-        onClick={shareTwitter} 
-        style={base} 
-        title="Share on X" 
-        aria-label="Share on X"
-      >
-        {/* Replacing <Twitter /> with the official X SVG */}
-        <svg 
-          width="14" 
-          height="14" 
-          viewBox="0 0 24 24" 
-          fill="currentColor" 
-          style={{ flexShrink: 0 }}
-        >
+      <button onClick={shareTwitter} style={base} title="Share on X" aria-label="Share on X">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
           <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
         </svg>
         <span className="hidden sm:inline">Share</span>
@@ -311,13 +284,11 @@ function ActionBar({
         <Bookmark size={14} fill={saved ? 'currentColor' : 'none'} style={{ flexShrink: 0 }} />
         <span className="hidden sm:inline">{saved ? 'Saved' : 'Save'}</span>
       </button>
-
     </div>
   )
 }
 
 // ── Comments section ──────────────────────────────────────────
-
 function CommentsSection({
   articleId,
   returnPath,
@@ -452,7 +423,6 @@ function CommentsSection({
 
   return (
     <section className="mt-12">
-
       <div
         className="flex items-center gap-3 pb-4 mb-8"
         style={{ borderBottom: '1px solid var(--border)' }}
@@ -694,7 +664,6 @@ function CommentsSection({
 }
 
 // ── Main Article Page ─────────────────────────────────────────
-
 export default function ArticlePage() {
   const { slug }       = useParams<{ slug: string }>()
   const location       = useLocation()
@@ -725,17 +694,12 @@ export default function ArticlePage() {
     getArticle(slug)
       .then(res => {
         const a = res.data
-        if (!a) {
-          setNotFound(true)
-          return
-        }
+        if (!a) { setNotFound(true); return }
         setArticle(a)
         setLikeCount(a.like_count)
         trackView(a.id)
       })
-      .catch(() => {
-        setNotFound(true)
-      })
+      .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
   }, [slug])
 
@@ -783,16 +747,11 @@ export default function ArticlePage() {
 
   const handleSave = async () => {
     if (!article) return
-
-    if (!isLoggedIn) {
-      setShowSaveGate(true)
-      return
-    }
+    if (!isLoggedIn) { setShowSaveGate(true); return }
 
     const wasSaved = saved
     setSaved(!wasSaved)
     setSavePending(true)
-
     try {
       const result = await toggleSaveArticle(article, true)
       setSaved(result.saved)
@@ -860,8 +819,7 @@ export default function ArticlePage() {
           <nav className="flex items-center gap-2 pt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <Link to="/" className="transition-opacity hover:opacity-70">Home</Link>
             <ChevronRight size={12} />
-            <Link to={`/category/${article.category_slug}`}
-              className="transition-opacity hover:opacity-70">
+            <Link to={`/category/${article.category_slug}`} className="transition-opacity hover:opacity-70">
               {article.category_name}
             </Link>
             <ChevronRight size={12} />
@@ -873,16 +831,10 @@ export default function ArticlePage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 pb-16">
 
             <article>
-
               <div className="flex items-center gap-2 mb-4">
                 {article.is_breaking && (
                   <span className="breaking-strip">● Breaking</span>
                 )}
-{/*                 <Link to={`/category/${article.category_slug}`}
-                  className="cat-label transition-opacity hover:opacity-70"
-                  style={{ color: article.category_color }}>
-                  {article.category_name}
-                </Link> */}
               </div>
 
               <h1 className="font-display text-display-md mb-3 leading-tight"
@@ -901,7 +853,7 @@ export default function ArticlePage() {
                 className="flex flex-wrap items-center gap-x-4 gap-y-1 pb-5 mb-3 text-sm"
                 style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}
               >
-                <Link 
+                <Link
                   to={`/user/${article.author_id}`}
                   className="font-medium transition-opacity hover:opacity-70"
                   style={{ color: 'var(--text-secondary)' }}>
@@ -945,6 +897,7 @@ export default function ArticlePage() {
                 <AISummaryBlock summary={article.ai_summary} />
               )}
 
+              {/* ── Article body — bullet points fixed ── */}
               {article.body ? (
                 <div className="article-body prose-article">
                   <style>{`
@@ -952,6 +905,7 @@ export default function ArticlePage() {
                     .article-body ol { list-style: decimal; padding-left: 1.5rem; margin: 0.8em 0; }
                     .article-body li { display: list-item; margin: 0.3em 0; line-height: 1.75; color: var(--text-secondary); }
                     .article-body li::marker { color: var(--accent); }
+                    .article-body ul ul, .article-body ol ol { margin: 0.25rem 0; }
                     .article-body h2 { font-size: 1.4rem; font-weight: 800; margin: 1.5em 0 0.5em; color: var(--text-primary); }
                     .article-body h3 { font-size: 1.1rem; font-weight: 700; margin: 1.2em 0 0.4em; color: var(--text-primary); }
                     .article-body blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; margin: 1.2em 0; color: var(--text-secondary); font-style: italic; }
@@ -961,13 +915,32 @@ export default function ArticlePage() {
                     .article-body code { background: var(--bg-subtle); padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.85em; }
                     .article-body pre { background: var(--bg-subtle); padding: 1em; border-radius: 8px; overflow-x: auto; }
                     .article-body p { margin: 0.8em 0; line-height: 1.75; font-size: 15px; color: var(--text-secondary); }
-                    .article-body ul ul, .article-body ol ol { margin: 0.25rem 0; }
                   `}</style>
                   <div dangerouslySetInnerHTML={{ __html: article.body }} />
                 </div>
               ) : article.excerpt ? (
                 <div className="article-body"><p>{article.excerpt}</p></div>
               ) : null}
+
+              {article.tags && article.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-10 pt-6"
+                  style={{ borderTop: '1px solid var(--border)' }}>
+                  {article.tags.map(tag => (
+                    <span
+                      key={tag.id}
+                      className="text-xs font-medium px-3 py-1.5 rounded-full cursor-pointer
+                                 transition-opacity hover:opacity-70"
+                      style={{
+                        background: 'var(--bg-subtle)',
+                        color:      'var(--text-muted)',
+                        border:     '1px solid var(--border)',
+                      }}
+                    >
+                      #{tag.name}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {article.id && (
                 <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
@@ -983,93 +956,100 @@ export default function ArticlePage() {
                 </div>
               )}
 
+              {/* ── Author bio ── */}
               {article.author_id && (
-              <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--border)' }}>
-                <div style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '1.25rem' }}>
-                  <div className="flex items-start gap-4">
-
-                    {/* Avatar */}
-                    <Link to={`/user/${article.author_id}`} className="shrink-0">
-                      <div
-                        className="w-13 h-13 rounded-full overflow-hidden border border-[var(--border)]"
-                        style={{ width: '52px', height: '52px', filter: 'grayscale(100%)' }}
-                      >
-                        {(article.author_avatar || (article as any).avatar_url) ? (
-                          <img src={article.author_avatar || (article as any).avatar_url} alt={article.author_name}
-                            className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-[var(--bg-subtle)] text-lg font-semibold"
-                            style={{ color: 'var(--text-secondary)' }}>
-                            {article.author_name?.charAt(0)?.toUpperCase() ?? '?'}
-                          </div>
-                        )}
-                      </div>
-                    </Link>
-
-                    {/* Everything right of avatar */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <Link to={`/user/${article.author_id}`}
-                          className="text-[15px] font-semibold transition-colors hover:text-[var(--accent)]"
-                          style={{ color: 'var(--text-primary)' }}>
-                          {article.author_name}
-                        </Link>
-                        <span className="text-[11px] uppercase tracking-[0.14em]"
-                          style={{ color: 'var(--text-muted)' }}>
-                          Author
-                        </span>
-                      </div>
-
-                      {article.author_bio && (
-                        <p className="text-[13px] leading-relaxed mb-3"
-                          style={{ color: 'var(--text-secondary)' }}>
-                          {article.author_bio}
-                        </p>
-                      )}
-
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex flex-wrap gap-1.5">
-                          {article.instagram_profile && (
-                            <a href={article.instagram_profile} target="_blank" rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg
-                                        transition-opacity hover:opacity-70"
-                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                              <Instagram size={12} /> Instagram
-                            </a>
-                          )}
-                          {article.twitter_profile && (
-                            <a href={article.twitter_profile} target="_blank" rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg
-                                        transition-opacity hover:opacity-70"
-                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
-                              </svg>
-                              X
-                            </a>
-                          )}
-                          {article.linkedin_profile && (
-                            <a href={article.linkedin_profile} target="_blank" rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-lg
-                                        transition-opacity hover:opacity-70"
-                              style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-                              <Linkedin size={12} /> LinkedIn
-                            </a>
+                <div className="mt-12 pt-12" style={{ borderTop: '1px solid var(--border)' }}>
+                  <div style={{ borderLeft: '3px solid var(--accent)', paddingLeft: '1.25rem' }}>
+                    <div className="flex items-start gap-4">
+                      <Link to={`/user/${article.author_id}`} className="shrink-0">
+                        <div
+                          className="rounded-full overflow-hidden border border-[var(--border)]"
+                          style={{ width: '52px', height: '52px', filter: 'grayscale(100%)' }}
+                        >
+                          {(article.author_avatar || (article as any).avatar_url) ? (
+                            <img
+                              src={article.author_avatar || (article as any).avatar_url}
+                              alt={article.author_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div
+                              className="flex h-full w-full items-center justify-center
+                                         bg-[var(--bg-subtle)] text-lg font-semibold"
+                              style={{ color: 'var(--text-secondary)' }}
+                            >
+                              {article.author_name?.charAt(0)?.toUpperCase() ?? '?'}
+                            </div>
                           )}
                         </div>
+                      </Link>
 
-                        <Link to={`/user/${article.author_id}`}
-                          className="inline-flex items-center gap-1 text-[13px] font-semibold"
-                          style={{ color: 'var(--accent)' }}>
-                          More articles <ChevronRight size={13} />
-                        </Link>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2 mb-1">
+                          <Link
+                            to={`/user/${article.author_id}`}
+                            className="text-[15px] font-semibold transition-colors hover:text-[var(--accent)]"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
+                            {article.author_name}
+                          </Link>
+                          <span className="text-[11px] uppercase tracking-[0.14em]"
+                            style={{ color: 'var(--text-muted)' }}>
+                            Author
+                          </span>
+                        </div>
+
+                        {article.author_bio && (
+                          <p className="text-[13px] leading-relaxed mb-3"
+                            style={{ color: 'var(--text-secondary)' }}>
+                            {article.author_bio}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-1.5">
+                            {article.instagram_profile && (
+                              <a href={article.instagram_profile} target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-medium
+                                           px-2.5 py-1 rounded-lg transition-opacity hover:opacity-70"
+                                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                                <Instagram size={12} /> Instagram
+                              </a>
+                            )}
+                            {article.twitter_profile && (
+                              <a href={article.twitter_profile} target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-medium
+                                           px-2.5 py-1 rounded-lg transition-opacity hover:opacity-70"
+                                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+                                </svg>
+                                X
+                              </a>
+                            )}
+                            {article.linkedin_profile && (
+                              <a href={article.linkedin_profile} target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs font-medium
+                                           px-2.5 py-1 rounded-lg transition-opacity hover:opacity-70"
+                                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                                <Linkedin size={12} /> LinkedIn
+                              </a>
+                            )}
+                          </div>
+
+                          <Link
+                            to={`/user/${article.author_id}`}
+                            className="inline-flex items-center gap-1 text-[13px] font-semibold"
+                            style={{ color: 'var(--accent)' }}
+                          >
+                            More articles <ChevronRight size={13} />
+                          </Link>
+                        </div>
                       </div>
                     </div>
-
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
               {article.id && (
                 <CommentsSection
@@ -1077,9 +1057,9 @@ export default function ArticlePage() {
                   returnPath={articlePath}
                 />
               )}
-
             </article>
 
+            {/* ── Desktop sidebar — related ── */}
             <aside className="hidden lg:block">
               <div className="sticky top-24 space-y-8">
                 <div>
@@ -1089,27 +1069,41 @@ export default function ArticlePage() {
                       Related
                     </span>
                   </div>
-                  <div className="space-y-5">
+                  <div className="space-y-4">
                     {related.map((a, i) => (
-                      <Link key={a.id ?? i} to={`/article/${a.slug}`}
-                        className="flex gap-3 group">
+                      <Link
+                        key={a.id ?? i}
+                        to={`/article/${a.slug}`}
+                        className="flex items-start gap-3 group"
+                      >
+                        {/* Thumbnail — 120px, no crop */}
                         {a.cover_image && (
-                          <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom"
-                            style={{ width: '72px', aspectRatio: '16/9' }}>
-                            <img src={cloudinaryUrl(a.cover_image, 72, 40)} alt={a.title}
-                              className="w-full h-full object-cover"
-                              width={72}
-                              height={40} />
+                          <div
+                            className="flex-shrink-0 rounded-lg overflow-hidden"
+                            style={{ width: '120px', aspectRatio: '16 / 9' }}
+                          >
+                            <img
+                              src={cloudinaryUrl(a.cover_image, 240, 135)}
+                              alt={a.title}
+                              className="w-full h-full object-cover transition-transform
+                                         duration-300 group-hover:scale-105"
+                              loading="lazy"
+                              draggable={false}
+                            />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <span className="cat-label text-[10px] block mb-1"
-                            style={{ color: a.category_color }}>
+                          <span
+                            className="cat-label text-[10px] block mb-1"
+                            style={{ color: a.category_color }}
+                          >
                             {a.category_name}
                           </span>
-                          <p className="text-sm font-medium leading-snug line-clamp-2
-                                        transition-opacity group-hover:opacity-70"
-                            style={{ color: 'var(--text-primary)' }}>
+                          <p
+                            className="text-sm font-medium leading-snug line-clamp-2
+                                       transition-opacity group-hover:opacity-70"
+                            style={{ color: 'var(--text-primary)' }}
+                          >
                             {a.title}
                           </p>
                           <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -1140,6 +1134,7 @@ export default function ArticlePage() {
             </aside>
           </div>
 
+          {/* ── Mobile related stories ── */}
           {related.length > 0 && (
             <div className="lg:hidden pb-16">
               <div className="pb-3 mb-5" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -1150,25 +1145,39 @@ export default function ArticlePage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {related.map((a, i) => (
-                  <Link key={a.id ?? i} to={`/article/${a.slug}`}
-                    className="flex sm:flex-col gap-3 group">
-                {a.cover_image && (
-                      <div className="flex-shrink-0 rounded-lg overflow-hidden img-zoom sm:w-full"
-                        style={{ width: '80px', aspectRatio: '16/9' }}>
-                        <img src={cloudinaryUrl(a.cover_image, 80, 45)} alt={a.title}
-                          className="w-full h-full object-cover"
-                          width={80}
-                          height={45} />
+                  <Link
+                    key={a.id ?? i}
+                    to={`/article/${a.slug}`}
+                    className="flex sm:flex-col gap-3 group"
+                  >
+                    {/* Mobile: 120px thumbnail | sm+: full width stacked */}
+                    {a.cover_image && (
+                      <div
+                        className="flex-shrink-0 rounded-lg overflow-hidden sm:w-full sm:flex-shrink"
+                        style={{ width: '120px', aspectRatio: '16 / 9' }}
+                      >
+                        <img
+                          src={cloudinaryUrl(a.cover_image, 240, 135)}
+                          alt={a.title}
+                          className="w-full h-full object-cover transition-transform
+                                     duration-300 group-hover:scale-105"
+                          loading="lazy"
+                          draggable={false}
+                        />
                       </div>
                     )}
                     <div className="flex-1 sm:mt-2">
-                      <span className="cat-label text-[10px] block mb-1"
-                        style={{ color: a.category_color }}>
+                      <span
+                        className="cat-label text-[10px] block mb-1"
+                        style={{ color: a.category_color }}
+                      >
                         {a.category_name}
                       </span>
-                      <p className="text-sm font-medium leading-snug line-clamp-2
-                                    transition-opacity group-hover:opacity-70"
-                        style={{ color: 'var(--text-primary)' }}>
+                      <p
+                        className="text-sm font-medium leading-snug line-clamp-2
+                                   transition-opacity group-hover:opacity-70"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
                         {a.title}
                       </p>
                       <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
