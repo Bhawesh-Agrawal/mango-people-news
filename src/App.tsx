@@ -71,6 +71,7 @@ const AdminUsers            = lazy(() => import('./pages/Adminuser'))
 const AdminEditorList       = lazy(() => import('./pages/Admineditorlist'))
 const AdminEditor           = lazy(() => import('./pages/Admineditor'))
 const ReviewQueue           = lazy(() => import('./pages/ReviewQueue'))
+const AdminHomepageEditor   = lazy(() => import('./pages/AdminhomepageEditor'))
 
 // AdminNewsletter & AdminSettings use named exports — wrap them
 const AdminNewsletter = lazy(() =>
@@ -264,6 +265,9 @@ function App() {
             } />
             <Route path="settings" element={
               <ProtectedRoute requiredRole="editor"><AdminSettings /></ProtectedRoute>
+            } />
+            <Route path="homepage" element={
+              <ProtectedRoute requiredRole="editor"><AdminHomepageEditor /></ProtectedRoute>
             } />
             <Route path="/admin/review" element={
               <ProtectedRoute requiredRole="super_admin"><ReviewQueue /></ProtectedRoute>

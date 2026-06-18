@@ -372,6 +372,7 @@ export default function AdminEditor() {
   const [categories,     setCategories]     = useState<Category[]>([])
   const [coverUploading, setCoverUploading] = useState(false)
   const [coverError,     setCoverError]     = useState('')
+  const [coverWarning,   setCoverWarning]   = useState('')
   const [imageUploading, setImageUploading] = useState(false)
   const [imageError,     setImageError]     = useState('')
 
@@ -642,10 +643,33 @@ export default function AdminEditor() {
 
   // ── Cover image upload ────────────────────────────────────
 
+  // ── Aspect-ratio check ──────────────────────────────────────
+  async function checkImageAspectRatio(file: File): Promise<string> {
+    try {
+      const img  = new Image()
+      const url  = URL.createObjectURL(file)
+      const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+        img.onload  = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+        img.onerror = reject
+        img.src     = url
+      })
+      URL.revokeObjectURL(url)
+      const ratio  = dims.w / dims.h
+      const target = 16 / 9
+      if (Math.abs(ratio - target) > 0.15) {
+        return `Image has a ${ratio.toFixed(2)}:1 aspect ratio (recommended: 16:9 ≈ 1.78:1). It will be cropped to 16:9.`
+      }
+    } catch { /* skip warning if we can't check */ }
+    return ''
+  }
+
   const uploadCover = useCallback(async (file: File) => {
     if (file.size > 5 * 1024 * 1024) { setCoverError('Cover image must be under 5 MB.'); return }
     setCoverUploading(true)
     setCoverError('')
+    setCoverWarning('')
+    const warning = await checkImageAspectRatio(file)
+    if (warning) setCoverWarning(warning)
     try {
       const fd = new FormData()
       fd.append('cover_image', file)
@@ -1146,6 +1170,15 @@ export default function AdminEditor() {
               Cover Image
             </p>
 
+            {coverWarning && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2 text-xs"
+                style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.22)', color: '#92400e' }}
+              >
+                <AlertTriangle size={12} />
+                {coverWarning}
+              </div>
+            )}
             {coverError && (
               <p className="text-xs mb-2" style={{ color: 'var(--breaking)' }}>{coverError}</p>
             )}
@@ -1177,6 +1210,7 @@ export default function AdminEditor() {
                     onClick={() => {
                       dispatch({ type: 'SET_FIELD', field: 'cover_image', value: '' })
                       dispatch({ type: 'SET_FIELD', field: 'cover_crop',  value: { ...DEFAULT_CROP } })
+                      setCoverWarning('')
                     }}
                     className="absolute top-2 right-2 w-6 h-6 rounded-lg flex items-center
                                justify-center transition-opacity hover:opacity-80"
@@ -1217,10 +1251,12 @@ export default function AdminEditor() {
                 }}
                 onClick={() => !coverUploading && coverInputRef.current?.click()}
                 className="flex flex-col items-center justify-center gap-2 rounded-xl
-                           py-8 cursor-pointer transition-all"
+                           cursor-pointer transition-all"
                 style={{
-                  border:     `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
-                  background: dragOver ? 'var(--accent-light)' : 'var(--bg)',
+                  border:       `2px dashed ${dragOver ? 'var(--accent)' : 'var(--border)'}`,
+                  background:   dragOver ? 'var(--accent-light)' : 'var(--bg)',
+                  aspectRatio:  '16 / 9',
+                  width:        '100%',
                 }}
               >
                 {coverUploading ? (

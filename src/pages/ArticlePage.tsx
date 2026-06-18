@@ -8,7 +8,8 @@ import {
   Trash2, CornerDownRight, X,
 } from 'lucide-react'
 import {
-  getArticle, getTrending, toggleLike, getLikeStatus,
+  getArticle, getTrending, getRelatedArticles,
+  toggleLike, getLikeStatus,
   trackView, getComments, postComment, deleteComment,
 } from '../api/articles'
 import type { Comment } from '../api/articles'
@@ -721,14 +722,13 @@ export default function ArticlePage() {
   }, [article?.id, isLoggedIn])
 
   useEffect(() => {
-    if (!article) return
-    getTrending(4)
+    if (!article?.id) return
+    getRelatedArticles(article.id)
       .then(res => {
-        const others = (res.data ?? []).filter(a => a.slug !== slug).slice(0, 3)
-        setRelated(others)
+        setRelated((res.data ?? []).filter(a => a.slug !== slug).slice(0, 8))
       })
       .catch(() => setRelated([]))
-  }, [article, slug])
+  }, [article?.id, slug])
 
   const handleLike = async () => {
     if (!article?.id) return

@@ -116,7 +116,7 @@ export default function Hero({ articles }: { articles: Article[] }) {
   if (articles.length === 0) return null
 
   const main       = articles[0]
-  const highlights = articles.slice(1, 7)
+  const highlights = articles.slice(1, 9)
 
   return (
     <section>

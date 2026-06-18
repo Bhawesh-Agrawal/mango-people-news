@@ -77,6 +77,13 @@ export const getTrending = async (
   return data
 }
 
+export const getRelatedArticles = async (
+  articleId: string
+): Promise<ApiResponse<Article[]>> => {
+  const { data } = await client.get(`/articles/${articleId}/related`)
+  return data
+}
+
 // ── Engagement ────────────────────────────────────────────────────────────────
 
 export const toggleLike = async (
