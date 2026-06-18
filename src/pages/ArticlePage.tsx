@@ -8,7 +8,7 @@ import {
   Trash2, CornerDownRight, X,
 } from 'lucide-react'
 import {
-  getArticle, getTrending, getRelatedArticles,
+  getArticle, getRelatedArticles,
   toggleLike, getLikeStatus,
   trackView, getComments, postComment, deleteComment,
 } from '../api/articles'
