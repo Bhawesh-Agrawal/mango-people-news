@@ -25,6 +25,7 @@
 
     { "source": "/sitemap.xml",          "destination": "/api/sitemap-index"    },
     { "source": "/sitemap-static.xml",   "destination": "/api/sitemap-static"   },
+    { "source": "/sitemap-news.xml",    "destination": "/api/sitemap-news"    },
     {
       "source": "/sitemap-:slug.xml",
       "destination": "/api/sitemap-category?slug=:slug"

@@ -788,8 +788,8 @@ export default function ArticlePage() {
   return (
     <>
       <SEO
-        title={article.title}
-        description={article.excerpt ?? undefined}
+        title={article.meta_title || article.title}
+        description={article.meta_description || (article.excerpt ?? undefined)}
         path={`/article/${article.slug}`}
         ogImage={article.cover_image ?? undefined}
         ogType="article"
