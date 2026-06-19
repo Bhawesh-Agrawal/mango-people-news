@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider }  from './context/AuthContext'
 import AuthGate          from './components/ui/AuthGate'
 import { Analytics }     from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <AuthGate>
           <App />
           <Analytics />
+          <SpeedInsights />
         </AuthGate>
       </AuthProvider>
     </ThemeProvider>
