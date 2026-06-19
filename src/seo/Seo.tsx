@@ -25,6 +25,8 @@ const DEFAULT_DESCRIPTION =
   "India's financial and business news platform. Markets, economy, policy and more. News for Every Indian."
 const DEFAULT_OG_IMAGE = `${SITE_URL}/logo.png`
 const TWITTER_HANDLE = "@mangopeoplenews"
+const PUBLISHER_NAME = "MangoPeople News"
+const FACEBOOK_PAGE = "https://www.facebook.com/share/1ZrPGRV4Xu/"
 
 // ─────────────────────────────────────────────────────────────
 //  Types
@@ -53,6 +55,9 @@ interface SEOProps {
     section?: string;       // Category name
   };
 
+  // Comma-separated keywords for <meta name="keywords"> and JSON-LD
+  keywords?: string;
+
   // Set true for pages Google should NOT index (search results, account pages)
   noIndex?: boolean;
 
@@ -70,6 +75,7 @@ export default function SEO({
   ogImage = DEFAULT_OG_IMAGE,
   ogType = "website",
   article,
+  keywords,
   noIndex = false,
   breadcrumbs,
 }: SEOProps) {
@@ -104,7 +110,8 @@ export default function SEO({
           },
           inLanguage: "en-IN",
           isAccessibleForFree: true,
-          ...(article.section ? { articleSection: article.section } : {}),
+          ...(article.section  ? { articleSection: article.section } : {}),
+          ...(keywords        ? { keywords }                        : {}),
         }, null, 2)
       : null
 
@@ -128,8 +135,10 @@ export default function SEO({
       {/* ── Primary ── */}
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
+      <meta name="publisher" content={PUBLISHER_NAME} />
       <link rel="canonical" href={canonicalUrl} />
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
+      {keywords && <meta name="keywords" content={keywords} />}
 
       {/* ── Open Graph ── */}
       <meta property="og:site_name" content={SITE_NAME} />
@@ -153,6 +162,7 @@ export default function SEO({
       {/* ── Article-specific Open Graph ── */}
       {ogType === "article" && article && (
         <>
+          <meta property="article:publisher" content={FACEBOOK_PAGE} />
           {article.publishedTime && (
             <meta
               property="article:published_time"

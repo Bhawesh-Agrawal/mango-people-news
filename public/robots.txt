@@ -25,3 +25,4 @@ Sitemap: https://www.mangopeoplenews.com/sitemap-market.xml
 Sitemap: https://www.mangopeoplenews.com/sitemap-personal-finance.xml
 Sitemap: https://www.mangopeoplenews.com/sitemap-technology.xml
 Sitemap: https://www.mangopeoplenews.com/sitemap-health-well-being.xml
+Sitemap: https://www.mangopeoplenews.com/sitemap-news.xml
