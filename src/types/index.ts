@@ -24,7 +24,6 @@ export interface Article {
   updated_at?:    string
   meta_title?:    string
   meta_description?: string
-  meta_keywords?: string
   is_breaking:    boolean
   is_featured:    boolean
   body?:          string

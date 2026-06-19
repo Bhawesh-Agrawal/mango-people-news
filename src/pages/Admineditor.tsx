@@ -47,7 +47,6 @@ interface ArticleForm {
   is_breaking:      boolean
   meta_title:       string
   meta_description: string
-  meta_keywords:    string
   tag_ids:          string[]
 }
 
@@ -79,7 +78,7 @@ const INITIAL_FORM: ArticleForm = {
   category_id: '', cover_image: '',
   cover_crop: { ...DEFAULT_CROP },
   status: 'draft', is_featured: false, is_breaking: false,
-  meta_title: '', meta_description: '', meta_keywords: '', tag_ids: [],
+  meta_title: '', meta_description: '', tag_ids: [],
 }
 
 function reducer(state: State, action: Action): State {
@@ -460,7 +459,6 @@ export default function AdminEditor() {
             is_breaking:      a.is_breaking      ?? false,
             meta_title:       a.meta_title       ?? '',
             meta_description: a.meta_description ?? '',
-            meta_keywords:    a.meta_keywords    ?? '',
             tag_ids:          a.tag_ids          ?? [],
           },
         })
@@ -1338,16 +1336,6 @@ export default function AdminEditor() {
                     rows={3}
                     maxLength={160}
                     className="w-full px-3 py-2 rounded-xl text-sm bg-transparent outline-none resize-none"
-                    style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>Meta keywords</label>
-                  <input
-                    value={form.meta_keywords}
-                    onChange={e => dispatch({ type: 'SET_FIELD', field: 'meta_keywords', value: e.target.value })}
-                    placeholder="news, finance, markets (comma-separated)"
-                    className="w-full px-3 py-2 rounded-xl text-sm bg-transparent outline-none"
                     style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                   />
                 </div>

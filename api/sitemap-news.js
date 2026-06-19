@@ -61,7 +61,6 @@ async function fetchRecentArticles() {
 }
 
 function buildKeywords(article) {
-  if (article.meta_keywords) return article.meta_keywords
   const parts = []
   if (article.author_name) parts.push(article.author_name)
   if (article.category_name) parts.push(article.category_name)

@@ -800,7 +800,7 @@ export default function ArticlePage() {
           section:       article.category_name,
           tags:          article.tags?.map(t => t.name),
         }}
-        keywords={article.meta_keywords}
+        keywords={[...(article.tags?.map(t => t.name) ?? []), article.category_name].filter(Boolean).join(', ')}
         breadcrumbs={[
           { name: 'Home', url: '/' },
           { name: article.category_name, url: `/category/${article.category_slug}` },
