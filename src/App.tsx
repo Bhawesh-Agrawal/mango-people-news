@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth }    from './context/AuthContext'
 import ProtectedRoute from './components/ui/ProtectedRoutes'
 import AdminLayout    from './components/layout/Adminlayout'
@@ -157,6 +157,14 @@ function PreloadManager() {
 // APP
 // ─────────────────────────────────────────────────────────────
 function App() {
+  const location = useLocation()
+
+  useEffect(() => {
+    if (typeof gtag !== 'undefined') {
+      gtag('config', 'G-K0H4C45SLB', { page_path: location.pathname + location.search })
+    }
+  }, [location])
+
   return (
     <BrowserRouter>
       <ScrollToTop />
