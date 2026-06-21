@@ -157,6 +157,14 @@ function PreloadManager() {
 // APP
 // ─────────────────────────────────────────────────────────────
 function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  )
+}
+
+function AppContent() {
   const location = useLocation()
 
   useEffect(() => {
@@ -166,7 +174,7 @@ function App() {
   }, [location])
 
   return (
-    <BrowserRouter>
+    <>
       <ScrollToTop />
       <PreloadManager />
 
@@ -290,7 +298,7 @@ function App() {
 
         </Routes>
       </Suspense>
-    </BrowserRouter>
+    </>
   )
 }
 
