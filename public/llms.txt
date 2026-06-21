@@ -1,0 +1,49 @@
+# Mango People News — News for Every Indian
+> India's financial and business news platform covering markets, economy, policy and more. Built for everyday Indians who want clear, honest, useful news — not investors, not analysts, not insiders.
+
+## Trust & Authority
+Mango People News is a student-built news platform committed to cross-verified, trustworthy reporting. Every story is checked against multiple sources before publication. The site follows an editorial code of ethics: never publish unverified claims, correct mistakes transparently, and never let advertisers influence editorial decisions. The site is HTTPS-secured, GDPR and CCPA compliant, and uses Google AdSense and Google Analytics. Errors can be reported to mangopeoplenews2026@gmail.com — corrections are handled promptly.
+
+## Core News Sections
+- [Home](https://www.mangopeoplenews.com/): Latest business, markets and economy news
+- [All News](https://www.mangopeoplenews.com/articles): Full article archive
+- [Categories](https://www.mangopeoplenews.com/articles): News organised by topic — categories are fetched dynamically from the API (e.g. `/category/market`)
+- [Trending](https://www.mangopeoplenews.com/trending): Most-read stories right now
+- [Search](https://www.mangopeoplenews.com/search): Search all articles and topics
+- [Newsletter](https://www.mangopeoplenews.com/newsletter): Daily business news delivered to your inbox every morning
+
+## Articles
+Individual articles are accessible at `/article/:slug`. Each article page includes a headline, byline, publish date, featured image (via Cloudinary), body content, category tag, and social sharing. Articles use JSON-LD structured data (`NewsArticle` schema) and Open Graph / Twitter Card meta tags for rich sharing on social platforms and AI crawlers. Google News sitemap is available at `/sitemap-news.xml` covering the last 7 days.
+
+## Company
+- [About Us](https://www.mangopeoplenews.com/about): Our story — started by students who found business news too complex or too dumbed-down. Four editorial pillars: Cross-Verified, Trustworthy, Actually Useful, Built by Students. The tagline "News for the Aam Aadmi" reflects a commitment to making financial news accessible to every Indian.
+- [Our Team](https://www.mangopeoplenews.com/team): Meet the people behind Mango People News
+- [Contact](https://www.mangopeoplenews.com/contact): mangopeoplenews2026@gmail.com — for news tips, correction requests, advertising, or general enquiries. Response within 1-2 business days.
+
+## Legal & Policies
+- [Privacy Policy](https://www.mangopeoplenews.com/privacy-policy): Effective May 1, 2026. Covers data collection, Google AdSense, cookies, user rights (access, correction, deletion, portability), GDPR, CCPA compliance. Data is NOT sold to third parties.
+- [Terms and Conditions](https://www.mangopeoplenews.com/terms-and-conditions): Effective May 1, 2026. Covers use license, content disclaimer, user accounts, intellectual property, governing law (India).
+- [Disclaimer](https://www.mangopeoplenews.com/disclaimer): Effective May 1, 2026. All content is for informational purposes only. No investment, financial, legal, or tax advice. Market data carries risk. No guarantee of accuracy or returns.
+
+## Social & Syndication
+- X / Twitter: [@mangopeoplenews](https://x.com/MangoPeopleNews)
+- Instagram: [@mangopeoplenews](https://www.instagram.com/mangopeoplenews/)
+- Facebook: [Mango People News](https://www.facebook.com/share/1ZrPGRV4Xu/)
+- Google News sitemap: `https://www.mangopeoplenews.com/sitemap-news.xml`
+
+## Site Structure & Technical Notes
+- **Domain**: https://www.mangopeoplenews.com
+- **API backend**: https://api.mangopeoplenews.com
+- **Platform**: Vite + React 19 SPA with react-router-dom v7 (client-side rendering)
+- **SEO**: react-helmet-async injects per-page meta tags, JSON-LD structured data, Open Graph and Twitter Card tags
+- **Sitemap index**: `https://www.mangopeoplenews.com/sitemap.xml`
+- **Static pages sitemap**: `https://www.mangopeoplenews.com/sitemap-static.xml`
+- **News sitemap (Google News)**: `https://www.mangopeoplenews.com/sitemap-news.xml`
+- **Category sitemaps**: `https://www.mangopeoplenews.com/sitemap-{slug}.xml`
+- **Analytics**: Google Analytics (G-K0H4C45SLB)
+- **Advertisements**: Google AdSense (ca-pub-9442958982270576)
+- **Subscribe with Google**: Product ID CAowsrbGDA:openaccess
+- **Hosting**: Vercel (Cloudflare Worker used for bot rendering of meta tags)
+- **Primary language**: English (en-IN locale)
+- **Publishing frequency**: Daily updates, weekly article refresh in sitemap
+- **Last updated**: 2026-06-21
