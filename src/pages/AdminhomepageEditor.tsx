@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  DndContext, closestCorners, KeyboardSensor, PointerSensor,
+  DndContext, pointerWithin, KeyboardSensor, PointerSensor,
   useSensor, useSensors, useDroppable, type DragEndEvent,
 } from '@dnd-kit/core'
 import {
@@ -120,7 +120,7 @@ function HeroSortableCard({
   pin: HeroPin
   onRemove: (id: string) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } =
     useSortable({ id: pin.id })
 
   const style: React.CSSProperties = {
@@ -137,6 +137,8 @@ function HeroSortableCard({
         ...style,
         background: 'var(--bg-surface)',
         border:     '1px solid var(--border)',
+        outline:    isOver ? '2px solid var(--accent)' : undefined,
+        outlineOffset: isOver ? '2px' : undefined,
       }}
       className="rounded-2xl overflow-hidden group"
     >
@@ -706,7 +708,7 @@ export default function AdminHomepageEditor() {
           ) : (
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCorners}
+              collisionDetection={pointerWithin}
               onDragEnd={handleDragEnd}
             >
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
